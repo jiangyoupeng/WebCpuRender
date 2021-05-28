@@ -1065,7 +1065,7 @@ function deparse_function(node: any) {
                 let oldData = output[argsInfo.index]
                 outputReplace(argsInfo.index, `__${oldData}__`)
                 replaceIndex.push(index)
-                funcArgsInReplace.push({ name: oldData, type: (<any>convertToTsType)[element] })
+                funcArgsInReplace.push({ name: oldData, type: (<any>convertToTsType)[element] || element })
             }
         }
     }
@@ -1340,8 +1340,13 @@ function deparse_stmtlist(node: any) {
         if (funcArgsInReplace.length > 0) {
             for (let index = 0; index < funcArgsInReplace.length; index++) {
                 const element = funcArgsInReplace[index]
-                outputPush(`let ${element.name}: ${element.type} = new ${element.type}\n`)
-                outputPush(`${element.name}.set(__${element.name}__)\n`)
+                outputPush(`let ${element.name}: ${element.type} = new ${element.type}()\n`)
+
+                let setType = (<any>builtinAbbreviation)[element.type] || "Struct"
+                let setFunc = `glSet_${setType}_${setType}`
+                outputPush(`${setFunc}(${element.name}, __${element.name}__)\n`)
+
+                useBuiltinOperators.add(setFunc)
             }
         }
     }
@@ -1847,7 +1852,7 @@ function customGetTypeNumStr(convertType: string) {
     } else if (convertType == "Mat4Data") {
         typeNumStr = "FLOAT_MAT4"
     } else if (convertType == "Sampler2D") {
-        typeNumStr = "SAMPLER2D"
+        typeNumStr = "SAMPLER_2D"
     } else if (convertType == "SamplerCube") {
         typeNumStr = "SAMPLER_CUBE"
     } else {
@@ -1927,7 +1932,9 @@ export function deparseToTs(
             dataKeysStr += `        ["${key}", cpuRenderingContext.cachGameGl.${typeNumStr}],\n`
 
             let abbreviation = convertToAbbreviation(convertType)
-            copyFuncStr += `        glSet_${abbreviation}_${abbreviation}(varying.${key}, this.${key})\n`
+            let setFunc = `glSet_${abbreviation}_${abbreviation}`
+            copyFuncStr += `        ${setFunc}(varying.${key}, this.${key})\n`
+            useBuiltinOperators.add(setFunc)
         } else {
             console.error("不识别的shader 数据结构: " + value)
         }

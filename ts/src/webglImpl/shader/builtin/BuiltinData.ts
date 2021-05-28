@@ -140,6 +140,11 @@ export class Vec2Data extends ValueType {
         this.out_y.v = v
     }
 
+    set(v: Vec2Data) {
+        this.x = v.x
+        this.y = v.y
+    }
+
     set_V2(v: Vec2Data) {
         this.x = v.x
         this.y = v.y
@@ -308,6 +313,12 @@ export class Vec3Data extends ValueType {
     }
     set z(v: number) {
         this.out_z.v = v
+    }
+
+    set(v: Vec3Data) {
+        this.x = v.x
+        this.y = v.y
+        this.z = v.z
     }
 
     set_V3(v: Vec3Data) {
@@ -853,6 +864,13 @@ export class Vec4Data extends ValueType {
     }
     set w(v: number) {
         this.out_w.v = v
+    }
+
+    set(v: Vec4Data) {
+        this.x = v.x
+        this.y = v.y
+        this.z = v.z
+        this.w = v.w
     }
 
     set_V4(v: Vec4Data) {
@@ -4807,6 +4825,30 @@ export class Mat3Data extends ValueType {
         return v3
     }
 
+    set(other: Mat3Data) {
+        this.m00 = other.m00
+        this.m01 = other.m01
+        this.m02 = other.m02
+        this.m03 = other.m03
+        this.m04 = other.m04
+        this.m05 = other.m05
+        this.m06 = other.m06
+        this.m07 = other.m07
+        this.m08 = other.m08
+    }
+
+    set_M3(other: Mat3Data) {
+        this.m00 = other.m00
+        this.m01 = other.m01
+        this.m02 = other.m02
+        this.m03 = other.m03
+        this.m04 = other.m04
+        this.m05 = other.m05
+        this.m06 = other.m06
+        this.m07 = other.m07
+        this.m08 = other.m08
+    }
+
     get out_y() {
         let v3 = new Vec3Data()
         v3.out_x = this.out_m03
@@ -5083,6 +5125,45 @@ export class Mat4Data extends ValueType {
 
     set m15(v: number) {
         this.out_m15.v = v
+    }
+
+
+    set(other: Mat4Data) {
+        this.m00 = other.m00
+        this.m01 = other.m01
+        this.m02 = other.m02
+        this.m03 = other.m03
+        this.m04 = other.m04
+        this.m05 = other.m05
+        this.m06 = other.m06
+        this.m07 = other.m07
+        this.m08 = other.m08
+        this.m09 = other.m09
+        this.m10 = other.m10
+        this.m11 = other.m11
+        this.m12 = other.m12
+        this.m13 = other.m13
+        this.m14 = other.m14
+        this.m15 = other.m15
+    }
+
+    set_M4(other: Mat4Data) {
+        this.m00 = other.m00
+        this.m01 = other.m01
+        this.m02 = other.m02
+        this.m03 = other.m03
+        this.m04 = other.m04
+        this.m05 = other.m05
+        this.m06 = other.m06
+        this.m07 = other.m07
+        this.m08 = other.m08
+        this.m09 = other.m09
+        this.m10 = other.m10
+        this.m11 = other.m11
+        this.m12 = other.m12
+        this.m13 = other.m13
+        this.m14 = other.m14
+        this.m15 = other.m15
     }
 
     get x() {

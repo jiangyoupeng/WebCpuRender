@@ -69,8 +69,8 @@ class OneFrameCachGlData {
     cachGlDatas: CachGlData[] = []
 }
 
-let debugCpuRender = false
-let createTsImplGlslFile = true
+let debugCpuRender = true
+let createTsImplGlslFile = false
 let createRenderFile = false
 
 let nowFrameCachData: OneFrameCachGlData = new OneFrameCachGlData()
@@ -214,12 +214,20 @@ function replaceWebglFunc(gl: any) {
                 }
 
                 let applyReturn: any
+                // 对于Extension 的方法暂没有实现
+                if (funcKey == "getExtension") {
+                    return null
+                } else if (funcKey == "getSupportedExtensions") {
+                    return []
+                } else if (funcKey == "getParameter") {
+                    return func.apply(gl, info)
+                }
 
                 if (debugCpuRender && !createTsImplGlslFile && !createRenderFile) {
                     let cpuFunc: Function = (<any>cpuRenderingContext)[funcKey]
                     if (!cpuFunc && !noFuncs.has(funcKey)) {
                         noFuncs.add(funcKey)
-                        console.warn("no funcKey " + funcKey)
+                        console.error("no funcKey " + funcKey)
                         debugger
                     }
                     applyReturn = cpuFunc.apply(cpuRenderingContext, info)
@@ -461,6 +469,8 @@ export class CpuRenderingContext {
         replaceWebglFunc(gl)
     }
 
+    private _canvars2D: CanvasRenderingContext2D = null!
+
     /**视窗 */
     private _viewSp: HTMLCanvasElement = null!
     /**缓存的实际RenderingContext */
@@ -473,7 +483,7 @@ export class CpuRenderingContext {
     /**视窗大小 */
     private _viewPort: Rect = null!
     /**帧数据 */
-    private _frameBuffer: Uint8Array = null!
+    private _frameBuffer: Uint8ClampedArray = null!
 
     /**深度数据 */
     private _depthBuffer: number[] = null!
@@ -636,6 +646,7 @@ export class CpuRenderingContext {
         //考虑下要不要换成动态的方式创建 会不会影响性能
         let frames = 0
         this._viewSp = sp
+        this._canvars2D = this._viewSp.getContext("2d")!
 
         // todo
         // director.on(
@@ -653,10 +664,12 @@ export class CpuRenderingContext {
         // )
 
         // todo
-        // if (this._viewPort) {
-        //     let uiTransform = this._viewSp.getComponent(UITransform)
-        //     uiTransform?.setContentSize(this._viewPort.width, this._viewPort.height)
-        // }
+        if (this._viewPort) {
+            // let uiTransform = this._viewSp.getComponent(UITransform)
+            // uiTransform?.setContentSize(this._viewPort.width, this._viewPort.height)
+            this._viewSp.width = this._viewPort.width
+            this._viewSp.width = this._viewPort.height
+        }
     }
 
     private _customJudgeDeleteShader(shaderIndex: CPUWebGLShader, shader: CPUShader): void {
@@ -1488,7 +1501,7 @@ export class CpuRenderingContext {
         this._scissorRect = new Rect(x, y, width, height)
         let frameLength = width * height * 4
         console.log("width:" + width + " height" + height + " frameLength " + frameLength)
-        this._frameBuffer = new Uint8Array(width * height * 4)
+        this._frameBuffer = new Uint8ClampedArray(width * height * 4)
         this._depthBuffer = new Array(width * height).fill(Number.MIN_SAFE_INTEGER)
 
         // todo
@@ -1819,7 +1832,10 @@ export class CpuRenderingContext {
     }
 
     render() {
-        console.error("自渲染的方式还未实现")
+        if (this._canvars2D) {
+            let imageData = new ImageData(this._frameBuffer, this._viewPort.width, this._viewPort.height)
+            this._canvars2D.putImageData(imageData, 0, 0)
+        }
     }
 
     drawArrays(mode: GLenum, first: GLint, count: GLsizei): void {
@@ -2541,6 +2557,7 @@ export class CpuRenderingContext {
             let textureData = this._textureDataMap.get((<CPUWebGLTexture>texture).cachIndex)
             if (!textureData) {
                 textureData = new WebGLTextureData(<CPUWebGLTexture>texture, target, this._gameGl)
+                this._textureDataMap.set((<CPUWebGLTexture>texture).cachIndex, textureData)
             }
             // 纹理创建后target 不能被修改
             if (textureData.glTarget !== target) {
@@ -2553,7 +2570,11 @@ export class CpuRenderingContext {
                 if (oldTextureData) {
                     oldTextureData.unBindTexUnit(this._nowActiveTextureUnit)
                 }
+                textureData.bindTexUnit(this._nowActiveTextureUnit)
                 activeTextureData.set(target, textureData)
+            } else {
+                debugger
+                renderError("bindTexture 无法找对应单元的数据")
             }
         } else {
             renderError("其它类型暂未实现 in bindTexture")
@@ -2655,8 +2676,9 @@ export class CpuRenderingContext {
             }
 
             if (textureData) {
+                // 好像不是立方体纹理的话不会报错(没有验证过)
                 // 如果是npot 非2的幂次方的话还要mipmap的话会报错
-                if (level > 0 && width % 2 !== 0 && height % 2 !== 0) {
+                if (target === this._gameGl.TEXTURE_2D && level > 0 && width % 2 !== 0 && height % 2 !== 0) {
                     renderError("this._gameGl.INVALID_VALUE " + this._gameGl.INVALID_VALUE + " in texImage2D")
                 } else {
                     /** 用于指定纹理在GPU端的格式，只能是GL_ALPHA, GL_LUMINANCE, GL_LUMINANCE_ALPHA, GL_RGB, GL_RGBA*/
@@ -2674,7 +2696,15 @@ export class CpuRenderingContext {
                             if (pixels) {
                                 uint8ArrayData.set(new Uint8Array(pixels.buffer))
                             }
-                            let texelsData = new TexelsData()
+                            let texelsData: TexelsData
+                            if (target === this._gameGl.TEXTURE_2D) {
+                                texelsData = textureData.texelsDatas![0]
+                            } else {
+                                texelsData = textureData.texelsDatas![this._cubeTexIndex.get(target)!]
+                            }
+                            if (!texelsData) {
+                                texelsData = new TexelsData()
+                            }
                             texelsData.setLevelData(level, width, height, uint8ArrayData)
                             if (target === this._gameGl.TEXTURE_2D) {
                                 textureData.texelsDatas![0] = texelsData
@@ -3279,7 +3309,6 @@ export class CpuRenderingContext {
             if (activeTextureData) {
                 let textureData: WebGLTextureData | undefined = activeTextureData.get(target)
                 if (textureData) {
-                    debugger
                     console.error("generateMipmap 方法暂未实现")
                 } else {
                     renderError("this._gameGl.INVALID_OPERATION " + this._gameGl.INVALID_OPERATION + " in hint")
@@ -3874,7 +3903,7 @@ export class CpuRenderingContext {
         this._blendFactorColor = new Vec4Data(clamp(red, 0, 1), clamp(green, 0, 1), clamp(blue, 0, 1), clamp(alpha, 0, 1))
     }
     blendEquation(mode: GLenum): void {
-        if (mode === this._gameGl.FUNC_ADD && mode === this._gameGl.FUNC_SUBTRACT && mode === this._gameGl.FUNC_REVERSE_SUBTRACT) {
+        if (mode === this._gameGl.FUNC_ADD || mode === this._gameGl.FUNC_SUBTRACT || mode === this._gameGl.FUNC_REVERSE_SUBTRACT) {
             this._rgbComputerBlendFunc = mode
             this._alphaComputerBlendFunc = mode
         } else {
@@ -3882,14 +3911,14 @@ export class CpuRenderingContext {
         }
     }
     blendEquationSeparate(modeRGB: GLenum, modeAlpha: GLenum): void {
-        if (modeRGB === this._gameGl.FUNC_ADD && modeRGB === this._gameGl.FUNC_SUBTRACT && modeRGB === this._gameGl.FUNC_REVERSE_SUBTRACT) {
+        if (modeRGB === this._gameGl.FUNC_ADD || modeRGB === this._gameGl.FUNC_SUBTRACT || modeRGB === this._gameGl.FUNC_REVERSE_SUBTRACT) {
             this._rgbComputerBlendFunc = modeRGB
         } else {
             renderError("this._gameGl.INVALID_ENUM " + this._gameGl.INVALID_ENUM + " in blendEquationSeparate")
         }
         if (
-            modeAlpha === this._gameGl.FUNC_ADD &&
-            modeAlpha === this._gameGl.FUNC_SUBTRACT &&
+            modeAlpha === this._gameGl.FUNC_ADD ||
+            modeAlpha === this._gameGl.FUNC_SUBTRACT ||
             modeAlpha === this._gameGl.FUNC_REVERSE_SUBTRACT
         ) {
             this._alphaComputerBlendFunc = modeAlpha
@@ -3901,20 +3930,20 @@ export class CpuRenderingContext {
     // src是片元产生的 dest是屏幕上的
     blendFunc(sfactor: GLenum, dfactor: GLenum): void {
         if (
-            sfactor === this._gameGl.ZERO &&
-            sfactor === this._gameGl.ONE &&
-            sfactor === this._gameGl.SRC_COLOR &&
-            sfactor === this._gameGl.ONE_MINUS_SRC_COLOR &&
-            sfactor === this._gameGl.DST_COLOR &&
-            sfactor === this._gameGl.ONE_MINUS_DST_COLOR &&
-            sfactor === this._gameGl.SRC_ALPHA &&
-            sfactor === this._gameGl.ONE_MINUS_SRC_ALPHA &&
-            sfactor === this._gameGl.DST_ALPHA &&
-            sfactor === this._gameGl.ONE_MINUS_DST_ALPHA &&
-            sfactor === this._gameGl.CONSTANT_COLOR &&
-            sfactor === this._gameGl.ONE_MINUS_CONSTANT_COLOR &&
-            sfactor === this._gameGl.CONSTANT_ALPHA &&
-            sfactor === this._gameGl.ONE_MINUS_CONSTANT_ALPHA &&
+            sfactor === this._gameGl.ZERO ||
+            sfactor === this._gameGl.ONE ||
+            sfactor === this._gameGl.SRC_COLOR ||
+            sfactor === this._gameGl.ONE_MINUS_SRC_COLOR ||
+            sfactor === this._gameGl.DST_COLOR ||
+            sfactor === this._gameGl.ONE_MINUS_DST_COLOR ||
+            sfactor === this._gameGl.SRC_ALPHA ||
+            sfactor === this._gameGl.ONE_MINUS_SRC_ALPHA ||
+            sfactor === this._gameGl.DST_ALPHA ||
+            sfactor === this._gameGl.ONE_MINUS_DST_ALPHA ||
+            sfactor === this._gameGl.CONSTANT_COLOR ||
+            sfactor === this._gameGl.ONE_MINUS_CONSTANT_COLOR ||
+            sfactor === this._gameGl.CONSTANT_ALPHA ||
+            sfactor === this._gameGl.ONE_MINUS_CONSTANT_ALPHA ||
             sfactor === this._gameGl.SRC_ALPHA_SATURATE
         ) {
             this._rgbSrcBlendFunc = sfactor
@@ -3923,19 +3952,19 @@ export class CpuRenderingContext {
             renderError("this._gameGl.INVALID_ENUM " + this._gameGl.INVALID_ENUM + " in blendFunc")
         }
         if (
-            dfactor === this._gameGl.ZERO &&
-            dfactor === this._gameGl.ONE &&
-            dfactor === this._gameGl.SRC_COLOR &&
-            dfactor === this._gameGl.ONE_MINUS_SRC_COLOR &&
-            dfactor === this._gameGl.DST_COLOR &&
-            dfactor === this._gameGl.ONE_MINUS_DST_COLOR &&
-            dfactor === this._gameGl.SRC_ALPHA &&
-            dfactor === this._gameGl.ONE_MINUS_SRC_ALPHA &&
-            dfactor === this._gameGl.DST_ALPHA &&
-            dfactor === this._gameGl.ONE_MINUS_DST_ALPHA &&
-            dfactor === this._gameGl.CONSTANT_COLOR &&
-            dfactor === this._gameGl.ONE_MINUS_CONSTANT_COLOR &&
-            dfactor === this._gameGl.CONSTANT_ALPHA &&
+            dfactor === this._gameGl.ZERO ||
+            dfactor === this._gameGl.ONE ||
+            dfactor === this._gameGl.SRC_COLOR ||
+            dfactor === this._gameGl.ONE_MINUS_SRC_COLOR ||
+            dfactor === this._gameGl.DST_COLOR ||
+            dfactor === this._gameGl.ONE_MINUS_DST_COLOR ||
+            dfactor === this._gameGl.SRC_ALPHA ||
+            dfactor === this._gameGl.ONE_MINUS_SRC_ALPHA ||
+            dfactor === this._gameGl.DST_ALPHA ||
+            dfactor === this._gameGl.ONE_MINUS_DST_ALPHA ||
+            dfactor === this._gameGl.CONSTANT_COLOR ||
+            dfactor === this._gameGl.ONE_MINUS_CONSTANT_COLOR ||
+            dfactor === this._gameGl.CONSTANT_ALPHA ||
             dfactor === this._gameGl.ONE_MINUS_CONSTANT_ALPHA
         ) {
             this._rgbDestBlendFunc = dfactor
@@ -4036,6 +4065,7 @@ export class CpuRenderingContext {
 }
 
 export let cpuRenderingContext = new CpuRenderingContext()
+cpuRenderingContext.customContextInit(<HTMLCanvasElement>document.getElementById("GameCanvas"))
 
 /**感觉是个无用api合集 
  * 
@@ -4088,7 +4118,6 @@ export let cpuRenderingContext = new CpuRenderingContext()
 // getError(): GLenum;
 // getExtension(extensionName: string): any;
 // getFramebufferAttachmentParameter(target: GLenum, attachment: GLenum, pname: GLenum): any;
-// getParameter(pname: GLenum): any;
 // getRenderbufferParameter(target: GLenum, pname: GLenum): any;
 // getShaderPrecisionFormat(shadertype: GLenum, precisiontype: GLenum): WebGLShaderPrecisionFormat | null;
 // getShaderSource(shader: WebGLShader): string | null;

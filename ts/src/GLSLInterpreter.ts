@@ -2,12 +2,12 @@ import { deparseToTs } from "./glslCompiler/deparserToTs"
 // import { parseArray } from "./glslCompiler/parser/parser"
 // import { tokenizeString } from "./glslCompiler/tokenizer/GlslTokenizer"
 // import { SparkMD5 } from "./Spark-md5"
-let tokenizeString = require('glsl-tokenizer')
-let parseArray = require('glsl-parser')
+let tokenizeString = require("glsl-tokenizer")
+let parseArray = require("glsl-parser")
 let SparkMD5 = require("Spark-md5")
 
 const shaderBeginContent = `import { AttributeData, FragShaderHandle, UniformData, VaryingData, VertShaderHandle, StructData } from "../../ShaderDefine"
-import { IntData, FloatData, Vec2Data, Vec3Data, Vec4Data, Mat3Data, Mat4Data, BoolData } from "../builtin/BuiltinData"
+import { IntData, FloatData, Vec2Data, Vec3Data, Vec4Data, Mat3Data, Mat4Data, BoolData, Sampler2D, SamplerCube } from "../builtin/BuiltinData"
 `
 enum BlockType {
     structBlock,
@@ -374,7 +374,6 @@ export class GLSLInterpreter {
         //     remainContent = `#define ${key} ${value}\n` + remainContent
         // })
 
-        
         let token = tokenizeString(remainContent)
         let ast = parseArray(token)
 
