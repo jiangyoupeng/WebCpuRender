@@ -1,0 +1,26 @@
+{
+  "private": true,
+  "scripts": {
+    "tsc": "tsc",
+    "tscw": "tsc --watch",
+    "wp": "webpack",
+    "wpw": "webpack --watch",
+    "serve": "http-server build"
+  },
+  "dependencies": {
+    "@types/lodash": "^4.14.150",
+    "copy-webpack-plugin": "^5.1.1",
+    "glsl-parser": "^2.0.1",
+    "glsl-tokenizer": "^2.1.5",
+    "http-server": "^0.12.1",
+    "lodash": "^4.17.15",
+    "spark-md5": "^3.0.1",
+    "ts-loader": "^7.0.0",
+    "typescript": "^3.8.3",
+    "webpack": "^4.42.1",
+    "webpack-cli": "^3.3.11"
+  },
+  "devDependencies": {
+    "@types/node": "^15.6.1"
+  }
+}
