@@ -3,7 +3,7 @@ import { deparseToTs } from "./glslCompiler/deparserToTs"
 // import { tokenizeString } from "./glslCompiler/tokenizer/GlslTokenizer"
 // import { SparkMD5 } from "./Spark-md5"
 let tokenizeString = require("glsl-tokenizer")
-let parseArray = require("glsl-parser")
+let parseArray = require("glsl-parser/direct")
 let SparkMD5 = require("Spark-md5")
 
 const shaderBeginContent = `import { AttributeData, FragShaderHandle, UniformData, VaryingData, VertShaderHandle, StructData } from "../../ShaderDefine"

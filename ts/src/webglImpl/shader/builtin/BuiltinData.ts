@@ -42,8 +42,19 @@ export class CachPool<T extends ValueType> {
         return data
     }
 
-    expansion() {
-        for (let index = 0; index < 100; index++) {
+    getDataByLength(num: number) {
+        let endIndex = this._cachIndex + num
+        if (endIndex >= this._dataCach.length) {
+            let expansionNum = Math.max(100, endIndex - this._dataCach.length + 1)
+            this.expansion(expansionNum)
+        }
+        let data = this._dataCach.slice(this._cachIndex, endIndex)
+        this._cachIndex = endIndex
+        return data
+    }
+
+    expansion(expansionNum: number = 100) {
+        for (let index = 0; index < expansionNum; index++) {
             this._dataCach.push(this._ctor())
         }
     }
@@ -4640,6 +4651,9 @@ export class IntData extends NumData {
     set v(value: number) {
         this._v = floor(value)
     }
+    get v() {
+        return this._v
+    }
     ctor() {
         return intData.getData()
     }
@@ -5126,7 +5140,6 @@ export class Mat4Data extends ValueType {
     set m15(v: number) {
         this.out_m15.v = v
     }
-
 
     set(other: Mat4Data) {
         this.m00 = other.m00

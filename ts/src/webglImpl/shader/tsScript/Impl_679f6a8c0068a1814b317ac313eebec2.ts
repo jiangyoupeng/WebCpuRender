@@ -168,8 +168,8 @@ class VaryingDataImpl extends VaryingData {
     }
 }
 class UniformDataImpl implements UniformData {
-    cc_screenSize: Vec4Data = null!
-    cc_lighting_resultMap: Sampler2D = null!
+    cc_screenSize: Vec4Data = new Vec4Data()
+    cc_lighting_resultMap: Sampler2D = new Sampler2D()
     dataKeys: Map<string, any> = new Map([
         ["cc_screenSize", cpuRenderingContext.cachGameGl.FLOAT_VEC4],
         ["cc_lighting_resultMap", cpuRenderingContext.cachGameGl.SAMPLER_2D],

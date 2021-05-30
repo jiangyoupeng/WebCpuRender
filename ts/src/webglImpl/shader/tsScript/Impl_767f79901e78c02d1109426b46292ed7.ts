@@ -1,5 +1,8 @@
 /*
 origin glsl source: 
+#define CC_DEVICE_SUPPORT_FLOAT_TEXTURE 0
+#define CC_DEVICE_MAX_VERTEX_UNIFORM_VECTORS 4096
+#define CC_DEVICE_MAX_FRAGMENT_UNIFORM_VECTORS 1024
 #define CC_EFFECT_USED_VERTEX_UNIFORM_VECTORS 37
 #define CC_EFFECT_USED_FRAGMENT_UNIFORM_VECTORS 53
 #define CC_RECEIVE_SHADOW 0
@@ -9,7 +12,7 @@ origin glsl source:
 #define CC_FORWARD_ADD 0
 #define CC_USE_HDR 0
 #define CC_PIPELINE_TYPE 0
-#define CC_USE_FOG 0
+#define CC_USE_FOG 4
 
 #ifdef GL_EXT_shader_texture_lod
 #extension GL_EXT_shader_texture_lod: enable
@@ -661,6 +664,9 @@ import {
     Sampler2D,
     SamplerCube,
 } from "../builtin/BuiltinData"
+let CC_DEVICE_SUPPORT_FLOAT_TEXTURE = new FloatData(0)
+let CC_DEVICE_MAX_VERTEX_UNIFORM_VECTORS = new FloatData(4096)
+let CC_DEVICE_MAX_FRAGMENT_UNIFORM_VECTORS = new FloatData(1024)
 let CC_EFFECT_USED_VERTEX_UNIFORM_VECTORS = new FloatData(37)
 let CC_EFFECT_USED_FRAGMENT_UNIFORM_VECTORS = new FloatData(53)
 let CC_RECEIVE_SHADOW = new FloatData(0)
@@ -670,7 +676,7 @@ let USE_BATCHING = new FloatData(0)
 let CC_FORWARD_ADD = new FloatData(0)
 let CC_USE_HDR = new FloatData(0)
 let CC_PIPELINE_TYPE = new FloatData(0)
-let CC_USE_FOG = new FloatData(0)
+let CC_USE_FOG = new FloatData(4)
 let LIGHTS_PER_PASS = new FloatData(1)
 class StandardSurface implements StructData {
     albedo: Vec4Data = new Vec4Data()
@@ -773,7 +779,7 @@ class UniformDataImpl implements UniformData {
         ["cc_gbuffer_emissiveMap", 1],
     ])
 }
-export class Impl_a16f945e975039ee6e884533730d85e9 extends FragShaderHandle {
+export class Impl_767f79901e78c02d1109426b46292ed7 extends FragShaderHandle {
     varyingData: VaryingDataImpl = new VaryingDataImpl()
     uniformData: UniformDataImpl = new UniformDataImpl()
 
@@ -1228,7 +1234,7 @@ export class Impl_a16f945e975039ee6e884533730d85e9 extends FragShaderHandle {
         glSet_V3_V3(s.emissive, emissiveMap.xyz)
         glSet_N_N(s.occlusion, float_N(emissiveMap.w))
         let fogFactor: FloatData = float()
-        glSet_N_N(fogFactor, this.LinearFog_V4(vec4_V3_N(s.position, int_N(1))))
+        glSet_N_N(fogFactor, float_N(1.0))
         let shadowPos: Vec4Data = vec4()
         glSet_V4_V4(shadowPos, glMul_M4_V4(this.uniformData.cc_matLightViewProj, vec4_V3_N(s.position, int_N(1))))
         let color: Vec4Data = vec4()

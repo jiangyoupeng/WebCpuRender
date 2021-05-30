@@ -1813,6 +1813,9 @@ function deparse_ternary(node: any) {
 
 function deparse(ast: any) {
     let func: any = (<any>types)[ast.type]
+    if (!func) {
+        debugger
+    }
     return func(ast)
 }
 
@@ -1964,7 +1967,20 @@ export function deparseToTs(
             uniformDataKeysStr += `        ["${factObjName}", cpuRenderingContext.cachGameGl.${typeNumStr}],\n`
             uniformDataSizeStr += `        ["${factObjName}", ${arrData.arrNum || 1}],\n`
             tmpUniformData.set(factObjName, `${convertType}${arrData.arrNum > 0 ? "[]" : ""}`)
-            uniformStr += `    ${factObjName}: ${convertType}${arrData.arrNum > 0 ? "[]" : ""} = null!\n`
+
+            if (arrData.arrNum > 0) {
+                uniformStr += `    ${factObjName}: ${convertType}${arrData.arrNum > 0 ? "[]" : ""} = [`
+                let lastIndex = arrData.arrNum - 1
+                for (let index = 0; index < arrData.arrNum; index++) {
+                    uniformStr += `new ${convertType}()`
+                    if (index != lastIndex) {
+                        uniformStr += `, `
+                    }
+                }
+                uniformStr += `]\n`
+            } else {
+                uniformStr += `    ${factObjName}: ${convertType}${arrData.arrNum > 0 ? "[]" : ""} = new ${convertType}()\n`
+            }
         } else {
             console.error("不识别的shader 数据结构: " + value)
         }

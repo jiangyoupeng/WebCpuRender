@@ -1,7 +1,10 @@
 /*
 origin glsl source: 
-#define CC_EFFECT_USED_VERTEX_UNIFORM_VECTORS 145
-#define CC_EFFECT_USED_FRAGMENT_UNIFORM_VECTORS 37
+#define CC_DEVICE_SUPPORT_FLOAT_TEXTURE 0
+#define CC_DEVICE_MAX_VERTEX_UNIFORM_VECTORS 4096
+#define CC_DEVICE_MAX_FRAGMENT_UNIFORM_VECTORS 1024
+#define CC_EFFECT_USED_VERTEX_UNIFORM_VECTORS 210
+#define CC_EFFECT_USED_FRAGMENT_UNIFORM_VECTORS 53
 #define CC_USE_MORPH 0
 #define CC_MORPH_TARGET_COUNT 2
 #define CC_MORPH_PRECOMPUTED 0
@@ -11,6 +14,9 @@ origin glsl source:
 #define CC_USE_SKINNING 0
 #define CC_USE_BAKED_ANIMATION 0
 #define USE_INSTANCING 0
+#define USE_BATCHING 0
+#define USE_LIGHTMAP 0
+#define CC_USE_HDR 0
 
 precision highp float;
 highp float decode32 (highp vec4 rgba) {
@@ -217,24 +223,49 @@ attr.normal = (m * vec4(attr.normal, 0.0)).xyz;
 attr.tangent.xyz = (m * vec4(attr.tangent.xyz, 0.0)).xyz;
 }
 #endif
-uniform highp vec4 cc_cameraPos;
-varying vec2 v_uv;
-void main () {
-StandardVertInput In;
-In.position = vec4(a_position, 1.0);
-In.normal = a_normal;
-In.tangent = a_tangent;
+uniform highp mat4 cc_matView;
+uniform highp mat4 cc_matProj;
+#if USE_INSTANCING
+attribute vec4 a_matWorld0;
+attribute vec4 a_matWorld1;
+attribute vec4 a_matWorld2;
+#if USE_LIGHTMAP
+attribute vec4 a_lightingMapUVParam;
+#endif
+#elif USE_BATCHING
+attribute float a_dyn_batch_id;
+uniform highp mat4 cc_matWorlds[10];
+#else
+uniform highp mat4 cc_matWorld;
+#endif
+uniform highp mat4 cc_matLightPlaneProj;
+vec4 vert () {
+vec4 position;
+position = vec4(a_position, 1.0);
 #if CC_USE_MORPH
-applyMorph(In);
+applyMorph(position);
 #endif
 #if CC_USE_SKINNING
-CCSkin(In);
+CCSkin(position);
 #endif
-In.position.xy = cc_cameraPos.w == 0.0 ? vec2(In.position.xy.x, -In.position.xy.y) : In.position.xy;
-gl_Position = In.position;
-gl_Position.y = gl_Position.y;
-v_uv = a_texCoord;
+mat4 matWorld;
+#if USE_INSTANCING
+matWorld = mat4(
+vec4(a_matWorld0.xyz, 0.0),
+vec4(a_matWorld1.xyz, 0.0),
+vec4(a_matWorld2.xyz, 0.0),
+vec4(a_matWorld0.w, a_matWorld1.w, a_matWorld2.w, 1.0)
+);
+#elif USE_BATCHING
+matWorld = cc_matWorlds[int(a_dyn_batch_id)];
+#else
+matWorld = cc_matWorld;
+#endif
+position = cc_matProj * (cc_matView * cc_matLightPlaneProj * matWorld) * position;
+position.z -= 0.0001;
+return position;
 }
+void main() { gl_Position = vert(); }
 */
 import {
     step_N_N,
@@ -243,7 +274,6 @@ import {
     mod_N_N,
     exp2_N,
     vec4_V3_N,
-    vec2_N_N,
     float,
     bool,
     bool_N,
@@ -255,16 +285,15 @@ import {
     mat4,
 } from "../builtin/BuiltinFunc"
 import {
-    glSet_V2_V2,
     glSet_V4_V4,
     glMul_V4_N,
     glSet_N_N,
     glAdd_N_N,
     glMul_N_N,
     glSub_N_N,
-    glSet_V3_V3,
-    glIsEqual_N_N,
-    glNegative_N,
+    glSet_M4_M4,
+    glMul_M4_M4,
+    glMul_M4_V4,
     getValueKeyByIndex,
 } from "../builtin/BuiltinOperator"
 import { gl_FragData, gl_FragColor, gl_Position, gl_FragCoord, gl_FragDepth, gl_FrontFacing, custom_isDiscard } from "../builtin/BuiltinVar"
@@ -282,8 +311,11 @@ import {
     Sampler2D,
     SamplerCube,
 } from "../builtin/BuiltinData"
-let CC_EFFECT_USED_VERTEX_UNIFORM_VECTORS = new FloatData(145)
-let CC_EFFECT_USED_FRAGMENT_UNIFORM_VECTORS = new FloatData(37)
+let CC_DEVICE_SUPPORT_FLOAT_TEXTURE = new FloatData(0)
+let CC_DEVICE_MAX_VERTEX_UNIFORM_VECTORS = new FloatData(4096)
+let CC_DEVICE_MAX_FRAGMENT_UNIFORM_VECTORS = new FloatData(1024)
+let CC_EFFECT_USED_VERTEX_UNIFORM_VECTORS = new FloatData(210)
+let CC_EFFECT_USED_FRAGMENT_UNIFORM_VECTORS = new FloatData(53)
 let CC_USE_MORPH = new FloatData(0)
 let CC_MORPH_TARGET_COUNT = new FloatData(2)
 let CC_MORPH_PRECOMPUTED = new FloatData(0)
@@ -293,6 +325,9 @@ let CC_MORPH_TARGET_HAS_TANGENT = new FloatData(0)
 let CC_USE_SKINNING = new FloatData(0)
 let CC_USE_BAKED_ANIMATION = new FloatData(0)
 let USE_INSTANCING = new FloatData(0)
+let USE_BATCHING = new FloatData(0)
+let USE_LIGHTMAP = new FloatData(0)
+let CC_USE_HDR = new FloatData(0)
 class StandardVertInput implements StructData {
     position: Vec4Data = new Vec4Data()
     normal: Vec3Data = new Vec3Data()
@@ -317,22 +352,31 @@ class AttributeDataImpl implements AttributeData {
     ])
 }
 class VaryingDataImpl extends VaryingData {
-    v_uv: Vec2Data = new Vec2Data()
-
     factoryCreate() {
         return new VaryingDataImpl()
     }
-    dataKeys: Map<string, any> = new Map([["v_uv", cpuRenderingContext.cachGameGl.FLOAT_VEC2]])
-    copy(varying: VaryingDataImpl) {
-        glSet_V2_V2(varying.v_uv, this.v_uv)
-    }
+    dataKeys: Map<string, any> = new Map([])
+    copy(varying: VaryingDataImpl) {}
 }
 class UniformDataImpl implements UniformData {
-    cc_cameraPos: Vec4Data = new Vec4Data()
-    dataKeys: Map<string, any> = new Map([["cc_cameraPos", cpuRenderingContext.cachGameGl.FLOAT_VEC4]])
-    dataSize: Map<string, number> = new Map([["cc_cameraPos", 1]])
+    cc_matView: Mat4Data = new Mat4Data()
+    cc_matProj: Mat4Data = new Mat4Data()
+    cc_matWorld: Mat4Data = new Mat4Data()
+    cc_matLightPlaneProj: Mat4Data = new Mat4Data()
+    dataKeys: Map<string, any> = new Map([
+        ["cc_matView", cpuRenderingContext.cachGameGl.FLOAT_MAT4],
+        ["cc_matProj", cpuRenderingContext.cachGameGl.FLOAT_MAT4],
+        ["cc_matWorld", cpuRenderingContext.cachGameGl.FLOAT_MAT4],
+        ["cc_matLightPlaneProj", cpuRenderingContext.cachGameGl.FLOAT_MAT4],
+    ])
+    dataSize: Map<string, number> = new Map([
+        ["cc_matView", 1],
+        ["cc_matProj", 1],
+        ["cc_matWorld", 1],
+        ["cc_matLightPlaneProj", 1],
+    ])
 }
-export class Impl_c78cd33daefc3c94e3885897a5af679b extends VertShaderHandle {
+export class Impl_04062c07597767335e4a708a2810021f extends VertShaderHandle {
     varyingData: VaryingDataImpl = new VaryingDataImpl()
     uniformData: UniformDataImpl = new UniformDataImpl()
     attributeData: AttributeDataImpl = new AttributeDataImpl()
@@ -383,19 +427,25 @@ export class Impl_c78cd33daefc3c94e3885897a5af679b extends VertShaderHandle {
         )
         return glMul_N_N(glMul_N_N(Sign, exp2_N(glSub_N_N(Exponent, float_N(23.0)))), Mantissa)
     }
-    main(): void {
-        let In: StandardVertInput = new StandardVertInput()
-        glSet_V4_V4(In.position, vec4_V3_N(this.attributeData.a_position, float_N(1.0)))
-        glSet_V3_V3(In.normal, this.attributeData.a_normal)
-        glSet_V4_V4(In.tangent, this.attributeData.a_tangent)
-        glSet_V2_V2(
-            In.position.xy,
-            glIsEqual_N_N(float_N(this.uniformData.cc_cameraPos.w), float_N(0.0))
-                ? vec2_N_N(float_N(In.position.xy.x), glNegative_N(float_N(In.position.xy.y)))
-                : In.position.xy
+    vert(): Vec4Data {
+        let position: Vec4Data = vec4()
+        glSet_V4_V4(position, vec4_V3_N(this.attributeData.a_position, float_N(1.0)))
+        let matWorld: Mat4Data = mat4()
+        glSet_M4_M4(matWorld, this.uniformData.cc_matWorld)
+        glSet_V4_V4(
+            position,
+            glMul_M4_V4(
+                glMul_M4_M4(
+                    this.uniformData.cc_matProj,
+                    glMul_M4_M4(glMul_M4_M4(this.uniformData.cc_matView, this.uniformData.cc_matLightPlaneProj), matWorld)
+                ),
+                position
+            )
         )
-        glSet_V4_V4(gl_Position, In.position)
-        gl_Position.y = float_N(gl_Position.y).v
-        glSet_V2_V2(this.varyingData.v_uv, this.attributeData.a_texCoord)
+        position.z -= float_N(0.0001).v
+        return position
+    }
+    main(): void {
+        glSet_V4_V4(gl_Position, this.vert())
     }
 }

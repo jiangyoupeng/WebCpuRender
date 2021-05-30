@@ -70,7 +70,7 @@ class OneFrameCachGlData {
 }
 
 let debugCpuRender = true
-let createTsImplGlslFile = false
+let createTsImplGlslFile = true
 let createRenderFile = false
 
 let nowFrameCachData: OneFrameCachGlData = new OneFrameCachGlData()
@@ -167,63 +167,65 @@ function replaceWebglFunc(gl: any) {
         if (typeof gl[funcKey] == "function") {
             let func: Function = gl[funcKey]
             gl[funcKey] = (...info: any) => {
-                // 测试走自己的内部实现gl接口
-                // if (funcKey == "bindBuffer") {
-                //     console.log(count + " bindBuffer => ")
-                //     console.log(info)
-                //     count++
-                // }
-
-                // if (funcKey == "bufferData") {
-                //     console.log(count + " bufferData =>")
-                //     console.log(info)
-                //     count++
-                // }
-
-                // if (funcKey == "bufferSubData") {
-                //     console.log(count + " bufferSubData =>")
-                //     console.log(info)
-                //     count++
-                // }
-
-                // if (funcKey == "drawElements") {
-                //     debugger
-                //     console.log(count + " drawElements =>")
-                //     console.log(info)
-                //     count++
-                // }
-                if (funcKey == "activeTexture") {
-                    console.log(count + " activeTexture =>")
-                    console.log(info)
-                    count++
-                }
-                if (funcKey == "bindTexture") {
-                    console.log(count + " bindTexture =>")
-                    console.log(info)
-                    count++
-                }
-                if (funcKey == "texImage2D") {
-                    console.log(count + " texImage2D =>")
-                    console.log(info)
-                    count++
-                }
-                if (funcKey == "texSubImage2D") {
-                    console.log(count + " texSubImage2D =>")
-                    console.log(info)
-                    count++
-                }
-
                 let applyReturn: any
-                // 对于Extension 的方法暂没有实现
+
+                // 对于getextension的方法没有实现 所以同一返回空
                 if (funcKey == "getExtension") {
                     return null
                 } else if (funcKey == "getSupportedExtensions") {
                     return []
-                } else if (funcKey == "getParameter") {
-                    return func.apply(gl, info)
                 }
 
-                if (debugCpuRender && !createTsImplGlslFile && !createRenderFile) {
+                if (debugCpuRender) {
+                    // 测试走自己的内部实现gl接口
+                    // if (funcKey == "bindBuffer") {
+                    //     console.log(count + " bindBuffer => ")
+                    //     console.log(info)
+                    //     count++
+                    // }
+
+                    // if (funcKey == "bufferData") {
+                    //     console.log(count + " bufferData =>")
+                    //     console.log(info)
+                    //     count++
+                    // }
+
+                    // if (funcKey == "bufferSubData") {
+                    //     console.log(count + " bufferSubData =>")
+                    //     console.log(info)
+                    //     count++
+                    // }
+
+                    // if (funcKey == "drawElements") {
+                    //     debugger
+                    //     console.log(count + " drawElements =>")
+                    //     console.log(info)
+                    //     count++
+                    // }
+                    // if (funcKey == "activeTexture") {
+                    //     console.log(count + " activeTexture =>")
+                    //     console.log(info)
+                    //     count++
+                    // }
+                    // if (funcKey == "bindTexture") {
+                    //     console.log(count + " bindTexture =>")
+                    //     console.log(info)
+                    //     count++
+                    // }
+                    // if (funcKey == "texImage2D") {
+                    //     console.log(count + " texImage2D =>")
+                    //     console.log(info)
+                    //     count++
+                    // }
+                    // if (funcKey == "texSubImage2D") {
+                    //     console.log(count + " texSubImage2D =>")
+                    //     console.log(info)
+                    //     count++
+                    // }
+                    if (funcKey == "getParameter") {
+                        return func.apply(gl, info)
+                    }
+
                     let cpuFunc: Function = (<any>cpuRenderingContext)[funcKey]
                     if (!cpuFunc && !noFuncs.has(funcKey)) {
                         noFuncs.add(funcKey)
@@ -232,189 +234,194 @@ function replaceWebglFunc(gl: any) {
                     }
                     applyReturn = cpuFunc.apply(cpuRenderingContext, info)
                 } else {
-                    applyReturn = func.apply(gl, info)
-                }
+                    if (createTsImplGlslFile) {
+                        if (funcKey == "shaderSource") {
+                            testShaderSourceNum++
+                            if (testShaderSourceNum >= testShaderBegin && testShaderSourceNum <= testShaderEnd) {
+                                // debugger
+                                // console.log("shaderSource:" + info)
+                                let shaderSource: string = info[1]
 
-                if (createTsImplGlslFile) {
-                    if (funcKey == "shaderSource") {
-                        testShaderSourceNum++
-                        if (testShaderSourceNum >= testShaderBegin && testShaderSourceNum <= testShaderEnd) {
-                            // debugger
-                            // console.log("shaderSource:" + info)
-                            let shaderSource: string = info[1]
+                                // if (testShaderSourceNum == 1) {
+                                //     shaderSource = `#define CC_EFFECT_USED_VERTEX_UNIFORM_VECTORS 37
+                                // #define CC_EFFECT_USED_FRAGMENT_UNIFORM_VECTORS 53
+                                // #define CC_RECEIVE_SHADOW 0
+                                // #define CC_USE_IBL 0
+                                // #define USE_LIGHTMAP 0
+                                // #define USE_BATCHING 0
+                                // #define CC_FORWARD_ADD 0
+                                // #define CC_USE_HDR 0
+                                // #define CC_PIPELINE_TYPE 0
+                                // #define CC_USE_FOG 0
+                                // precision highp float;
+                                // struct StandardVertInput {
+                                // float asd;
+                                // highp vec4 position;
+                                // vec3 normal;
+                                // vec4 tangent;
+                                // };
+                                // attribute vec3 a_position;
+                                // attribute vec3 a_normal;
+                                // attribute vec2 a_texCoord;
+                                // attribute vec4 a_tangent;
+                                // uniform highp vec4 cc_cameraPos;
+                                // varying vec2 v_uv;
 
-                            // if (testShaderSourceNum == 1) {
-                            //     shaderSource = `#define CC_EFFECT_USED_VERTEX_UNIFORM_VECTORS 37
-                            // #define CC_EFFECT_USED_FRAGMENT_UNIFORM_VECTORS 53
-                            // #define CC_RECEIVE_SHADOW 0
-                            // #define CC_USE_IBL 0
-                            // #define USE_LIGHTMAP 0
-                            // #define USE_BATCHING 0
-                            // #define CC_FORWARD_ADD 0
-                            // #define CC_USE_HDR 0
-                            // #define CC_PIPELINE_TYPE 0
-                            // #define CC_USE_FOG 0
-                            // precision highp float;
-                            // struct StandardVertInput {
-                            // float asd;
-                            // highp vec4 position;
-                            // vec3 normal;
-                            // vec4 tangent;
-                            // };
-                            // attribute vec3 a_position;
-                            // attribute vec3 a_normal;
-                            // attribute vec2 a_texCoord;
-                            // attribute vec4 a_tangent;
-                            // uniform highp vec4 cc_cameraPos;
-                            // varying vec2 v_uv;
+                                // void test1Func(float asvdsx, inout float asv, in float qwes, out float qwescxs){
 
-                            // void test1Func(float asvdsx, inout float asv, in float qwes, out float qwescxs){
+                                // }
+                                // void test2Func(in float asv){
 
-                            // }
-                            // void test2Func(in float asv){
+                                // }
+                                // void test3Func(out float asv){
 
-                            // }
-                            // void test3Func(out float asv){
+                                // }
+                                // void test4Func(float asv){
 
-                            // }
-                            // void test4Func(float asv){
+                                // }
 
-                            // }
+                                // void main () {
+                                // vec4 color;
+                                // test1Func((color.x + color.y + color.z + color).z , color.y, color.z, color.w);
+                                // float lumaB;
+                                // color.x = color.y = color.z = lumaB;
 
-                            // void main () {
-                            // vec4 color;
-                            // test1Func((color.x + color.y + color.z + color).z , color.y, color.z, color.w);
-                            // float lumaB;
-                            // color.x = color.y = color.z = lumaB;
+                                // float lumaMin;
+                                // float lumaMax;
 
-                            // float lumaMin;
-                            // float lumaMax;
+                                // // if ((lumaB < lumaMin) || (lumaB > lumaMax)){
+                                // //     color = vec4(2);
+                                // // }else{
+                                // //     color = vec4(2);
+                                // // }
 
-                            // // if ((lumaB < lumaMin) || (lumaB > lumaMax)){
-                            // //     color = vec4(2);
-                            // // }else{
-                            // //     color = vec4(2);
-                            // // }
+                                // if ((lumaB < lumaMin) || (lumaB > lumaMax))
+                                //     color = vec4(2);
+                                // else if (lumaB < lumaMin)
+                                //     color = vec4(2);
+                                // else if (lumaB > lumaMax)
+                                //     color = vec4(2);
+                                // else
+                                //     color = vec4(2);
+                                // bool tqweqwe = false;
+                                // if (tqweqwe){}
+                                // float a;
+                                // if (a > 0.9){
 
-                            // if ((lumaB < lumaMin) || (lumaB > lumaMax))
-                            //     color = vec4(2);
-                            // else if (lumaB < lumaMin)
-                            //     color = vec4(2);
-                            // else if (lumaB > lumaMax)
-                            //     color = vec4(2);
-                            // else
-                            //     color = vec4(2);
-                            // bool tqweqwe = false;
-                            // if (tqweqwe){}
-                            // float a;
-                            // if (a > 0.9){
+                                // }else if(a > 0.8){
 
-                            // }else if(a > 0.8){
+                                // }else if(a > 0.7){
 
-                            // }else if(a > 0.7){
+                                // }else{
 
-                            // }else{
+                                // }
+                                // tqweqwe = a > 0.;
+                                // for (int i = 1; (i < 3); i++) {
+                                //     int tes = 3;
+                                // }
 
-                            // }
-                            // tqweqwe = a > 0.;
-                            // for (int i = 1; (i < 3); i++) {
-                            //     int tes = 3;
-                            // }
+                                // mat3 matrix3 = mat3(1.,1.,1.,1.,1.,1.,0.1,0.2,0.3);
+                                // mat4 matrix4 = mat4(matrix3);
+                                // matrix4[0][0] = 0.;
+                                // vec4 matrix4Test = matrix4[0];
+                                // // matrix4Test.x = 0.;
+                                // // matrix4Test.y = 0.;
+                                // // matrix4Test.z = 0.;
+                                // // matrix4Test.w = 1.;
+                                // matrix4[0] = matrix4Test;
+                                // matrix4[0][1] = 0.;
+                                // matrix4[0][2] = 0.;
+                                // vec3 I = vec3(1,0,0);
+                                // I[2] = 3.;
+                                // I[2] *= 3.;
+                                // I.x *= 3;
+                                // a++;
+                                // a--;
+                                // ++a;
+                                // --a;
+                                // float gg =3., bb, tt = 1;
+                                // float b;
+                                // float c;
+                                // float wwww, www = a, zzz = b = c = 1. + gg + I.x;
+                                // float fDeltaD, fDeltaY, fDensityIntegral, fDensity;
+                                // fDensity = (sqrt(1.0 + ((fDeltaD / fDeltaY) * (fDeltaD / fDeltaY)))) * fDensityIntegral;
+                                // I = -I;
+                                // StandardVertInput s;
+                                // v_uv.x = 2. * vec2(s.tangent.xy + 1.).x;
+                                // I += 3.;
+                                // I += I.zyx;
+                                // I -= I.zyx;
+                                // I -= 3.;
+                                // I *= 1.;
+                                // I /= 1.;
+                                // a = a + b * c;
+                                // a = (a + b) * c;
 
-                            // mat3 matrix3 = mat3(1.,1.,1.,1.,1.,1.,0.1,0.2,0.3);
-                            // mat4 matrix4 = mat4(matrix3);
-                            // matrix4[0][0] = 0.;
-                            // vec4 matrix4Test = matrix4[0];
-                            // // matrix4Test.x = 0.;
-                            // // matrix4Test.y = 0.;
-                            // // matrix4Test.z = 0.;
-                            // // matrix4Test.w = 1.;
-                            // matrix4[0] = matrix4Test;
-                            // matrix4[0][1] = 0.;
-                            // matrix4[0][2] = 0.;
-                            // vec3 I = vec3(1,0,0);
-                            // I[2] = 3.;
-                            // I[2] *= 3.;
-                            // I.x *= 3;
-                            // a++;
-                            // a--;
-                            // ++a;
-                            // --a;
-                            // float gg =3., bb, tt = 1;
-                            // float b;
-                            // float c;
-                            // float wwww, www = a, zzz = b = c = 1. + gg + I.x;
-                            // float fDeltaD, fDeltaY, fDensityIntegral, fDensity;
-                            // fDensity = (sqrt(1.0 + ((fDeltaD / fDeltaY) * (fDeltaD / fDeltaY)))) * fDensityIntegral;
-                            // I = -I;
-                            // StandardVertInput s;
-                            // v_uv.x = 2. * vec2(s.tangent.xy + 1.).x;
-                            // I += 3.;
-                            // I += I.zyx;
-                            // I -= I.zyx;
-                            // I -= 3.;
-                            // I *= 1.;
-                            // I /= 1.;
-                            // a = a + b * c;
-                            // a = (a + b) * c;
+                                // vec3 N = vec3(0.5,0.5,0.5);
+                                // // vec2 yx = vec2(I.xy + (c + (a + b * c * (a + b) * c) * b + I.x + dot(I, N)));
+                                // // v_uv.x = 2. + vec2(I.xy + (c + (a + b * c * (a + b) * c) * b + I.x + dot(I, N))).x;
+                                // s.tangent.xy = vec2();
+                                // a = (s.tangent.x + b) * s.tangent.z;
+                                // if ((v_uv.x != a * b) ){
+                                //   vec2 v_uv;
+                                //   v_uv = vec2(1,1);
+                                // }else{
+                                //   vec2 v_uv;
+                                //   v_uv = vec2(0,0);
+                                // }
+                                // vec2 stepTest = step(v_uv, v_uv);
+                                // vec4 position;
+                                // position = vec4(a_position, 1.0);
+                                // position.xy = cc_cameraPos.w == 0.0 ? vec2(position.xy.x, -position.xy.y) : position.xy;
+                                // gl_Position = vec4(position.x, position.y, 1.0, 1.0);
+                                // v_uv = a_texCoord;
+                                // if (v_uv.x < 0.5){
+                                //   vec2 v_uv;
+                                //   v_uv = vec2(1,1);
+                                // }else{
+                                //   vec2 v_uv;
+                                //   v_uv = vec2(0,0);
+                                // }
+                                // v_uv.x = 1.;
+                                // }`
+                                // }
 
-                            // vec3 N = vec3(0.5,0.5,0.5);
-                            // // vec2 yx = vec2(I.xy + (c + (a + b * c * (a + b) * c) * b + I.x + dot(I, N)));
-                            // // v_uv.x = 2. + vec2(I.xy + (c + (a + b * c * (a + b) * c) * b + I.x + dot(I, N))).x;
-                            // s.tangent.xy = vec2();
-                            // a = (s.tangent.x + b) * s.tangent.z;
-                            // if ((v_uv.x != a * b) ){
-                            //   vec2 v_uv;
-                            //   v_uv = vec2(1,1);
-                            // }else{
-                            //   vec2 v_uv;
-                            //   v_uv = vec2(0,0);
-                            // }
-                            // vec2 stepTest = step(v_uv, v_uv);
-                            // vec4 position;
-                            // position = vec4(a_position, 1.0);
-                            // position.xy = cc_cameraPos.w == 0.0 ? vec2(position.xy.x, -position.xy.y) : position.xy;
-                            // gl_Position = vec4(position.x, position.y, 1.0, 1.0);
-                            // v_uv = a_texCoord;
-                            // if (v_uv.x < 0.5){
-                            //   vec2 v_uv;
-                            //   v_uv = vec2(1,1);
-                            // }else{
-                            //   vec2 v_uv;
-                            //   v_uv = vec2(0,0);
-                            // }
-                            // v_uv.x = 1.;
-                            // }`
-                            // }
+                                console.log(testShaderSourceNum)
+                                let interpreterData = GLSLInterpreter.interpreter(shaderSource)
+                                compilerTsFiles.set(interpreterData[0], interpreterData[1])
 
-                            console.log(testShaderSourceNum)
-                            let interpreterData = GLSLInterpreter.interpreter(shaderSource)
-                            compilerTsFiles.set(interpreterData[0], interpreterData[1])
+                                if (testShaderSourceNum == 46) {
+                                    var zip = new win.JSZip()
+                                    let readonlyStr = ""
+                                    let importStr = ""
+                                    compilerTsFiles.forEach((value: string, key: string) => {
+                                        zip.file(`Impl_${key}.ts`, value)
+                                        readonlyStr += `    static readonly Impl_${key} = Impl_${key}\n`
+                                        importStr += `import { Impl_${key} } from "./Impl_${key}"\n`
+                                    })
 
-                            if (testShaderSourceNum == 46) {
-                                var zip = new win.JSZip()
-                                let readonlyStr = ""
-                                let importStr = ""
-                                compilerTsFiles.forEach((value: string, key: string) => {
-                                    zip.file(`Impl_${key}.ts`, value)
-                                    readonlyStr += `    static readonly Impl_${key} = Impl_${key}\n`
-                                    importStr += `import { Impl_${key} } from "./shader/tsScript/Impl_${key}"\n`
-                                })
-                                console.log(importStr)
-                                console.log(readonlyStr)
-                                zip.generateAsync({ type: "blob" }).then((content: any) => {
-                                    // file-saver保存文件
-                                    fileSaveAs(content, `tsScript.zip`)
-                                })
+                                    let ShaderManagerStr = importStr + `export class ShaderManager {\n` + readonlyStr
+
+                                    ShaderManagerStr += `    static getConstruct(source: string) {\n`
+                                    ShaderManagerStr += `        return (<any>this)[source]\n`
+                                    ShaderManagerStr += `    }\n`
+                                    ShaderManagerStr += "}\n"
+                                    zip.file(`ShaderManager.ts`, ShaderManagerStr)
+
+                                    zip.generateAsync({ type: "blob" }).then((content: any) => {
+                                        // file-saver保存文件
+                                        fileSaveAs(content, `tsScript.zip`)
+                                    })
+                                }
                             }
                         }
+                    } else if (createRenderFile) {
+                        let glData: CachGlData = new CachGlData()
+                        glData.glCall = funcKey
+                        glData.glParasm = JSON.stringify(info)
+                        nowFrameCachData.addCachGlDatas(glData)
                     }
-                }
-                if (createRenderFile) {
-                    let glData: CachGlData = new CachGlData()
-                    glData.glCall = funcKey
-                    glData.glParasm = JSON.stringify(info)
-                    nowFrameCachData.addCachGlDatas(glData)
+                    applyReturn = func.apply(gl, info)
                 }
                 return applyReturn
             }
@@ -668,7 +675,7 @@ export class CpuRenderingContext {
             // let uiTransform = this._viewSp.getComponent(UITransform)
             // uiTransform?.setContentSize(this._viewPort.width, this._viewPort.height)
             this._viewSp.width = this._viewPort.width
-            this._viewSp.width = this._viewPort.height
+            this._viewSp.height = this._viewPort.height
         }
     }
 
@@ -1015,7 +1022,7 @@ export class CpuRenderingContext {
             if (buffer) {
                 let eboBuffer = this._eboBufferDataMap.get((<CPUWebGLBuffer>buffer).cachIndex)
                 if (!eboBuffer) {
-                    eboBuffer = new VBOBufferData(this._gameGl.STATIC_DRAW, <CPUWebGLBuffer>buffer)
+                    eboBuffer = new EBOBufferData(this._gameGl.STATIC_DRAW, <CPUWebGLBuffer>buffer)
                     this._eboBufferDataMap.set((<CPUWebGLBuffer>buffer).cachIndex, eboBuffer)
                 }
                 this._useEboBufferData = eboBuffer
@@ -1051,12 +1058,13 @@ export class CpuRenderingContext {
                 } else {
                     /**如果直接使用arraybuffer的话不会复制 arraybuffer对象用来表示通用的、固定长度的原始二进制数据缓冲区。
                      * 只能通过类型数组对象和dataView操作 */
-                    if ((<BufferSource>sizeOrData).constructor === ArrayBuffer) {
-                        let uint8ArrayData = new Uint8Array(<ArrayBuffer>sizeOrData)
-                        this._useVboBufferData.buffer = new Uint8Array(uint8ArrayData)
+                    let uint8ArrayData: Uint8Array
+                    if (ArrayBuffer.isView(sizeOrData)) {
+                        uint8ArrayData = new Uint8Array(sizeOrData.buffer, sizeOrData.byteOffset, sizeOrData.byteLength)
                     } else {
-                        this._useVboBufferData.buffer = new Uint8Array((<ArrayBufferView>sizeOrData).buffer)
+                        uint8ArrayData = new Uint8Array(<ArrayBuffer>sizeOrData)
                     }
+                    this._useVboBufferData.buffer = new Uint8Array(uint8ArrayData!)
                 }
                 this._useVboBufferData.status = usage
             } else {
@@ -1068,13 +1076,15 @@ export class CpuRenderingContext {
                 if (isSize) {
                     this._useEboBufferData.buffer = new Uint8Array(<number>sizeOrData)
                 } else {
-                    if ((<BufferSource>sizeOrData).constructor === ArrayBuffer) {
-                        let uint8ArrayData = new Uint8Array(<ArrayBuffer>sizeOrData)
-                        /** 复制 */
-                        this._useEboBufferData.buffer = new Uint8Array(uint8ArrayData)
+                    /**如果直接使用arraybuffer的话不会复制 arraybuffer对象用来表示通用的、固定长度的原始二进制数据缓冲区。
+                     * 只能通过类型数组对象和dataView操作 */
+                    let uint8ArrayData: Uint8Array
+                    if (ArrayBuffer.isView(sizeOrData)) {
+                        uint8ArrayData = new Uint8Array(sizeOrData.buffer, sizeOrData.byteOffset, sizeOrData.byteLength)
                     } else {
-                        this._useEboBufferData.buffer = new Uint8Array((<ArrayBufferView>sizeOrData).buffer)
+                        uint8ArrayData = new Uint8Array(<ArrayBuffer>sizeOrData)
                     }
+                    this._useEboBufferData.buffer = new Uint8Array(uint8ArrayData!)
                 }
                 this._useEboBufferData.status = usage
             } else {
@@ -1092,8 +1102,14 @@ export class CpuRenderingContext {
                 if (offset + data.byteLength > this._useVboBufferData?.buffer?.byteLength) {
                     renderError("this._gameGl.INVALID_VALUE " + this._gameGl.INVALID_VALUE + " in bufferSubData ")
                 } else {
-                    let uint8ArrayData = new Uint8Array(<ArrayBuffer>data)
-                    this._useVboBufferData.buffer.set(uint8ArrayData, offset)
+                    let uint8ArrayData: Uint8Array
+                    // data有可能是typeArray
+                    if (ArrayBuffer.isView(data)) {
+                        uint8ArrayData = new Uint8Array(data.buffer, data.byteOffset, data.byteLength)
+                    } else {
+                        uint8ArrayData = new Uint8Array(<ArrayBuffer>data)
+                    }
+                    this._useVboBufferData.buffer.set(uint8ArrayData!, offset)
                 }
             } else {
                 renderError("this._gameGl.GL_INVALID_OPERATION " + this._gameGl.INVALID_OPERATION + " in bufferSubData ")
@@ -1103,7 +1119,13 @@ export class CpuRenderingContext {
                 if (offset + data.byteLength > this._useEboBufferData?.buffer?.byteLength) {
                     renderError("this._gameGl.INVALID_VALUE " + this._gameGl.INVALID_VALUE + " in bufferSubData ")
                 } else {
-                    let uint8ArrayData = new Uint8Array(<ArrayBuffer>data)
+                    let uint8ArrayData: Uint8Array
+                    // data有可能是typeArray
+                    if (ArrayBuffer.isView(data)) {
+                        uint8ArrayData = new Uint8Array(data.buffer, data.byteOffset, data.byteLength)
+                    } else {
+                        uint8ArrayData = new Uint8Array(<ArrayBuffer>data)
+                    }
                     this._useEboBufferData.buffer.set(uint8ArrayData, offset)
                 }
             } else {
@@ -1223,6 +1245,10 @@ export class CpuRenderingContext {
                 renderError("this._gameGl.INVALID_OPERATION   " + this._gameGl.INVALID_OPERATION + " in getUniformLocation ")
             }
         }
+        // console.log("***************getUniformLocation***************")
+        // console.log("name: " + name)
+        // console.log(localtion)
+        // console.log("***************getUniformLocation***************")
         return localtion
     }
 
@@ -1504,6 +1530,8 @@ export class CpuRenderingContext {
         this._frameBuffer = new Uint8ClampedArray(width * height * 4)
         this._depthBuffer = new Array(width * height).fill(Number.MIN_SAFE_INTEGER)
 
+        this._viewSp.width = this._viewPort.width
+        this._viewSp.height = this._viewPort.height
         // todo
         // let uiTransform = this._viewSp.getComponent(UITransform)
         // uiTransform?.setContentSize(width, height)
@@ -1550,7 +1578,6 @@ export class CpuRenderingContext {
             // 当前有正在渲染的数据 无法执行
             console.error("has cachWriteData not can draw")
         }
-        debugger
         // 清空数据缓存
         cpuCachData.clear()
         let cachVboAttributeDatas: Map<string, number[] | Vec2Data[] | Vec3Data[] | Vec4Data[] | IntData[] | FloatData[]> = new Map()
@@ -1560,16 +1587,20 @@ export class CpuRenderingContext {
         if (type === this._gameGl.UNSIGNED_BYTE) {
             eboBufferData = this._useEboBufferData.buffer
         } else if (type === this._gameGl.UNSIGNED_SHORT) {
-            eboBufferData = new Uint16Array(this._useEboBufferData.buffer.buffer)
+            eboBufferData = new Uint16Array(
+                this._useEboBufferData.buffer.buffer,
+                this._useEboBufferData.buffer.byteOffset,
+                this._useEboBufferData.buffer.byteLength / Uint16Array.BYTES_PER_ELEMENT
+            )
         }
         this._attributeReadInfo.forEach((value: AttributeReadInfo, index: GLint) => {
             // 只会对enable的属性进行处理
             if (this._attributeLocalEnable[index]) {
                 let name = this._useProgram.getNameByAttributeLocal(index)
                 if (name) {
-                    let byteLength = value.byteType.BYTES_PER_ELEMENT
+                    let bytesPerElement = value.byteType.BYTES_PER_ELEMENT
                     let size = value.size
-                    let stride = value.stride ? value.stride : byteLength * value.size
+                    let stride = value.stride ? value.stride : bytesPerElement * value.size
                     let bufferData = this._vboBufferDataMap.get(value.readBufferIndex)
                     let numCachData = value.isFloat ? cpuCachData.floatData : cpuCachData.intData
                     if (bufferData) {
@@ -1582,9 +1613,9 @@ export class CpuRenderingContext {
                             | Float64Array
                             | Int16Array
                             | Int32Array
-                            | Int8Array = new value.byteType(buffer.buffer)
+                            | Int8Array = new value.byteType(buffer.buffer, buffer.byteOffset, buffer.byteLength / bytesPerElement)
 
-                        let num = buffer.buffer.byteLength / stride
+                        let num = buffer.byteLength / stride
 
                         let dataArr: IntData[] | FloatData[] | Vec2Data[] | Vec3Data[] | Vec4Data[]
                         if (size === 1) {
@@ -1605,7 +1636,7 @@ export class CpuRenderingContext {
                             for (let i = offset; i < eboBufferData.length; i++) {
                                 let element = eboBufferData[i]
                                 let elementIndex = value.offset + element * stride
-                                let byteIndex = elementIndex / byteLength
+                                let byteIndex = elementIndex / bytesPerElement
                                 let data: IntData | FloatData = numCachData.getData()
                                 data.v = dataTypeArray[byteIndex]
                                 dataArr![dataIndex++] = data!
@@ -1614,7 +1645,7 @@ export class CpuRenderingContext {
                             for (let i = offset; i < eboBufferData.length; i++) {
                                 let element = eboBufferData[i]
                                 let elementIndex = value.offset + element * stride
-                                let byteIndex = elementIndex / byteLength
+                                let byteIndex = elementIndex / bytesPerElement
                                 let data: Vec2Data = cpuCachData.vec2Data.getData()
                                 data.set_Vn(dataTypeArray[byteIndex], dataTypeArray[byteIndex + 1])
                                 dataArr![dataIndex++] = data!
@@ -1623,7 +1654,7 @@ export class CpuRenderingContext {
                             for (let i = offset; i < eboBufferData.length; i++) {
                                 let element = eboBufferData[i]
                                 let elementIndex = value.offset + element * stride
-                                let byteIndex = elementIndex / byteLength
+                                let byteIndex = elementIndex / bytesPerElement
                                 let data: Vec3Data = cpuCachData.vec3Data.getData()
                                 data.set_Vn(dataTypeArray[byteIndex], dataTypeArray[byteIndex + 1], dataTypeArray[byteIndex + 2])
                                 dataArr![dataIndex++] = data!
@@ -1632,7 +1663,7 @@ export class CpuRenderingContext {
                             for (let i = offset; i < eboBufferData.length; i++) {
                                 let element = eboBufferData[i]
                                 let elementIndex = value.offset + element * stride
-                                let byteIndex = elementIndex / byteLength
+                                let byteIndex = elementIndex / bytesPerElement
                                 let data: Vec4Data = cpuCachData.vec4Data.getData()
                                 data.set_Vn(
                                     dataTypeArray[byteIndex],
@@ -1859,16 +1890,16 @@ export class CpuRenderingContext {
             if (this._attributeLocalEnable[index]) {
                 let name = this._useProgram.getNameByAttributeLocal(index)
                 if (name) {
-                    let byteLength = value.byteType.BYTES_PER_ELEMENT
+                    let bytesPerElement = value.byteType.BYTES_PER_ELEMENT
                     let size = value.size
-                    let stride = value.stride ? value.stride : byteLength * value.size
+                    let stride = value.stride ? value.stride : bytesPerElement * value.size
                     let bufferData = this._vboBufferDataMap.get(value.readBufferIndex)
                     let numCachData = value.isFloat ? cpuCachData.floatData : cpuCachData.intData
                     if (bufferData) {
                         let buffer = bufferData.buffer
-                        let dataTypeArray = new value.byteType(buffer.buffer)
+                        let dataTypeArray = new value.byteType(buffer.buffer, buffer.byteOffset, buffer.byteLength / bytesPerElement)
 
-                        let num = buffer.buffer.byteLength / stride
+                        let num = buffer.byteLength / stride
 
                         let dataArr: Vec2Data[] | Vec3Data[] | Vec4Data[] | IntData[] | FloatData[]
                         if (size === 1) {
@@ -1883,14 +1914,14 @@ export class CpuRenderingContext {
                         let dataIndex = 0
                         if (size === 1) {
                             for (let i = value.offset; i < buffer.length; i += stride) {
-                                let byteIndex = i / byteLength
+                                let byteIndex = i / bytesPerElement
                                 let data: IntData | FloatData = numCachData.getData()
                                 data.v = dataTypeArray[byteIndex]
                                 dataArr![dataIndex++] = data!
                             }
                         } else if (size === 2) {
                             for (let i = value.offset; i < buffer.length; i += stride) {
-                                let byteIndex = i / byteLength
+                                let byteIndex = i / bytesPerElement
                                 let data: Vec2Data = cpuCachData.vec2Data.getData()
 
                                 data.set_Vn(dataTypeArray[byteIndex], dataTypeArray[byteIndex + 1])
@@ -1898,14 +1929,14 @@ export class CpuRenderingContext {
                             }
                         } else if (size === 3) {
                             for (let i = value.offset; i < buffer.length; i += stride) {
-                                let byteIndex = i / byteLength
+                                let byteIndex = i / bytesPerElement
                                 let data: Vec3Data = cpuCachData.vec3Data.getData()
                                 data.set_Vn(dataTypeArray[byteIndex], dataTypeArray[byteIndex + 1], dataTypeArray[byteIndex + 2])
                                 dataArr![dataIndex++] = data!
                             }
                         } else if (size === 4) {
                             for (let i = value.offset; i < buffer.length; i += stride) {
-                                let byteIndex = i / byteLength
+                                let byteIndex = i / bytesPerElement
                                 let data: Vec4Data = cpuCachData.vec4Data.getData()
                                 data.set_Vn(
                                     dataTypeArray[byteIndex],
@@ -2084,7 +2115,7 @@ export class CpuRenderingContext {
                     triangleEndY = triangleBeginY
                 }
                 for (let y = triangleBeginY; y <= triangleEndY; y++) {
-                    if (this._openScissorTest && this._scissorRect.contains(new Vec2Data(x, y))) {
+                    if (this._openScissorTest && !this._scissorRect.contains(new Vec2Data(x, y))) {
                         continue
                     }
 
@@ -2134,6 +2165,7 @@ export class CpuRenderingContext {
                         fragShader.main()
                         if (!custom_isDiscard.v) {
                             let color = gl_FragColor
+                            Vec4Data.multiplyScalar(color, color, 255)
                             if (this._openBlend) {
                                 let destColor = new Vec4Data(
                                     this._frameBuffer[index],
@@ -2371,16 +2403,16 @@ export class CpuRenderingContext {
                             }
 
                             if (this._colorRWriteEnable) {
-                                this._frameBuffer[index] = clamp(color.x, 0, 1) * 255
+                                this._frameBuffer[index] = color.x
                             }
                             if (this._colorGWriteEnable) {
-                                this._frameBuffer[index + 1] = clamp(color.y, 0, 1) * 255
+                                this._frameBuffer[index + 1] = color.y
                             }
                             if (this._colorBWriteEnable) {
-                                this._frameBuffer[index + 2] = clamp(color.z, 0, 1) * 255
+                                this._frameBuffer[index + 2] = color.z
                             }
                             if (this._colorAWriteEnable) {
-                                this._frameBuffer[index + 3] = clamp(color.w, 0, 1) * 255
+                                this._frameBuffer[index + 3] = color.w
                             }
                         }
                     }
@@ -2479,16 +2511,12 @@ export class CpuRenderingContext {
         } else if (cap === this._gameGl.DEPTH_TEST) {
             this._openDepthTest = true
         } else if (cap === this._gameGl.DITHER) {
-            debugger
             console.error("DITHER 还未实现")
         } else if (cap === this._gameGl.POLYGON_OFFSET_FILL) {
-            debugger
             console.error("POLYGON_OFFSET_FILL 还未实现")
         } else if (cap === this._gameGl.SAMPLE_ALPHA_TO_COVERAGE) {
-            debugger
             console.error("SAMPLE_ALPHA_TO_COVERAGE 还未实现")
         } else if (cap === this._gameGl.SAMPLE_COVERAGE) {
-            debugger
             console.error("SAMPLE_COVERAGE 还未实现")
         } else if (cap === this._gameGl.SCISSOR_TEST) {
             this._openScissorTest = true
@@ -2507,16 +2535,12 @@ export class CpuRenderingContext {
         } else if (cap === this._gameGl.DEPTH_TEST) {
             this._openDepthTest = false
         } else if (cap === this._gameGl.DITHER) {
-            debugger
             console.error("DITHER 还未实现")
         } else if (cap === this._gameGl.POLYGON_OFFSET_FILL) {
-            debugger
             console.error("POLYGON_OFFSET_FILL 还未实现")
         } else if (cap === this._gameGl.SAMPLE_ALPHA_TO_COVERAGE) {
-            debugger
             console.error("SAMPLE_ALPHA_TO_COVERAGE 还未实现")
         } else if (cap === this._gameGl.SAMPLE_COVERAGE) {
-            debugger
             console.error("SAMPLE_COVERAGE 还未实现")
         } else if (cap === this._gameGl.SCISSOR_TEST) {
             this._openScissorTest = false
@@ -2586,7 +2610,6 @@ export class CpuRenderingContext {
         if (textureNum >= 0 && textureNum < this._textureUnit.size) {
             this._nowActiveTextureUnit = textureNum
             console.log("this._nowActiveTextureUnit:" + this._nowActiveTextureUnit)
-            debugger
         } else {
             renderError("this._gameGl.INVALID_ENUM " + this._gameGl.INVALID_ENUM + " in activeTexture")
         }
@@ -2694,7 +2717,7 @@ export class CpuRenderingContext {
                         if (type == this._gameGl.UNSIGNED_BYTE) {
                             let uint8ArrayData = new Uint8Array(width * height * 4)
                             if (pixels) {
-                                uint8ArrayData.set(new Uint8Array(pixels.buffer))
+                                uint8ArrayData.set(new Uint8Array(pixels.buffer, pixels.byteOffset, pixels.byteLength))
                             }
                             let texelsData: TexelsData
                             if (target === this._gameGl.TEXTURE_2D) {
@@ -2862,7 +2885,7 @@ export class CpuRenderingContext {
                                 或者yoffset+height大于texture的高，那么就会出现INVALID_VALUE的错误。*/
 
                                 if (xoffset + width <= texBufferData.width && yoffset + height <= texBufferData.height) {
-                                    let copyData = new Uint8Array(pixels.buffer)
+                                    let copyData = new Uint8Array(pixels.buffer, pixels.byteOffset, pixels.byteLength)
                                     let bufferData = texBufferData.bufferData!
                                     let copyIndex = 0
                                     for (let y = 0; y < height; y++) {
@@ -4065,7 +4088,6 @@ export class CpuRenderingContext {
 }
 
 export let cpuRenderingContext = new CpuRenderingContext()
-cpuRenderingContext.customContextInit(<HTMLCanvasElement>document.getElementById("GameCanvas"))
 
 /**感觉是个无用api合集 
  * 

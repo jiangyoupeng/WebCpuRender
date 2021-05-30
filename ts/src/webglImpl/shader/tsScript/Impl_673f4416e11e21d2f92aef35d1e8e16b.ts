@@ -1,5 +1,8 @@
 /*
 origin glsl source: 
+#define CC_DEVICE_SUPPORT_FLOAT_TEXTURE 0
+#define CC_DEVICE_MAX_VERTEX_UNIFORM_VECTORS 4096
+#define CC_DEVICE_MAX_FRAGMENT_UNIFORM_VECTORS 1024
 #define CC_EFFECT_USED_VERTEX_UNIFORM_VECTORS 37
 #define CC_EFFECT_USED_FRAGMENT_UNIFORM_VECTORS 53
 #define CC_RECEIVE_SHADOW 0
@@ -9,7 +12,7 @@ origin glsl source:
 #define CC_FORWARD_ADD 0
 #define CC_USE_HDR 0
 #define CC_PIPELINE_TYPE 0
-#define CC_USE_FOG 0
+#define CC_USE_FOG 4
 
 precision highp float;
 struct StandardVertInput {
@@ -63,6 +66,9 @@ import {
     Sampler2D,
     SamplerCube,
 } from "../builtin/BuiltinData"
+let CC_DEVICE_SUPPORT_FLOAT_TEXTURE = new FloatData(0)
+let CC_DEVICE_MAX_VERTEX_UNIFORM_VECTORS = new FloatData(4096)
+let CC_DEVICE_MAX_FRAGMENT_UNIFORM_VECTORS = new FloatData(1024)
 let CC_EFFECT_USED_VERTEX_UNIFORM_VECTORS = new FloatData(37)
 let CC_EFFECT_USED_FRAGMENT_UNIFORM_VECTORS = new FloatData(53)
 let CC_RECEIVE_SHADOW = new FloatData(0)
@@ -72,7 +78,7 @@ let USE_BATCHING = new FloatData(0)
 let CC_FORWARD_ADD = new FloatData(0)
 let CC_USE_HDR = new FloatData(0)
 let CC_PIPELINE_TYPE = new FloatData(0)
-let CC_USE_FOG = new FloatData(0)
+let CC_USE_FOG = new FloatData(4)
 class StandardVertInput implements StructData {
     position: Vec4Data = new Vec4Data()
     normal: Vec3Data = new Vec3Data()
@@ -112,7 +118,7 @@ class UniformDataImpl implements UniformData {
     dataKeys: Map<string, any> = new Map([["cc_cameraPos", cpuRenderingContext.cachGameGl.FLOAT_VEC4]])
     dataSize: Map<string, number> = new Map([["cc_cameraPos", 1]])
 }
-export class Impl_f528b2751518ef0b8252e52d20e2dd2d extends VertShaderHandle {
+export class Impl_673f4416e11e21d2f92aef35d1e8e16b extends VertShaderHandle {
     varyingData: VaryingDataImpl = new VaryingDataImpl()
     uniformData: UniformDataImpl = new UniformDataImpl()
     attributeData: AttributeDataImpl = new AttributeDataImpl()

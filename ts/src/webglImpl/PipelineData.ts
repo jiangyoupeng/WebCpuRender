@@ -1,5 +1,5 @@
 import { BaseShaderHandle, FragShaderHandle, VertShaderHandle } from "./ShaderDefine"
-import { ShaderManager } from "./ShaderManager"
+import { ShaderManager } from "./shader/tsScript/ShaderManager"
 let SparkMD5 = require("Spark-md5")
 
 /**着色器相关 */
@@ -238,6 +238,10 @@ export class CPUShaderProgram {
     setUniformData(location: CPUWebGLUniformLocation, data: any) {
         let setSuc = false
         let name: string | null = this._getUniformLocalName(location)
+        // console.log("&&&&&&&&&&&&&&&&&setUniformData&&&&&&&&&&&&&&&&&&")
+        // console.log(location)
+        // console.log(name)
+        // console.log("&&&&&&&&&&&&&&&&&setUniformData&&&&&&&&&&&&&&&&&&")
         if (name) {
             if (data instanceof Array) {
                 if (!this._getUniformLocalIsArray(name)) {

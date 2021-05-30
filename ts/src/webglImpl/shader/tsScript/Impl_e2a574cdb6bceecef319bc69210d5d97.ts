@@ -1,16 +1,46 @@
 /*
 origin glsl source: 
-#define CC_EFFECT_USED_VERTEX_UNIFORM_VECTORS 37
-#define CC_EFFECT_USED_FRAGMENT_UNIFORM_VECTORS 53
-#define CC_RECEIVE_SHADOW 0
-#define CC_USE_IBL 0
-#define USE_LIGHTMAP 0
+#define CC_DEVICE_SUPPORT_FLOAT_TEXTURE 0
+#define CC_DEVICE_MAX_VERTEX_UNIFORM_VECTORS 4096
+#define CC_DEVICE_MAX_FRAGMENT_UNIFORM_VECTORS 1024
+#define CC_EFFECT_USED_VERTEX_UNIFORM_VECTORS 216
+#define CC_EFFECT_USED_FRAGMENT_UNIFORM_VECTORS 59
+#define CC_USE_MORPH 0
+#define CC_MORPH_TARGET_COUNT 2
+#define CC_MORPH_PRECOMPUTED 0
+#define CC_MORPH_TARGET_HAS_POSITION 0
+#define CC_MORPH_TARGET_HAS_NORMAL 0
+#define CC_MORPH_TARGET_HAS_TANGENT 0
+#define CC_USE_SKINNING 0
+#define CC_USE_BAKED_ANIMATION 0
+#define USE_INSTANCING 0
 #define USE_BATCHING 0
-#define CC_FORWARD_ADD 0
-#define CC_USE_HDR 0
-#define CC_PIPELINE_TYPE 0
+#define USE_LIGHTMAP 0
 #define CC_USE_FOG 0
+#define CC_FORWARD_ADD 0
+#define CC_RECEIVE_SHADOW 0
+#define USE_VERTEX_COLOR 0
+#define USE_NORMAL_MAP 0
+#define HAS_SECOND_UV 0
+#define SAMPLE_FROM_RT 0
+#define CC_USE_IBL 0
+#define CC_USE_HDR 0
+#define USE_ALBEDO_MAP 0
+#define ALBEDO_UV v_uv
+#define NORMAL_UV v_uv
+#define PBR_UV v_uv
+#define USE_PBR_MAP 0
+#define USE_METALLIC_ROUGHNESS_MAP 0
+#define USE_OCCLUSION_MAP 0
+#define USE_EMISSIVE_MAP 0
+#define EMISSIVE_UV v_uv
+#define USE_ALPHA_TEST 0
+#define ALPHA_TEST_CHANNEL a
+#define CC_PIPELINE_TYPE 0
 
+#ifdef GL_EXT_draw_buffers
+#extension GL_EXT_draw_buffers: enable
+#endif
 #ifdef GL_EXT_shader_texture_lod
 #extension GL_EXT_shader_texture_lod: enable
 #endif
@@ -22,13 +52,16 @@ uniform mediump vec4 cc_mainLitColor;
 uniform mediump vec4 cc_ambientSky;
 uniform mediump vec4 cc_ambientGround;
 uniform mediump vec4 cc_fogColor;
-uniform mediump vec4 cc_fogBase;
-uniform mediump vec4 cc_fogAdd;
+uniform vec4 albedo;
+uniform vec4 albedoScaleAndCutoff;
+uniform vec4 pbrParams;
+uniform vec4 emissive;
+uniform vec4 emissiveScaleParam;
+varying float v_fog_factor;
 vec3 SRGBToLinear (vec3 gamma) {
 return gamma * gamma;
 }
 uniform highp mat4 cc_matLightView;
-uniform highp mat4 cc_matLightViewProj;
 uniform lowp vec4 cc_shadowNFLSInfo;
 uniform lowp vec4 cc_shadowWHPBInfo;
 uniform lowp vec4 cc_shadowLPNNInfo;
@@ -383,6 +416,116 @@ finalColor.rgb = shadowColor.rgb * shadowAttenuation * NL + finalColor.rgb * (1.
 #endif
 return vec4(finalColor, s.albedo.a);
 }
+vec3 ACESToneMap (vec3 color) {
+color = min(color, vec3(8.0));
+const float A = 2.51;
+const float B = 0.03;
+const float C = 2.43;
+const float D = 0.59;
+const float E = 0.14;
+return (color * (A * color + B)) / (color * (C * color + D) + E);
+}
+vec4 CCFragOutput (vec4 color) {
+#if !CC_USE_HDR
+color.rgb = sqrt(ACESToneMap(color.rgb));
+#endif
+return color;
+}
+varying highp vec4 v_shadowPos;
+#if USE_LIGHTMAP && !USE_BATCHING && !CC_FORWARD_ADD
+varying vec3 v_luv;
+uniform sampler2D cc_lightingMap;
+vec3 UnpackLightingmap(vec4 color) {
+vec3 c;
+float e = 1.0 + color.a * (8.0 - 1.0);
+c.r = color.r * e;
+c.g = color.g * e;
+c.b = color.b * e;
+return c;
+}
+#endif
+varying vec3 v_position;
+varying vec2 v_uv;
+varying vec2 v_uv1;
+varying vec3 v_normal;
+#if USE_VERTEX_COLOR
+varying vec4 v_color;
+#endif
+#if USE_ALBEDO_MAP
+uniform sampler2D albedoMap;
+#endif
+#if USE_NORMAL_MAP
+varying vec3 v_tangent;
+varying vec3 v_bitangent;
+uniform sampler2D normalMap;
+#endif
+#if USE_PBR_MAP
+uniform sampler2D pbrMap;
+#endif
+#if USE_METALLIC_ROUGHNESS_MAP
+uniform sampler2D metallicRoughnessMap;
+#endif
+#if USE_OCCLUSION_MAP
+uniform sampler2D occlusionMap;
+#endif
+#if USE_EMISSIVE_MAP
+uniform sampler2D emissiveMap;
+#endif
+#if USE_ALPHA_TEST
+#endif
+void surf (out StandardSurface s) {
+vec4 baseColor = albedo;
+#if USE_VERTEX_COLOR
+baseColor *= v_color;
+#endif
+#if USE_ALBEDO_MAP
+vec4 texColor = texture2D(albedoMap, ALBEDO_UV);
+texColor.rgb = SRGBToLinear(texColor.rgb);
+baseColor *= texColor;
+#endif
+s.albedo = baseColor;
+s.albedo.rgb *= albedoScaleAndCutoff.xyz;
+#if USE_ALPHA_TEST
+if (s.albedo.ALPHA_TEST_CHANNEL < albedoScaleAndCutoff.w) discard;
+#endif
+#if USE_LIGHTMAP && !USE_BATCHING && !CC_FORWARD_ADD
+vec4 lightColor = texture2D(cc_lightingMap, v_luv.xy);
+s.lightmap = UnpackLightingmap(lightColor);
+s.lightmap_test = v_luv.z;
+#endif
+s.normal = v_normal;
+#if USE_NORMAL_MAP
+vec3 nmmp = texture2D(normalMap, NORMAL_UV).xyz - vec3(0.5);
+s.normal =
+(nmmp.x * pbrParams.w) * normalize(v_tangent) +
+(nmmp.y * pbrParams.w) * normalize(v_bitangent) +
+nmmp.z * normalize(s.normal);
+#endif
+s.position = v_position;
+vec4 pbr = pbrParams;
+#if USE_PBR_MAP
+vec4 res = texture2D(pbrMap, PBR_UV);
+pbr.x *= res.r;
+pbr.y *= res.g;
+pbr.z *= res.b;
+#endif
+#if USE_METALLIC_ROUGHNESS_MAP
+vec4 metallicRoughness = texture2D(metallicRoughnessMap, PBR_UV);
+pbr.z *= metallicRoughness.b;
+pbr.y *= metallicRoughness.g;
+#endif
+#if USE_OCCLUSION_MAP
+pbr.x *= texture2D(occlusionMap, PBR_UV).r;
+#endif
+s.occlusion = clamp(pbr.x, 0.0, 0.96);
+s.roughness = clamp(pbr.y, 0.04, 1.0);
+s.metallic = pbr.z;
+s.emissive = emissive.rgb * emissiveScaleParam.xyz;
+#if USE_EMISSIVE_MAP
+s.emissive *= SRGBToLinear(texture2D(emissiveMap, EMISSIVE_UV).rgb);
+#endif
+}
+#if CC_FORWARD_ADD
 #if CC_PIPELINE_TYPE == 0
 # define LIGHTS_PER_PASS 1
 #else
@@ -461,120 +604,28 @@ finalColor += SNL * lightColor * cc_lightColor[i].w * illum * att * (diffuseCont
 finalColor = finalColor * s.occlusion;
 return vec4(finalColor, 0.0);
 }
-vec3 ACESToneMap (vec3 color) {
-color = min(color, vec3(8.0));
-const float A = 2.51;
-const float B = 0.03;
-const float C = 2.43;
-const float D = 0.59;
-const float E = 0.14;
-return (color * (A * color + B)) / (color * (C * color + D) + E);
-}
-vec4 CCFragOutput (vec4 color) {
-#if !CC_USE_HDR
-color.rgb = sqrt(ACESToneMap(color.rgb));
-#endif
-return color;
-}
-float LinearFog(vec4 pos) {
-vec4 wPos = pos;
-float cam_dis = distance(cc_cameraPos, wPos);
-float fogStart = cc_fogBase.x;
-float fogEnd = cc_fogBase.y;
-return clamp((fogEnd - cam_dis) / (fogEnd - fogStart), 0., 1.);
-}
-float ExpFog(vec4 pos) {
-vec4 wPos = pos;
-float fogAtten = cc_fogAdd.z;
-float fogDensity = cc_fogBase.z;
-float cam_dis = distance(cc_cameraPos, wPos) / fogAtten * 4.;
-float f = exp(-cam_dis * fogDensity);
-return f;
-}
-float ExpSquaredFog(vec4 pos) {
-vec4 wPos = pos;
-float fogAtten = cc_fogAdd.z;
-float fogDensity = cc_fogBase.z;
-float cam_dis = distance(cc_cameraPos, wPos) / fogAtten * 4.;
-float f = exp(-cam_dis * cam_dis * fogDensity * fogDensity);
-return f;
-}
-float LayeredFog(vec4 pos) {
-vec4 wPos = pos;
-float fogAtten = cc_fogAdd.z;
-float _FogTop = cc_fogAdd.x;
-float _FogRange = cc_fogAdd.y;
-vec3 camWorldProj = cc_cameraPos.xyz;
-camWorldProj.y = 0.;
-vec3 worldPosProj = wPos.xyz;
-worldPosProj.y = 0.;
-float fDeltaD = distance(worldPosProj, camWorldProj) / fogAtten * 2.0;
-float fDeltaY, fDensityIntegral;
-if (cc_cameraPos.y > _FogTop) {
-if (wPos.y < _FogTop) {
-fDeltaY = (_FogTop - wPos.y) / _FogRange * 2.0;
-fDensityIntegral = fDeltaY * fDeltaY * 0.5;
-} else {
-fDeltaY = 0.;
-fDensityIntegral = 0.;
-}
-} else {
-if (wPos.y < _FogTop) {
-float fDeltaA = (_FogTop - cc_cameraPos.y) / _FogRange * 2.;
-float fDeltaB = (_FogTop - wPos.y) / _FogRange * 2.;
-fDeltaY = abs(fDeltaA - fDeltaB);
-fDensityIntegral = abs((fDeltaA * fDeltaA * 0.5) - (fDeltaB * fDeltaB * 0.5));
-} else {
-fDeltaY = abs(_FogTop - cc_cameraPos.y) / _FogRange * 2.;
-fDensityIntegral = abs(fDeltaY * fDeltaY * 0.5);
-}
-}
-float fDensity;
-if (fDeltaY != 0.) {
-fDensity = (sqrt(1.0 + ((fDeltaD / fDeltaY) * (fDeltaD / fDeltaY)))) * fDensityIntegral;
-} else {
-fDensity = 0.;
-}
-float f = exp(-fDensity);
-return f;
-}
-varying vec2 v_uv;
-uniform sampler2D cc_gbuffer_albedoMap;
-uniform sampler2D cc_gbuffer_positionMap;
-uniform sampler2D cc_gbuffer_normalMap;
-uniform sampler2D cc_gbuffer_emissiveMap;
 void main () {
-StandardSurface s;
-vec4 albedoMap = texture2D(cc_gbuffer_albedoMap,v_uv);
-vec4 positionMap = texture2D(cc_gbuffer_positionMap,v_uv);
-vec4 normalMap = texture2D(cc_gbuffer_normalMap,v_uv);
-vec4 emissiveMap = texture2D(cc_gbuffer_emissiveMap,v_uv);
-s.albedo = albedoMap;
-s.position = positionMap.xyz;
-s.roughness = positionMap.w;
-s.normal = normalMap.xyz;
-s.metallic = normalMap.w;
-s.emissive = emissiveMap.xyz;
-s.occlusion = emissiveMap.w;
-float fogFactor;
-#if CC_USE_FOG == 0
-fogFactor = LinearFog(vec4(s.position, 1));
-#elif CC_USE_FOG == 1
-fogFactor = ExpFog(vec4(s.position, 1));
-#elif CC_USE_FOG == 2
-fogFactor = ExpSquaredFog(vec4(s.position, 1));
-#elif CC_USE_FOG == 3
-fogFactor = LayeredFog(vec4(s.position, 1));
-#else
-fogFactor = 1.0;
-#endif
-vec4 shadowPos;
-shadowPos = cc_matLightViewProj * vec4(s.position, 1);
-vec4 color = CCStandardShadingBase(s, shadowPos) +
-CCStandardShadingAdditive(s, shadowPos);
-color = vec4(mix(CC_FORWARD_ADD > 0 ? vec3(0.0) : cc_fogColor.rgb, color.rgb, fogFactor), color.a);
-gl_FragColor = CCFragOutput(color);
+StandardSurface s; surf(s);
+vec4 color = CCStandardShadingAdditive(s, v_shadowPos);
+color = vec4(mix(CC_FORWARD_ADD > 0 ? vec3(0.0) : cc_fogColor.rgb, color.rgb, v_fog_factor), color.a);
+gl_FragData[0] = CCFragOutput(color);
 }
+#elif CC_PIPELINE_TYPE == 0
+void main () {
+StandardSurface s; surf(s);
+vec4 color = CCStandardShadingBase(s, v_shadowPos);
+color = vec4(mix(CC_FORWARD_ADD > 0 ? vec3(0.0) : cc_fogColor.rgb, color.rgb, v_fog_factor), color.a);
+gl_FragData[0] = CCFragOutput(color);
+}
+#elif CC_PIPELINE_TYPE == 1
+void main () {
+StandardSurface s; surf(s);
+gl_FragData[0] = s.albedo;
+gl_FragData[1] = vec4(s.position, s.roughness);
+gl_FragData[2] = vec4(s.normal, s.metallic);
+gl_FragData[3] = vec4(s.emissive, s.occlusion);
+}
+#endif
 */
 import {
     cross_V3_V3,
@@ -590,18 +641,13 @@ import {
     abs_N,
     max_N_N,
     vec4_V3_N,
-    int_N,
     min_V3_V3,
     sqrt_V3,
-    distance_V4_V4,
-    exp_N,
-    distance_V3_V3,
-    sqrt_N,
-    texture2D_N_V2,
     float,
     float_N,
     bool,
     bool_N,
+    int_N,
     int,
     vec4,
     vec3,
@@ -610,14 +656,14 @@ import {
     mat4,
 } from "../builtin/BuiltinFunc"
 import {
-    glSet_V2_V2,
-    glSet_V3_V3,
-    glMul_V3_V3,
     glSet_N_N,
+    glSet_V4_V4,
+    glSet_V3_V3,
+    glSet_V2_V2,
+    glMul_V3_V3,
     glMul_N_N,
     glAdd_N_N,
     glDiv_N_N,
-    glSet_V4_V4,
     glNegative_N,
     glMul_N_V4,
     glAdd_V4_V4,
@@ -634,16 +680,8 @@ import {
     glDivSet_V3_N,
     glMulSet_V3_V3,
     glAddSet_V3_V3,
-    glMulSet_N_N,
-    glDiv_V3_N,
-    glIsEqual_N_N,
-    glIsLess_N_N,
-    glAfterAddSelf_N,
-    glIsMoreEqual_N_N,
-    glIsMore_N_N,
     glDiv_V3_V3,
-    glIsNotEqual_N_N,
-    glMul_M4_V4,
+    glIsMore_N_N,
     getValueKeyByIndex,
 } from "../builtin/BuiltinOperator"
 import { gl_FragData, gl_FragColor, gl_Position, gl_FragCoord, gl_FragDepth, gl_FrontFacing, custom_isDiscard } from "../builtin/BuiltinVar"
@@ -661,17 +699,38 @@ import {
     Sampler2D,
     SamplerCube,
 } from "../builtin/BuiltinData"
-let CC_EFFECT_USED_VERTEX_UNIFORM_VECTORS = new FloatData(37)
-let CC_EFFECT_USED_FRAGMENT_UNIFORM_VECTORS = new FloatData(53)
-let CC_RECEIVE_SHADOW = new FloatData(0)
-let CC_USE_IBL = new FloatData(0)
-let USE_LIGHTMAP = new FloatData(0)
+let CC_DEVICE_SUPPORT_FLOAT_TEXTURE = new FloatData(0)
+let CC_DEVICE_MAX_VERTEX_UNIFORM_VECTORS = new FloatData(4096)
+let CC_DEVICE_MAX_FRAGMENT_UNIFORM_VECTORS = new FloatData(1024)
+let CC_EFFECT_USED_VERTEX_UNIFORM_VECTORS = new FloatData(216)
+let CC_EFFECT_USED_FRAGMENT_UNIFORM_VECTORS = new FloatData(59)
+let CC_USE_MORPH = new FloatData(0)
+let CC_MORPH_TARGET_COUNT = new FloatData(2)
+let CC_MORPH_PRECOMPUTED = new FloatData(0)
+let CC_MORPH_TARGET_HAS_POSITION = new FloatData(0)
+let CC_MORPH_TARGET_HAS_NORMAL = new FloatData(0)
+let CC_MORPH_TARGET_HAS_TANGENT = new FloatData(0)
+let CC_USE_SKINNING = new FloatData(0)
+let CC_USE_BAKED_ANIMATION = new FloatData(0)
+let USE_INSTANCING = new FloatData(0)
 let USE_BATCHING = new FloatData(0)
-let CC_FORWARD_ADD = new FloatData(0)
-let CC_USE_HDR = new FloatData(0)
-let CC_PIPELINE_TYPE = new FloatData(0)
+let USE_LIGHTMAP = new FloatData(0)
 let CC_USE_FOG = new FloatData(0)
-let LIGHTS_PER_PASS = new FloatData(1)
+let CC_FORWARD_ADD = new FloatData(0)
+let CC_RECEIVE_SHADOW = new FloatData(0)
+let USE_VERTEX_COLOR = new FloatData(0)
+let USE_NORMAL_MAP = new FloatData(0)
+let HAS_SECOND_UV = new FloatData(0)
+let SAMPLE_FROM_RT = new FloatData(0)
+let CC_USE_IBL = new FloatData(0)
+let CC_USE_HDR = new FloatData(0)
+let USE_ALBEDO_MAP = new FloatData(0)
+let USE_PBR_MAP = new FloatData(0)
+let USE_METALLIC_ROUGHNESS_MAP = new FloatData(0)
+let USE_OCCLUSION_MAP = new FloatData(0)
+let USE_EMISSIVE_MAP = new FloatData(0)
+let USE_ALPHA_TEST = new FloatData(0)
+let CC_PIPELINE_TYPE = new FloatData(0)
 class StandardSurface implements StructData {
     albedo: Vec4Data = new Vec4Data()
     position: Vec3Data = new Vec3Data()
@@ -688,14 +747,31 @@ class AttributeDataImpl implements AttributeData {
     dataSize: Map<string, number> = new Map([])
 }
 class VaryingDataImpl extends VaryingData {
+    v_fog_factor: FloatData = new FloatData()
+    v_shadowPos: Vec4Data = new Vec4Data()
+    v_position: Vec3Data = new Vec3Data()
     v_uv: Vec2Data = new Vec2Data()
+    v_uv1: Vec2Data = new Vec2Data()
+    v_normal: Vec3Data = new Vec3Data()
 
     factoryCreate() {
         return new VaryingDataImpl()
     }
-    dataKeys: Map<string, any> = new Map([["v_uv", cpuRenderingContext.cachGameGl.FLOAT_VEC2]])
+    dataKeys: Map<string, any> = new Map([
+        ["v_fog_factor", cpuRenderingContext.cachGameGl.FLOAT],
+        ["v_shadowPos", cpuRenderingContext.cachGameGl.FLOAT_VEC4],
+        ["v_position", cpuRenderingContext.cachGameGl.FLOAT_VEC3],
+        ["v_uv", cpuRenderingContext.cachGameGl.FLOAT_VEC2],
+        ["v_uv1", cpuRenderingContext.cachGameGl.FLOAT_VEC2],
+        ["v_normal", cpuRenderingContext.cachGameGl.FLOAT_VEC3],
+    ])
     copy(varying: VaryingDataImpl) {
+        glSet_N_N(varying.v_fog_factor, this.v_fog_factor)
+        glSet_V4_V4(varying.v_shadowPos, this.v_shadowPos)
+        glSet_V3_V3(varying.v_position, this.v_position)
         glSet_V2_V2(varying.v_uv, this.v_uv)
+        glSet_V2_V2(varying.v_uv1, this.v_uv1)
+        glSet_V3_V3(varying.v_normal, this.v_normal)
     }
 }
 class UniformDataImpl implements UniformData {
@@ -706,22 +782,16 @@ class UniformDataImpl implements UniformData {
     cc_ambientSky: Vec4Data = new Vec4Data()
     cc_ambientGround: Vec4Data = new Vec4Data()
     cc_fogColor: Vec4Data = new Vec4Data()
-    cc_fogBase: Vec4Data = new Vec4Data()
-    cc_fogAdd: Vec4Data = new Vec4Data()
+    albedo: Vec4Data = new Vec4Data()
+    albedoScaleAndCutoff: Vec4Data = new Vec4Data()
+    pbrParams: Vec4Data = new Vec4Data()
+    emissive: Vec4Data = new Vec4Data()
+    emissiveScaleParam: Vec4Data = new Vec4Data()
     cc_matLightView: Mat4Data = new Mat4Data()
-    cc_matLightViewProj: Mat4Data = new Mat4Data()
     cc_shadowNFLSInfo: Vec4Data = new Vec4Data()
     cc_shadowWHPBInfo: Vec4Data = new Vec4Data()
     cc_shadowLPNNInfo: Vec4Data = new Vec4Data()
     cc_shadowColor: Vec4Data = new Vec4Data()
-    cc_lightPos: Vec4Data[] = [new Vec4Data()]
-    cc_lightColor: Vec4Data[] = [new Vec4Data()]
-    cc_lightSizeRangeAngle: Vec4Data[] = [new Vec4Data()]
-    cc_lightDir: Vec4Data[] = [new Vec4Data()]
-    cc_gbuffer_albedoMap: Sampler2D = new Sampler2D()
-    cc_gbuffer_positionMap: Sampler2D = new Sampler2D()
-    cc_gbuffer_normalMap: Sampler2D = new Sampler2D()
-    cc_gbuffer_emissiveMap: Sampler2D = new Sampler2D()
     dataKeys: Map<string, any> = new Map([
         ["cc_cameraPos", cpuRenderingContext.cachGameGl.FLOAT_VEC4],
         ["cc_exposure", cpuRenderingContext.cachGameGl.FLOAT_VEC4],
@@ -730,22 +800,16 @@ class UniformDataImpl implements UniformData {
         ["cc_ambientSky", cpuRenderingContext.cachGameGl.FLOAT_VEC4],
         ["cc_ambientGround", cpuRenderingContext.cachGameGl.FLOAT_VEC4],
         ["cc_fogColor", cpuRenderingContext.cachGameGl.FLOAT_VEC4],
-        ["cc_fogBase", cpuRenderingContext.cachGameGl.FLOAT_VEC4],
-        ["cc_fogAdd", cpuRenderingContext.cachGameGl.FLOAT_VEC4],
+        ["albedo", cpuRenderingContext.cachGameGl.FLOAT_VEC4],
+        ["albedoScaleAndCutoff", cpuRenderingContext.cachGameGl.FLOAT_VEC4],
+        ["pbrParams", cpuRenderingContext.cachGameGl.FLOAT_VEC4],
+        ["emissive", cpuRenderingContext.cachGameGl.FLOAT_VEC4],
+        ["emissiveScaleParam", cpuRenderingContext.cachGameGl.FLOAT_VEC4],
         ["cc_matLightView", cpuRenderingContext.cachGameGl.FLOAT_MAT4],
-        ["cc_matLightViewProj", cpuRenderingContext.cachGameGl.FLOAT_MAT4],
         ["cc_shadowNFLSInfo", cpuRenderingContext.cachGameGl.FLOAT_VEC4],
         ["cc_shadowWHPBInfo", cpuRenderingContext.cachGameGl.FLOAT_VEC4],
         ["cc_shadowLPNNInfo", cpuRenderingContext.cachGameGl.FLOAT_VEC4],
         ["cc_shadowColor", cpuRenderingContext.cachGameGl.FLOAT_VEC4],
-        ["cc_lightPos", cpuRenderingContext.cachGameGl.FLOAT_VEC4],
-        ["cc_lightColor", cpuRenderingContext.cachGameGl.FLOAT_VEC4],
-        ["cc_lightSizeRangeAngle", cpuRenderingContext.cachGameGl.FLOAT_VEC4],
-        ["cc_lightDir", cpuRenderingContext.cachGameGl.FLOAT_VEC4],
-        ["cc_gbuffer_albedoMap", cpuRenderingContext.cachGameGl.SAMPLER_2D],
-        ["cc_gbuffer_positionMap", cpuRenderingContext.cachGameGl.SAMPLER_2D],
-        ["cc_gbuffer_normalMap", cpuRenderingContext.cachGameGl.SAMPLER_2D],
-        ["cc_gbuffer_emissiveMap", cpuRenderingContext.cachGameGl.SAMPLER_2D],
     ])
     dataSize: Map<string, number> = new Map([
         ["cc_cameraPos", 1],
@@ -755,25 +819,19 @@ class UniformDataImpl implements UniformData {
         ["cc_ambientSky", 1],
         ["cc_ambientGround", 1],
         ["cc_fogColor", 1],
-        ["cc_fogBase", 1],
-        ["cc_fogAdd", 1],
+        ["albedo", 1],
+        ["albedoScaleAndCutoff", 1],
+        ["pbrParams", 1],
+        ["emissive", 1],
+        ["emissiveScaleParam", 1],
         ["cc_matLightView", 1],
-        ["cc_matLightViewProj", 1],
         ["cc_shadowNFLSInfo", 1],
         ["cc_shadowWHPBInfo", 1],
         ["cc_shadowLPNNInfo", 1],
         ["cc_shadowColor", 1],
-        ["cc_lightPos", 1],
-        ["cc_lightColor", 1],
-        ["cc_lightSizeRangeAngle", 1],
-        ["cc_lightDir", 1],
-        ["cc_gbuffer_albedoMap", 1],
-        ["cc_gbuffer_positionMap", 1],
-        ["cc_gbuffer_normalMap", 1],
-        ["cc_gbuffer_emissiveMap", 1],
     ])
 }
-export class Impl_a16f945e975039ee6e884533730d85e9 extends FragShaderHandle {
+export class Impl_e2a574cdb6bceecef319bc69210d5d97 extends FragShaderHandle {
     varyingData: VaryingDataImpl = new VaryingDataImpl()
     uniformData: UniformDataImpl = new UniformDataImpl()
 
@@ -901,144 +959,6 @@ export class Impl_a16f945e975039ee6e884533730d85e9 extends FragShaderHandle {
         glAddSet_V3_V3(finalColor, s.emissive)
         return vec4_V3_N(finalColor, float_N(s.albedo.w))
     }
-    SmoothDistAtt_N_N(__distSqr__: FloatData, __invSqrAttRadius__: FloatData): FloatData {
-        let distSqr: FloatData = new FloatData()
-        glSet_N_N(distSqr, __distSqr__)
-        let invSqrAttRadius: FloatData = new FloatData()
-        glSet_N_N(invSqrAttRadius, __invSqrAttRadius__)
-
-        let factor: FloatData = float()
-        glSet_N_N(factor, glMul_N_N(distSqr, invSqrAttRadius))
-        let smoothFactor: FloatData = float()
-        glSet_N_N(smoothFactor, clamp_N_N_N(glSub_N_N(float_N(1.0), glMul_N_N(factor, factor)), float_N(0.0), float_N(1.0)))
-        return glMul_N_N(smoothFactor, smoothFactor)
-    }
-    GetDistAtt_N_N(__distSqr__: FloatData, __invSqrAttRadius__: FloatData): FloatData {
-        let distSqr: FloatData = new FloatData()
-        glSet_N_N(distSqr, __distSqr__)
-        let invSqrAttRadius: FloatData = new FloatData()
-        glSet_N_N(invSqrAttRadius, __invSqrAttRadius__)
-
-        let attenuation: FloatData = float()
-        glSet_N_N(attenuation, glDiv_N_N(float_N(1.0), max_N_N(distSqr, glMul_N_N(float_N(0.01), float_N(0.01)))))
-        glMulSet_N_N(attenuation, this.SmoothDistAtt_N_N(distSqr, invSqrAttRadius))
-        return attenuation
-    }
-    GetAngleAtt_V3_V3_N_N(__L__: Vec3Data, __litDir__: Vec3Data, __litAngleScale__: FloatData, __litAngleOffset__: FloatData): FloatData {
-        let L: Vec3Data = new Vec3Data()
-        glSet_V3_V3(L, __L__)
-        let litDir: Vec3Data = new Vec3Data()
-        glSet_V3_V3(litDir, __litDir__)
-        let litAngleScale: FloatData = new FloatData()
-        glSet_N_N(litAngleScale, __litAngleScale__)
-        let litAngleOffset: FloatData = new FloatData()
-        glSet_N_N(litAngleOffset, __litAngleOffset__)
-
-        let cd: FloatData = float()
-        glSet_N_N(cd, dot_V3_V3(litDir, L))
-        let attenuation: FloatData = float()
-        glSet_N_N(attenuation, clamp_N_N_N(glAdd_N_N(glMul_N_N(cd, litAngleScale), litAngleOffset), float_N(0.0), float_N(1.0)))
-        return glMul_N_N(attenuation, attenuation)
-    }
-    CCStandardShadingAdditive_StandardSurface_V4(__s__: StandardSurface, __shadowPos__: Vec4Data): Vec4Data {
-        let s: StandardSurface = new StandardSurface()
-        glSet_Struct_Struct(s, __s__)
-        let shadowPos: Vec4Data = new Vec4Data()
-        glSet_V4_V4(shadowPos, __shadowPos__)
-
-        let diffuse: Vec3Data = vec3()
-        glSet_V3_V3(diffuse, glMul_V3_N(s.albedo.xyz, glSub_N_N(float_N(1.0), s.metallic)))
-        let specular: Vec3Data = vec3()
-        glSet_V3_V3(specular, mix_V3_V3_N(vec3_N(float_N(0.04)), s.albedo.xyz, s.metallic))
-        let diffuseContrib: Vec3Data = vec3()
-        glSet_V3_V3(diffuseContrib, glDiv_V3_N(diffuse, float_N(3.14159265359)))
-        let N: Vec3Data = vec3()
-        glSet_V3_V3(N, normalize_V3(s.normal))
-        let V: Vec3Data = vec3()
-        glSet_V3_V3(V, normalize_V3(glSub_V3_V3(this.uniformData.cc_cameraPos.xyz, s.position)))
-        let NV: FloatData = float()
-        glSet_N_N(NV, max_N_N(abs_N(dot_V3_V3(N, V)), float_N(0.001)))
-        glSet_V3_V3(specular, this.BRDFApprox_V3_N_N(specular, s.roughness, NV))
-        let finalColor: Vec3Data = vec3()
-        glSet_V3_V3(finalColor, vec3_N(float_N(0.0)))
-        let numLights: IntData = int()
-        glSet_N_N(
-            numLights,
-            glIsEqual_N_N(CC_PIPELINE_TYPE, int_N(0)) ? LIGHTS_PER_PASS : int_N(float_N(this.uniformData.cc_lightDir[int_N(0).v].w))
-        )
-        for (let i: IntData = int_N(0); glIsLess_N_N(i, LIGHTS_PER_PASS); glAfterAddSelf_N(i)) {
-            let s: StandardSurface = new StandardSurface()
-            glSet_Struct_Struct(s, __s__)
-            let shadowPos: Vec4Data = new Vec4Data()
-            glSet_V4_V4(shadowPos, __shadowPos__)
-
-            if (glIsMoreEqual_N_N(i, numLights)) {
-                break
-            }
-
-            let SLU: Vec3Data = vec3()
-            glSet_V3_V3(SLU, glSub_V3_V3(this.uniformData.cc_lightPos[i.v].xyz, s.position))
-            let SL: Vec3Data = vec3()
-            glSet_V3_V3(SL, normalize_V3(SLU))
-            let SH: Vec3Data = vec3()
-            glSet_V3_V3(SH, normalize_V3(glAdd_V3_V3(SL, V)))
-            let SNL: FloatData = float()
-            glSet_N_N(SNL, max_N_N(dot_V3_V3(N, SL), float_N(0.001)))
-            let SNH: FloatData = float()
-            glSet_N_N(SNH, max_N_N(dot_V3_V3(N, SH), float_N(0.0)))
-            let distSqr: FloatData = float()
-            glSet_N_N(distSqr, dot_V3_V3(SLU, SLU))
-            let litRadius: FloatData = float()
-            glSet_N_N(litRadius, float_N(this.uniformData.cc_lightSizeRangeAngle[i.v].x))
-            let litRadiusSqr: FloatData = float()
-            glSet_N_N(litRadiusSqr, glMul_N_N(litRadius, litRadius))
-            let illum: FloatData = float()
-            glSet_N_N(illum, glMul_N_N(float_N(3.14159265359), glDiv_N_N(litRadiusSqr, max_N_N(litRadiusSqr, distSqr))))
-            let attRadiusSqrInv: FloatData = float()
-            glSet_N_N(
-                attRadiusSqrInv,
-                glDiv_N_N(float_N(1.0), max_N_N(float_N(this.uniformData.cc_lightSizeRangeAngle[i.v].y), float_N(0.01)))
-            )
-            glMulSet_N_N(attRadiusSqrInv, attRadiusSqrInv)
-            let att: FloatData = float()
-            glSet_N_N(att, this.GetDistAtt_N_N(distSqr, attRadiusSqrInv))
-            let lspec: Vec3Data = vec3()
-            glSet_V3_V3(lspec, glMul_V3_N(specular, this.CalcSpecular_N_N_V3_V3(s.roughness, SNH, SH, N)))
-            if (glIsMore_N_N(float_N(this.uniformData.cc_lightPos[i.v].w), float_N(0.0))) {
-                let s: StandardSurface = new StandardSurface()
-                glSet_Struct_Struct(s, __s__)
-                let shadowPos: Vec4Data = new Vec4Data()
-                glSet_V4_V4(shadowPos, __shadowPos__)
-
-                let cosInner: FloatData = float()
-                glSet_N_N(cosInner, max_N_N(dot_V3_V3(glNegative_V3(this.uniformData.cc_lightDir[i.v].xyz), SL), float_N(0.01)))
-                let cosOuter: FloatData = float()
-                glSet_N_N(cosOuter, float_N(this.uniformData.cc_lightSizeRangeAngle[i.v].z))
-                let litAngleScale: FloatData = float()
-                glSet_N_N(litAngleScale, glDiv_N_N(float_N(1.0), max_N_N(float_N(0.001), glSub_N_N(cosInner, cosOuter))))
-                let litAngleOffset: FloatData = float()
-                glSet_N_N(litAngleOffset, glMul_N_N(glNegative_N(cosOuter), litAngleScale))
-                glMulSet_N_N(
-                    att,
-                    this.GetAngleAtt_V3_V3_N_N(SL, glNegative_V3(this.uniformData.cc_lightDir[i.v].xyz), litAngleScale, litAngleOffset)
-                )
-            }
-            let lightColor: Vec3Data = vec3()
-            glSet_V3_V3(lightColor, this.uniformData.cc_lightColor[i.v].xyz)
-            glAddSet_V3_V3(
-                finalColor,
-                glMul_V3_V3(
-                    glMul_V3_N(
-                        glMul_V3_N(glMul_V3_N(glMul_N_V3(SNL, lightColor), float_N(this.uniformData.cc_lightColor[i.v].w)), illum),
-                        att
-                    ),
-                    glAdd_V3_V3(diffuseContrib, lspec)
-                )
-            )
-        }
-        glSet_V3_V3(finalColor, glMul_V3_N(finalColor, s.occlusion))
-        return vec4_V3_N(finalColor, float_N(0.0))
-    }
     ACESToneMap_V3(__color__: Vec3Data): Vec3Data {
         let color: Vec3Data = new Vec3Data()
         glSet_V3_V3(color, __color__)
@@ -1066,190 +986,36 @@ export class Impl_a16f945e975039ee6e884533730d85e9 extends FragShaderHandle {
         glSet_V3_V3(color.xyz, sqrt_V3(this.ACESToneMap_V3(color.out_xyz)))
         return color
     }
-    LinearFog_V4(__pos__: Vec4Data): FloatData {
-        let pos: Vec4Data = new Vec4Data()
-        glSet_V4_V4(pos, __pos__)
-
-        let wPos: Vec4Data = vec4()
-        glSet_V4_V4(wPos, pos)
-        let cam_dis: FloatData = float()
-        glSet_N_N(cam_dis, distance_V4_V4(this.uniformData.cc_cameraPos, wPos))
-        let fogStart: FloatData = float()
-        glSet_N_N(fogStart, float_N(this.uniformData.cc_fogBase.x))
-        let fogEnd: FloatData = float()
-        glSet_N_N(fogEnd, float_N(this.uniformData.cc_fogBase.y))
-        return clamp_N_N_N(glDiv_N_N(glSub_N_N(fogEnd, cam_dis), glSub_N_N(fogEnd, fogStart)), float_N(0), float_N(1))
-    }
-    ExpFog_V4(__pos__: Vec4Data): FloatData {
-        let pos: Vec4Data = new Vec4Data()
-        glSet_V4_V4(pos, __pos__)
-
-        let wPos: Vec4Data = vec4()
-        glSet_V4_V4(wPos, pos)
-        let fogAtten: FloatData = float()
-        glSet_N_N(fogAtten, float_N(this.uniformData.cc_fogAdd.z))
-        let fogDensity: FloatData = float()
-        glSet_N_N(fogDensity, float_N(this.uniformData.cc_fogBase.z))
-        let cam_dis: FloatData = float()
-        glSet_N_N(cam_dis, glMul_N_N(glDiv_N_N(distance_V4_V4(this.uniformData.cc_cameraPos, wPos), fogAtten), float_N(4)))
-        let f: FloatData = float()
-        glSet_N_N(f, exp_N(glMul_N_N(glNegative_N(cam_dis), fogDensity)))
-        return f
-    }
-    ExpSquaredFog_V4(__pos__: Vec4Data): FloatData {
-        let pos: Vec4Data = new Vec4Data()
-        glSet_V4_V4(pos, __pos__)
-
-        let wPos: Vec4Data = vec4()
-        glSet_V4_V4(wPos, pos)
-        let fogAtten: FloatData = float()
-        glSet_N_N(fogAtten, float_N(this.uniformData.cc_fogAdd.z))
-        let fogDensity: FloatData = float()
-        glSet_N_N(fogDensity, float_N(this.uniformData.cc_fogBase.z))
-        let cam_dis: FloatData = float()
-        glSet_N_N(cam_dis, glMul_N_N(glDiv_N_N(distance_V4_V4(this.uniformData.cc_cameraPos, wPos), fogAtten), float_N(4)))
-        let f: FloatData = float()
-        glSet_N_N(f, exp_N(glMul_N_N(glMul_N_N(glMul_N_N(glNegative_N(cam_dis), cam_dis), fogDensity), fogDensity)))
-        return f
-    }
-    LayeredFog_V4(__pos__: Vec4Data): FloatData {
-        let pos: Vec4Data = new Vec4Data()
-        glSet_V4_V4(pos, __pos__)
-
-        let wPos: Vec4Data = vec4()
-        glSet_V4_V4(wPos, pos)
-        let fogAtten: FloatData = float()
-        glSet_N_N(fogAtten, float_N(this.uniformData.cc_fogAdd.z))
-        let _FogTop: FloatData = float()
-        glSet_N_N(_FogTop, float_N(this.uniformData.cc_fogAdd.x))
-        let _FogRange: FloatData = float()
-        glSet_N_N(_FogRange, float_N(this.uniformData.cc_fogAdd.y))
-        let camWorldProj: Vec3Data = vec3()
-        glSet_V3_V3(camWorldProj, this.uniformData.cc_cameraPos.xyz)
-        camWorldProj.y = float_N(0).v
-        let worldPosProj: Vec3Data = vec3()
-        glSet_V3_V3(worldPosProj, wPos.xyz)
-        worldPosProj.y = float_N(0).v
-        let fDeltaD: FloatData = float()
-        glSet_N_N(fDeltaD, glMul_N_N(glDiv_N_N(distance_V3_V3(worldPosProj, camWorldProj), fogAtten), float_N(2.0)))
-        let fDeltaY: FloatData = float()
-
-        let fDensityIntegral: FloatData = float()
-        if (glIsMore_N_N(float_N(this.uniformData.cc_cameraPos.y), _FogTop)) {
-            let pos: Vec4Data = new Vec4Data()
-            glSet_V4_V4(pos, __pos__)
-
-            if (glIsLess_N_N(float_N(wPos.y), _FogTop)) {
-                let pos: Vec4Data = new Vec4Data()
-                glSet_V4_V4(pos, __pos__)
-
-                glSet_N_N(fDeltaY, glMul_N_N(glDiv_N_N(glSub_N_N(_FogTop, float_N(wPos.y)), _FogRange), float_N(2.0)))
-                glSet_N_N(fDensityIntegral, glMul_N_N(glMul_N_N(fDeltaY, fDeltaY), float_N(0.5)))
-            } else {
-                let pos: Vec4Data = new Vec4Data()
-                glSet_V4_V4(pos, __pos__)
-
-                glSet_N_N(fDeltaY, float_N(0))
-                glSet_N_N(fDensityIntegral, float_N(0))
-            }
-        } else {
-            let pos: Vec4Data = new Vec4Data()
-            glSet_V4_V4(pos, __pos__)
-
-            if (glIsLess_N_N(float_N(wPos.y), _FogTop)) {
-                let pos: Vec4Data = new Vec4Data()
-                glSet_V4_V4(pos, __pos__)
-
-                let fDeltaA: FloatData = float()
-                glSet_N_N(
-                    fDeltaA,
-                    glMul_N_N(glDiv_N_N(glSub_N_N(_FogTop, float_N(this.uniformData.cc_cameraPos.y)), _FogRange), float_N(2))
-                )
-                let fDeltaB: FloatData = float()
-                glSet_N_N(fDeltaB, glMul_N_N(glDiv_N_N(glSub_N_N(_FogTop, float_N(wPos.y)), _FogRange), float_N(2)))
-                glSet_N_N(fDeltaY, abs_N(glSub_N_N(fDeltaA, fDeltaB)))
-                glSet_N_N(
-                    fDensityIntegral,
-                    abs_N(
-                        glSub_N_N(
-                            glMul_N_N(glMul_N_N(fDeltaA, fDeltaA), float_N(0.5)),
-                            glMul_N_N(glMul_N_N(fDeltaB, fDeltaB), float_N(0.5))
-                        )
-                    )
-                )
-            } else {
-                let pos: Vec4Data = new Vec4Data()
-                glSet_V4_V4(pos, __pos__)
-
-                glSet_N_N(
-                    fDeltaY,
-                    glMul_N_N(glDiv_N_N(abs_N(glSub_N_N(_FogTop, float_N(this.uniformData.cc_cameraPos.y))), _FogRange), float_N(2))
-                )
-                glSet_N_N(fDensityIntegral, abs_N(glMul_N_N(glMul_N_N(fDeltaY, fDeltaY), float_N(0.5))))
-            }
-        }
-        let fDensity: FloatData = float()
-        if (glIsNotEqual_N_N(fDeltaY, float_N(0))) {
-            let pos: Vec4Data = new Vec4Data()
-            glSet_V4_V4(pos, __pos__)
-
-            glSet_N_N(
-                fDensity,
-                glMul_N_N(
-                    sqrt_N(glAdd_N_N(float_N(1.0), glMul_N_N(glDiv_N_N(fDeltaD, fDeltaY), glDiv_N_N(fDeltaD, fDeltaY)))),
-                    fDensityIntegral
-                )
-            )
-        } else {
-            let pos: Vec4Data = new Vec4Data()
-            glSet_V4_V4(pos, __pos__)
-
-            glSet_N_N(fDensity, float_N(0))
-        }
-        let f: FloatData = float()
-        glSet_N_N(f, exp_N(glNegative_N(fDensity)))
-        return f
+    surf_StandardSurface(s: StandardSurface): void {
+        let baseColor: Vec4Data = vec4()
+        glSet_V4_V4(baseColor, this.uniformData.albedo)
+        glSet_V4_V4(s.albedo, baseColor)
+        glMulSet_V3_V3(s.albedo.xyz, this.uniformData.albedoScaleAndCutoff.xyz)
+        glSet_V3_V3(s.normal, this.varyingData.v_normal)
+        glSet_V3_V3(s.position, this.varyingData.v_position)
+        let pbr: Vec4Data = vec4()
+        glSet_V4_V4(pbr, this.uniformData.pbrParams)
+        glSet_N_N(s.occlusion, clamp_N_N_N(float_N(pbr.x), float_N(0.0), float_N(0.96)))
+        glSet_N_N(s.roughness, clamp_N_N_N(float_N(pbr.y), float_N(0.04), float_N(1.0)))
+        glSet_N_N(s.metallic, float_N(pbr.z))
+        glSet_V3_V3(s.emissive, glMul_V3_V3(this.uniformData.emissive.xyz, this.uniformData.emissiveScaleParam.xyz))
     }
     main(): void {
         let s: StandardSurface = new StandardSurface()
-        let albedoMap: Vec4Data = vec4()
-        glSet_V4_V4(albedoMap, texture2D_N_V2(this.uniformData.cc_gbuffer_albedoMap, this.varyingData.v_uv))
-        let positionMap: Vec4Data = vec4()
-        glSet_V4_V4(positionMap, texture2D_N_V2(this.uniformData.cc_gbuffer_positionMap, this.varyingData.v_uv))
-        let normalMap: Vec4Data = vec4()
-        glSet_V4_V4(normalMap, texture2D_N_V2(this.uniformData.cc_gbuffer_normalMap, this.varyingData.v_uv))
-        let emissiveMap: Vec4Data = vec4()
-        glSet_V4_V4(emissiveMap, texture2D_N_V2(this.uniformData.cc_gbuffer_emissiveMap, this.varyingData.v_uv))
-        glSet_V4_V4(s.albedo, albedoMap)
-        glSet_V3_V3(s.position, positionMap.xyz)
-        glSet_N_N(s.roughness, float_N(positionMap.w))
-        glSet_V3_V3(s.normal, normalMap.xyz)
-        glSet_N_N(s.metallic, float_N(normalMap.w))
-        glSet_V3_V3(s.emissive, emissiveMap.xyz)
-        glSet_N_N(s.occlusion, float_N(emissiveMap.w))
-        let fogFactor: FloatData = float()
-        glSet_N_N(fogFactor, this.LinearFog_V4(vec4_V3_N(s.position, int_N(1))))
-        let shadowPos: Vec4Data = vec4()
-        glSet_V4_V4(shadowPos, glMul_M4_V4(this.uniformData.cc_matLightViewProj, vec4_V3_N(s.position, int_N(1))))
+        this.surf_StandardSurface(s)
         let color: Vec4Data = vec4()
-        glSet_V4_V4(
-            color,
-            glAdd_V4_V4(
-                this.CCStandardShadingBase_StandardSurface_V4(s, shadowPos),
-                this.CCStandardShadingAdditive_StandardSurface_V4(s, shadowPos)
-            )
-        )
+        glSet_V4_V4(color, this.CCStandardShadingBase_StandardSurface_V4(s, this.varyingData.v_shadowPos))
         glSet_V4_V4(
             color,
             vec4_V3_N(
                 mix_V3_V3_N(
                     glIsMore_N_N(CC_FORWARD_ADD, int_N(0)) ? vec3_N(float_N(0.0)) : this.uniformData.cc_fogColor.xyz,
                     color.xyz,
-                    fogFactor
+                    this.varyingData.v_fog_factor
                 ),
                 float_N(color.w)
             )
         )
-        glSet_V4_V4(gl_FragColor, this.CCFragOutput_V4(color))
+        glSet_V4_V4(gl_FragData[int_N(0).v], this.CCFragOutput_V4(color))
     }
 }
