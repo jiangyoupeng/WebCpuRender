@@ -38,10 +38,24 @@ import { Impl_3f8011755e15679b7e8a10175df4d2dc } from "./Impl_3f8011755e15679b7e
 import { Impl_e5f0eda2c9e64e42ce1bb3312da8199a } from "./Impl_e5f0eda2c9e64e42ce1bb3312da8199a"
 import { Impl_a653afa17e46edcc00d2862cc372d803 } from "./Impl_a653afa17e46edcc00d2862cc372d803"
 import { Impl_a77b8e00572cf1ba5db4eb6237b4293e } from "./Impl_a77b8e00572cf1ba5db4eb6237b4293e"
+import { Impl_98d7ed5e69b9b620ed425d20689d1fcd } from "./Impl_98d7ed5e69b9b620ed425d20689d1fcd"
+import { Impl_ccea488da0ac787d91f2439a092ce341 } from "./Impl_ccea488da0ac787d91f2439a092ce341"
+import { Impl_581f76cbba89fea209ef2bc3b3864751 } from "./Impl_581f76cbba89fea209ef2bc3b3864751"
+import { Impl_82eba91ad2aa63658cf12578583a2c51 } from "./Impl_82eba91ad2aa63658cf12578583a2c51"
+import { Impl_476654b17a109cc028fbe40fecd7d35e } from "./Impl_476654b17a109cc028fbe40fecd7d35e"
+import { Impl_fa3cd42f074d3124e900fd55e8f1c6a6 } from "./Impl_fa3cd42f074d3124e900fd55e8f1c6a6"
+import { Impl_97453b9434a2be683cd0132ee239d9cd } from "./Impl_97453b9434a2be683cd0132ee239d9cd"
+import { Impl_15b83ec76b5b9d5c5cbf5e3ce8e4877b } from "./Impl_15b83ec76b5b9d5c5cbf5e3ce8e4877b"
+import { Impl_4005287f1b35ae57b962da1983a4898b } from "./Impl_4005287f1b35ae57b962da1983a4898b"
+import { Impl_51be3ce9f0b7d7d460ec0b033a932277 } from "./Impl_51be3ce9f0b7d7d460ec0b033a932277"
 import { Impl_15fef1eaa5fa08ab99b8ab1f50f1536f } from "./Impl_15fef1eaa5fa08ab99b8ab1f50f1536f"
 import { Impl_b38959f15b5e2a2eeeb15c11adee8099 } from "./Impl_b38959f15b5e2a2eeeb15c11adee8099"
 import { Impl_cc942b5cafaaee05ef888728bd9087a3 } from "./Impl_cc942b5cafaaee05ef888728bd9087a3"
 import { Impl_77fedd74c2ac1ed8214e40882d35ff0e } from "./Impl_77fedd74c2ac1ed8214e40882d35ff0e"
+import { Impl_396d34f1afe08bbfec52f70fdd87dfde } from "./Impl_396d34f1afe08bbfec52f70fdd87dfde"
+import { Impl_a9823f2a8beb0eeddc18dcbbc7240236 } from "./Impl_a9823f2a8beb0eeddc18dcbbc7240236"
+import { Impl_06509c004d0e5bd7dc08a09ecff2c9bf } from "./Impl_06509c004d0e5bd7dc08a09ecff2c9bf"
+import { Impl_b8b396f31dcec99fb51ccfcf277e397b } from "./Impl_b8b396f31dcec99fb51ccfcf277e397b"
 import { Impl_8a14f7fb44035dfb97f07355e73a1dc9 } from "./Impl_8a14f7fb44035dfb97f07355e73a1dc9"
 import { Impl_55d6524fa8aa484f07f48e8f47abb25a } from "./Impl_55d6524fa8aa484f07f48e8f47abb25a"
 export class ShaderManager {
@@ -85,10 +99,24 @@ export class ShaderManager {
     static readonly Impl_e5f0eda2c9e64e42ce1bb3312da8199a = Impl_e5f0eda2c9e64e42ce1bb3312da8199a
     static readonly Impl_a653afa17e46edcc00d2862cc372d803 = Impl_a653afa17e46edcc00d2862cc372d803
     static readonly Impl_a77b8e00572cf1ba5db4eb6237b4293e = Impl_a77b8e00572cf1ba5db4eb6237b4293e
+    static readonly Impl_98d7ed5e69b9b620ed425d20689d1fcd = Impl_98d7ed5e69b9b620ed425d20689d1fcd
+    static readonly Impl_ccea488da0ac787d91f2439a092ce341 = Impl_ccea488da0ac787d91f2439a092ce341
+    static readonly Impl_581f76cbba89fea209ef2bc3b3864751 = Impl_581f76cbba89fea209ef2bc3b3864751
+    static readonly Impl_82eba91ad2aa63658cf12578583a2c51 = Impl_82eba91ad2aa63658cf12578583a2c51
+    static readonly Impl_476654b17a109cc028fbe40fecd7d35e = Impl_476654b17a109cc028fbe40fecd7d35e
+    static readonly Impl_fa3cd42f074d3124e900fd55e8f1c6a6 = Impl_fa3cd42f074d3124e900fd55e8f1c6a6
+    static readonly Impl_97453b9434a2be683cd0132ee239d9cd = Impl_97453b9434a2be683cd0132ee239d9cd
+    static readonly Impl_15b83ec76b5b9d5c5cbf5e3ce8e4877b = Impl_15b83ec76b5b9d5c5cbf5e3ce8e4877b
+    static readonly Impl_4005287f1b35ae57b962da1983a4898b = Impl_4005287f1b35ae57b962da1983a4898b
+    static readonly Impl_51be3ce9f0b7d7d460ec0b033a932277 = Impl_51be3ce9f0b7d7d460ec0b033a932277
     static readonly Impl_15fef1eaa5fa08ab99b8ab1f50f1536f = Impl_15fef1eaa5fa08ab99b8ab1f50f1536f
     static readonly Impl_b38959f15b5e2a2eeeb15c11adee8099 = Impl_b38959f15b5e2a2eeeb15c11adee8099
     static readonly Impl_cc942b5cafaaee05ef888728bd9087a3 = Impl_cc942b5cafaaee05ef888728bd9087a3
     static readonly Impl_77fedd74c2ac1ed8214e40882d35ff0e = Impl_77fedd74c2ac1ed8214e40882d35ff0e
+    static readonly Impl_396d34f1afe08bbfec52f70fdd87dfde = Impl_396d34f1afe08bbfec52f70fdd87dfde
+    static readonly Impl_a9823f2a8beb0eeddc18dcbbc7240236 = Impl_a9823f2a8beb0eeddc18dcbbc7240236
+    static readonly Impl_06509c004d0e5bd7dc08a09ecff2c9bf = Impl_06509c004d0e5bd7dc08a09ecff2c9bf
+    static readonly Impl_b8b396f31dcec99fb51ccfcf277e397b = Impl_b8b396f31dcec99fb51ccfcf277e397b
     static readonly Impl_8a14f7fb44035dfb97f07355e73a1dc9 = Impl_8a14f7fb44035dfb97f07355e73a1dc9
     static readonly Impl_55d6524fa8aa484f07f48e8f47abb25a = Impl_55d6524fa8aa484f07f48e8f47abb25a
     static getConstruct(source: string) {

@@ -69,9 +69,9 @@ class OneFrameCachGlData {
     cachGlDatas: CachGlData[] = []
 }
 
-let showGlDebugLog = true
-let debugCpuRender = false
-let createTsImplGlslFile = false
+let showGlDebugLog = false
+let debugCpuRender = true
+let createTsImplGlslFile = true
 let createRenderFile = false
 
 let nowFrameCachData: OneFrameCachGlData = new OneFrameCachGlData()
@@ -176,14 +176,15 @@ function replaceWebglFunc(gl: any) {
                 } else if (funcKey == "getSupportedExtensions") {
                     return []
                 }
-                // 测试走自己的内部实现gl接口
-                if (funcKey == "bindBuffer") {
-                    console.log(count + " bindBuffer => ")
-                    console.log(info)
-                    count++
-                }
 
                 if (showGlDebugLog) {
+                    // 测试走自己的内部实现gl接口
+                    if (funcKey == "bindBuffer") {
+                        console.log(count + " bindBuffer => ")
+                        console.log(info)
+                        count++
+                    }
+
                     if (funcKey == "bufferData") {
                         console.log(count + " bufferData =>")
                         console.log(info)
@@ -392,7 +393,7 @@ function replaceWebglFunc(gl: any) {
                                 let interpreterData = GLSLInterpreter.interpreter(shaderSource)
                                 compilerTsFiles.set(interpreterData[0], interpreterData[1])
 
-                                if (testShaderSourceNum == 46) {
+                                if (testShaderSourceNum == 60) {
                                     var zip = new win.JSZip()
                                     let readonlyStr = ""
                                     let importStr = ""
@@ -1720,7 +1721,6 @@ export class CpuRenderingContext {
         endIndex: number,
         cachVboAttributeDatas: Map<string, number[] | Vec2Data[] | Vec3Data[] | Vec4Data[] | IntData[] | FloatData[]>
     ) {
-        builtinCachData.clear()
         let beginDrawTime = performance.now()
         let drawOver = false
         switch (mode) {
@@ -1755,6 +1755,8 @@ export class CpuRenderingContext {
                 }
                 let index = beginIndex
                 do {
+                    // 将缓存切换到顶点
+                    builtinCachData.clear()
                     for (let t = 0; t < 3; t++) {
                         let nowTriIndex = index + t
 
@@ -2165,6 +2167,7 @@ export class CpuRenderingContext {
                             debugger
                         }
                         index *= 4
+                        builtinCachData.clear()
                         this._customInterpolated(varyingData, interpolateData, alpha, beta, gamma)
                         custom_isDiscard.v = false
                         gl_FragColor.set_Vn(0, 0, 0, 0)
@@ -2436,10 +2439,6 @@ export class CpuRenderingContext {
             let dataName = iterator[0]
             let typeName = iterator[1]
             if (typeName === this._gameGl.FLOAT || typeName === this._gameGl.INT) {
-                ;(<any>outvaryingData)[dataName] =
-                    (<any>interpolateData0)[dataName] * alpha +
-                    (<any>interpolateData1)[dataName] * beta +
-                    (<any>interpolateData2)[dataName] * gamma
                 let vec0: FloatData = (<any>interpolateData0)[dataName]
                 let vec1: FloatData = (<any>interpolateData1)[dataName]
                 let vec2: FloatData = (<any>interpolateData2)[dataName]

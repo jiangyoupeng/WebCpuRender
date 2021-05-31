@@ -2,7 +2,17 @@
  * @en The base class of all value types.
  * @zh 所有值类型的基类。
  */
+
+let valueCtorCount = 0
+
 export class ValueType {
+    constructor() {
+        valueCtorCount++
+        if (valueCtorCount > 100000) {
+            debugger
+        }
+    }
+
     public clone() {
         console.error("必须自己实现clone方法")
         return this
@@ -19,6 +29,10 @@ export class ValueType {
 
     public toString() {
         console.error("必须自己实现toString方法")
+    }
+
+    public getInit() {
+        console.error("必须自己实现getInit方法")
     }
 }
 
@@ -91,13 +105,25 @@ let vec3Data = builtinCachData.vec3Data
 let vec4Data = builtinCachData.vec4Data
 let floatData = builtinCachData.floatData
 let intData = builtinCachData.intData
-let boolData = builtinCachData.boolData
+
+let outParasmCachData = new BuiltinDataCach()
+let outVec2Data = outParasmCachData.vec2Data
+let outVec3Data = outParasmCachData.vec3Data
+let outVec4Data = outParasmCachData.vec4Data
+let outFloatData = outParasmCachData.floatData
+let outIntData = outParasmCachData.intData
 
 export const EPSILON = 0.000001
 let floor = Math.floor
 export class Vec2Data extends ValueType {
     out_x: FloatData = new FloatData()
     out_y: FloatData = new FloatData()
+
+    constructor(x?: number, y?: number) {
+        super()
+        this.out_x.v = x || 0
+        this.out_y.v = y || 0
+    }
 
     public static distance(a: Vec2Data, b: Vec2Data) {
         const x = b.x - a.x
@@ -130,12 +156,6 @@ export class Vec2Data extends ValueType {
 
     public cross(other: Vec2Data) {
         return this.x * other.y - this.y * other.x
-    }
-
-    constructor(x?: number, y?: number) {
-        super()
-        this.out_x.v = x || 0
-        this.out_y.v = y || 0
     }
 
     get x() {
