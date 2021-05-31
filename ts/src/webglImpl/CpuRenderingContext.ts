@@ -2165,7 +2165,6 @@ export class CpuRenderingContext {
                         fragShader.main()
                         if (!custom_isDiscard.v) {
                             let color = gl_FragColor
-                            Vec4Data.multiplyScalar(color, color, 255)
                             if (this._openBlend) {
                                 let destColor = new Vec4Data(
                                     this._frameBuffer[index],
@@ -2173,6 +2172,7 @@ export class CpuRenderingContext {
                                     this._frameBuffer[index + 2],
                                     this._frameBuffer[index + 3]
                                 )
+                                Vec4Data.multiplyScalar(destColor, destColor, 1 / 255)
                                 let srcComputerColor: Vec4Data = new Vec4Data()
                                 let destComputerColor: Vec4Data = new Vec4Data()
                                 if (this._rgbSrcBlendFunc === this._gameGl.ZERO) {
@@ -2403,16 +2403,16 @@ export class CpuRenderingContext {
                             }
 
                             if (this._colorRWriteEnable) {
-                                this._frameBuffer[index] = color.x
+                                this._frameBuffer[index] = color.x * 255
                             }
                             if (this._colorGWriteEnable) {
-                                this._frameBuffer[index + 1] = color.y
+                                this._frameBuffer[index + 1] = color.y * 255
                             }
                             if (this._colorBWriteEnable) {
-                                this._frameBuffer[index + 2] = color.z
+                                this._frameBuffer[index + 2] = color.z * 255
                             }
                             if (this._colorAWriteEnable) {
-                                this._frameBuffer[index + 3] = color.w
+                                this._frameBuffer[index + 3] = color.w * 255
                             }
                         }
                     }
