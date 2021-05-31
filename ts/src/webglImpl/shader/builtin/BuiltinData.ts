@@ -8,7 +8,7 @@ let valueCtorCount = 0
 export class ValueType {
     constructor() {
         valueCtorCount++
-        if (valueCtorCount > 100000) {
+        if (valueCtorCount > 1000000) {
             debugger
         }
     }
@@ -71,6 +71,9 @@ export class CachPool<T extends ValueType> {
         for (let index = 0; index < expansionNum; index++) {
             this._dataCach.push(this._ctor())
         }
+        if (this._dataCach.length > 100000) {
+            debugger
+        }
     }
 
     constructor(ctor: (...info: any) => T) {
@@ -91,6 +94,8 @@ export class BuiltinDataCach {
     mat4Data: CachPool<Mat4Data> = new CachPool<Mat4Data>(() => new Mat4Data())
     boolData: CachPool<BoolData> = new CachPool<BoolData>(() => new BoolData())
     clear() {
+        this.intData.clear()
+        this.floatData.clear()
         this.vec2Data.clear()
         this.vec3Data.clear()
         this.vec4Data.clear()
@@ -99,6 +104,12 @@ export class BuiltinDataCach {
         this.boolData.clear()
     }
 }
+
+export function clearShaderCachData() {
+    builtinCachData.clear()
+    outParasmCachData.clear()
+}
+
 export let builtinCachData = new BuiltinDataCach()
 let vec2Data = builtinCachData.vec2Data
 let vec3Data = builtinCachData.vec3Data
@@ -110,8 +121,6 @@ let outParasmCachData = new BuiltinDataCach()
 let outVec2Data = outParasmCachData.vec2Data
 let outVec3Data = outParasmCachData.vec3Data
 let outVec4Data = outParasmCachData.vec4Data
-let outFloatData = outParasmCachData.floatData
-let outIntData = outParasmCachData.intData
 
 export const EPSILON = 0.000001
 let floor = Math.floor
@@ -202,7 +211,7 @@ export class Vec2Data extends ValueType {
         return v
     }
     get out_xx() {
-        let v = new Vec2Data()
+        let v = outVec2Data.getData()
         v.outSet_N_N(this.out_x, this.out_x)
         return v
     }
@@ -212,7 +221,7 @@ export class Vec2Data extends ValueType {
         return v
     }
     get out_yx() {
-        let v = new Vec2Data()
+        let v = outVec2Data.getData()
         v.outSet_N_N(this.out_y, this.out_x)
         return v
     }
@@ -226,7 +235,7 @@ export class Vec2Data extends ValueType {
         return v
     }
     get out_xy() {
-        let v = new Vec2Data()
+        let v = outVec2Data.getData()
         v.outSet_N_N(this.out_x, this.out_y)
         return v
     }
@@ -240,7 +249,7 @@ export class Vec2Data extends ValueType {
         return v
     }
     get out_yy() {
-        let v = new Vec2Data()
+        let v = outVec2Data.getData()
         v.outSet_N_N(this.out_y, this.out_y)
         return v
     }
@@ -382,7 +391,7 @@ export class Vec3Data extends ValueType {
         return v
     }
     get out_xx() {
-        let v = new Vec2Data()
+        let v = outVec2Data.getData()
         v.outSet_N_N(this.out_x, this.out_x)
         return v
     }
@@ -392,7 +401,7 @@ export class Vec3Data extends ValueType {
         return v
     }
     get out_yx() {
-        let v = new Vec2Data()
+        let v = outVec2Data.getData()
         v.outSet_N_N(this.out_y, this.out_x)
         return v
     }
@@ -406,7 +415,7 @@ export class Vec3Data extends ValueType {
         return v
     }
     get out_zx() {
-        let v = new Vec2Data()
+        let v = outVec2Data.getData()
         v.outSet_N_N(this.out_z, this.out_x)
         return v
     }
@@ -420,7 +429,7 @@ export class Vec3Data extends ValueType {
         return v
     }
     get out_xy() {
-        let v = new Vec2Data()
+        let v = outVec2Data.getData()
         v.outSet_N_N(this.out_x, this.out_y)
         return v
     }
@@ -434,7 +443,7 @@ export class Vec3Data extends ValueType {
         return v
     }
     get out_yy() {
-        let v = new Vec2Data()
+        let v = outVec2Data.getData()
         v.outSet_N_N(this.out_y, this.out_y)
         return v
     }
@@ -444,7 +453,7 @@ export class Vec3Data extends ValueType {
         return v
     }
     get out_zy() {
-        let v = new Vec2Data()
+        let v = outVec2Data.getData()
         v.outSet_N_N(this.out_z, this.out_y)
         return v
     }
@@ -458,7 +467,7 @@ export class Vec3Data extends ValueType {
         return v
     }
     get out_xz() {
-        let v = new Vec2Data()
+        let v = outVec2Data.getData()
         v.outSet_N_N(this.out_x, this.out_z)
         return v
     }
@@ -472,7 +481,7 @@ export class Vec3Data extends ValueType {
         return v
     }
     get out_yz() {
-        let v = new Vec2Data()
+        let v = outVec2Data.getData()
         v.outSet_N_N(this.out_y, this.out_z)
         return v
     }
@@ -486,7 +495,7 @@ export class Vec3Data extends ValueType {
         return v
     }
     get out_zz() {
-        let v = new Vec2Data()
+        let v = outVec2Data.getData()
         v.outSet_N_N(this.out_z, this.out_z)
         return v
     }
@@ -497,7 +506,7 @@ export class Vec3Data extends ValueType {
         return v
     }
     get out_xxx() {
-        let v = new Vec3Data()
+        let v = outVec3Data.getData()
         v.outSet_N_N_N(this.out_x, this.out_x, this.out_x)
         return v
     }
@@ -507,7 +516,7 @@ export class Vec3Data extends ValueType {
         return v
     }
     get out_yxx() {
-        let v = new Vec3Data()
+        let v = outVec3Data.getData()
         v.outSet_N_N_N(this.out_y, this.out_x, this.out_x)
         return v
     }
@@ -517,7 +526,7 @@ export class Vec3Data extends ValueType {
         return v
     }
     get out_zxx() {
-        let v = new Vec3Data()
+        let v = outVec3Data.getData()
         v.outSet_N_N_N(this.out_z, this.out_x, this.out_x)
         return v
     }
@@ -527,7 +536,7 @@ export class Vec3Data extends ValueType {
         return v
     }
     get out_xyx() {
-        let v = new Vec3Data()
+        let v = outVec3Data.getData()
         v.outSet_N_N_N(this.out_x, this.out_y, this.out_x)
         return v
     }
@@ -537,7 +546,7 @@ export class Vec3Data extends ValueType {
         return v
     }
     get out_yyx() {
-        let v = new Vec3Data()
+        let v = outVec3Data.getData()
         v.outSet_N_N_N(this.out_y, this.out_y, this.out_x)
         return v
     }
@@ -547,7 +556,7 @@ export class Vec3Data extends ValueType {
         return v
     }
     get out_zyx() {
-        let v = new Vec3Data()
+        let v = outVec3Data.getData()
         v.outSet_N_N_N(this.out_z, this.out_y, this.out_x)
         return v
     }
@@ -562,7 +571,7 @@ export class Vec3Data extends ValueType {
         return v
     }
     get out_xzx() {
-        let v = new Vec3Data()
+        let v = outVec3Data.getData()
         v.outSet_N_N_N(this.out_x, this.out_z, this.out_x)
         return v
     }
@@ -572,7 +581,7 @@ export class Vec3Data extends ValueType {
         return v
     }
     get out_yzx() {
-        let v = new Vec3Data()
+        let v = outVec3Data.getData()
         v.outSet_N_N_N(this.out_y, this.out_z, this.out_x)
         return v
     }
@@ -587,7 +596,7 @@ export class Vec3Data extends ValueType {
         return v
     }
     get out_zzx() {
-        let v = new Vec3Data()
+        let v = outVec3Data.getData()
         v.outSet_N_N_N(this.out_z, this.out_z, this.out_x)
         return v
     }
@@ -597,7 +606,7 @@ export class Vec3Data extends ValueType {
         return v
     }
     get out_xxy() {
-        let v = new Vec3Data()
+        let v = outVec3Data.getData()
         v.outSet_N_N_N(this.out_x, this.out_x, this.out_y)
         return v
     }
@@ -607,7 +616,7 @@ export class Vec3Data extends ValueType {
         return v
     }
     get out_yxy() {
-        let v = new Vec3Data()
+        let v = outVec3Data.getData()
         v.outSet_N_N_N(this.out_y, this.out_x, this.out_y)
         return v
     }
@@ -617,7 +626,7 @@ export class Vec3Data extends ValueType {
         return v
     }
     get out_zxy() {
-        let v = new Vec3Data()
+        let v = outVec3Data.getData()
         v.outSet_N_N_N(this.out_z, this.out_x, this.out_y)
         return v
     }
@@ -632,7 +641,7 @@ export class Vec3Data extends ValueType {
         return v
     }
     get out_xyy() {
-        let v = new Vec3Data()
+        let v = outVec3Data.getData()
         v.outSet_N_N_N(this.out_x, this.out_y, this.out_y)
         return v
     }
@@ -642,7 +651,7 @@ export class Vec3Data extends ValueType {
         return v
     }
     get out_yyy() {
-        let v = new Vec3Data()
+        let v = outVec3Data.getData()
         v.outSet_N_N_N(this.out_y, this.out_y, this.out_y)
         return v
     }
@@ -652,7 +661,7 @@ export class Vec3Data extends ValueType {
         return v
     }
     get out_zyy() {
-        let v = new Vec3Data()
+        let v = outVec3Data.getData()
         v.outSet_N_N_N(this.out_z, this.out_y, this.out_y)
         return v
     }
@@ -662,7 +671,7 @@ export class Vec3Data extends ValueType {
         return v
     }
     get out_xzy() {
-        let v = new Vec3Data()
+        let v = outVec3Data.getData()
         v.outSet_N_N_N(this.out_x, this.out_z, this.out_y)
         return v
     }
@@ -677,7 +686,7 @@ export class Vec3Data extends ValueType {
         return v
     }
     get out_yzy() {
-        let v = new Vec3Data()
+        let v = outVec3Data.getData()
         v.outSet_N_N_N(this.out_y, this.out_z, this.out_y)
         return v
     }
@@ -687,7 +696,7 @@ export class Vec3Data extends ValueType {
         return v
     }
     get out_zzy() {
-        let v = new Vec3Data()
+        let v = outVec3Data.getData()
         v.outSet_N_N_N(this.out_z, this.out_z, this.out_y)
         return v
     }
@@ -697,7 +706,7 @@ export class Vec3Data extends ValueType {
         return v
     }
     get out_xxz() {
-        let v = new Vec3Data()
+        let v = outVec3Data.getData()
         v.outSet_N_N_N(this.out_x, this.out_x, this.out_z)
         return v
     }
@@ -707,7 +716,7 @@ export class Vec3Data extends ValueType {
         return v
     }
     get out_yxz() {
-        let v = new Vec3Data()
+        let v = outVec3Data.getData()
         v.outSet_N_N_N(this.out_y, this.out_x, this.out_z)
         return v
     }
@@ -722,7 +731,7 @@ export class Vec3Data extends ValueType {
         return v
     }
     get out_zxz() {
-        let v = new Vec3Data()
+        let v = outVec3Data.getData()
         v.outSet_N_N_N(this.out_z, this.out_x, this.out_z)
         return v
     }
@@ -732,7 +741,7 @@ export class Vec3Data extends ValueType {
         return v
     }
     get out_xyz() {
-        let v = new Vec3Data()
+        let v = outVec3Data.getData()
         v.outSet_N_N_N(this.out_x, this.out_y, this.out_z)
         return v
     }
@@ -747,7 +756,7 @@ export class Vec3Data extends ValueType {
         return v
     }
     get out_yyz() {
-        let v = new Vec3Data()
+        let v = outVec3Data.getData()
         v.outSet_N_N_N(this.out_y, this.out_y, this.out_z)
         return v
     }
@@ -757,7 +766,7 @@ export class Vec3Data extends ValueType {
         return v
     }
     get out_zyz() {
-        let v = new Vec3Data()
+        let v = outVec3Data.getData()
         v.outSet_N_N_N(this.out_z, this.out_y, this.out_z)
         return v
     }
@@ -767,7 +776,7 @@ export class Vec3Data extends ValueType {
         return v
     }
     get out_xzz() {
-        let v = new Vec3Data()
+        let v = outVec3Data.getData()
         v.outSet_N_N_N(this.out_x, this.out_z, this.out_z)
         return v
     }
@@ -777,7 +786,7 @@ export class Vec3Data extends ValueType {
         return v
     }
     get out_yzz() {
-        let v = new Vec3Data()
+        let v = outVec3Data.getData()
         v.outSet_N_N_N(this.out_y, this.out_z, this.out_z)
         return v
     }
@@ -787,7 +796,7 @@ export class Vec3Data extends ValueType {
         return v
     }
     get out_zzz() {
-        let v = new Vec3Data()
+        let v = outVec3Data.getData()
         v.outSet_N_N_N(this.out_z, this.out_z, this.out_z)
         return v
     }
@@ -937,7 +946,7 @@ export class Vec4Data extends ValueType {
         return v
     }
     get out_xx() {
-        let v = new Vec2Data()
+        let v = outVec2Data.getData()
         v.outSet_N_N(this.out_x, this.out_x)
         return v
     }
@@ -947,7 +956,7 @@ export class Vec4Data extends ValueType {
         return v
     }
     get out_yx() {
-        let v = new Vec2Data()
+        let v = outVec2Data.getData()
         v.outSet_N_N(this.out_y, this.out_x)
         return v
     }
@@ -961,7 +970,7 @@ export class Vec4Data extends ValueType {
         return v
     }
     get out_zx() {
-        let v = new Vec2Data()
+        let v = outVec2Data.getData()
         v.outSet_N_N(this.out_z, this.out_x)
         return v
     }
@@ -975,7 +984,7 @@ export class Vec4Data extends ValueType {
         return v
     }
     get out_wx() {
-        let v = new Vec2Data()
+        let v = outVec2Data.getData()
         v.outSet_N_N(this.out_w, this.out_x)
         return v
     }
@@ -989,7 +998,7 @@ export class Vec4Data extends ValueType {
         return v
     }
     get out_xy() {
-        let v = new Vec2Data()
+        let v = outVec2Data.getData()
         v.outSet_N_N(this.out_x, this.out_y)
         return v
     }
@@ -1003,7 +1012,7 @@ export class Vec4Data extends ValueType {
         return v
     }
     get out_yy() {
-        let v = new Vec2Data()
+        let v = outVec2Data.getData()
         v.outSet_N_N(this.out_y, this.out_y)
         return v
     }
@@ -1013,7 +1022,7 @@ export class Vec4Data extends ValueType {
         return v
     }
     get out_zy() {
-        let v = new Vec2Data()
+        let v = outVec2Data.getData()
         v.outSet_N_N(this.out_z, this.out_y)
         return v
     }
@@ -1027,7 +1036,7 @@ export class Vec4Data extends ValueType {
         return v
     }
     get out_wy() {
-        let v = new Vec2Data()
+        let v = outVec2Data.getData()
         v.outSet_N_N(this.out_w, this.out_y)
         return v
     }
@@ -1041,7 +1050,7 @@ export class Vec4Data extends ValueType {
         return v
     }
     get out_xz() {
-        let v = new Vec2Data()
+        let v = outVec2Data.getData()
         v.outSet_N_N(this.out_x, this.out_z)
         return v
     }
@@ -1055,7 +1064,7 @@ export class Vec4Data extends ValueType {
         return v
     }
     get out_yz() {
-        let v = new Vec2Data()
+        let v = outVec2Data.getData()
         v.outSet_N_N(this.out_y, this.out_z)
         return v
     }
@@ -1069,7 +1078,7 @@ export class Vec4Data extends ValueType {
         return v
     }
     get out_zz() {
-        let v = new Vec2Data()
+        let v = outVec2Data.getData()
         v.outSet_N_N(this.out_z, this.out_z)
         return v
     }
@@ -1079,7 +1088,7 @@ export class Vec4Data extends ValueType {
         return v
     }
     get out_wz() {
-        let v = new Vec2Data()
+        let v = outVec2Data.getData()
         v.outSet_N_N(this.out_w, this.out_z)
         return v
     }
@@ -1093,7 +1102,7 @@ export class Vec4Data extends ValueType {
         return v
     }
     get out_xw() {
-        let v = new Vec2Data()
+        let v = outVec2Data.getData()
         v.outSet_N_N(this.out_x, this.out_w)
         return v
     }
@@ -1107,7 +1116,7 @@ export class Vec4Data extends ValueType {
         return v
     }
     get out_yw() {
-        let v = new Vec2Data()
+        let v = outVec2Data.getData()
         v.outSet_N_N(this.out_y, this.out_w)
         return v
     }
@@ -1121,7 +1130,7 @@ export class Vec4Data extends ValueType {
         return v
     }
     get out_zw() {
-        let v = new Vec2Data()
+        let v = outVec2Data.getData()
         v.outSet_N_N(this.out_z, this.out_w)
         return v
     }
@@ -1135,7 +1144,7 @@ export class Vec4Data extends ValueType {
         return v
     }
     get out_ww() {
-        let v = new Vec2Data()
+        let v = outVec2Data.getData()
         v.outSet_N_N(this.out_w, this.out_w)
         return v
     }
@@ -1146,7 +1155,7 @@ export class Vec4Data extends ValueType {
         return v
     }
     get out_xxx() {
-        let v = new Vec3Data()
+        let v = outVec3Data.getData()
         v.outSet_N_N_N(this.out_x, this.out_x, this.out_x)
         return v
     }
@@ -1156,7 +1165,7 @@ export class Vec4Data extends ValueType {
         return v
     }
     get out_yxx() {
-        let v = new Vec3Data()
+        let v = outVec3Data.getData()
         v.outSet_N_N_N(this.out_y, this.out_x, this.out_x)
         return v
     }
@@ -1166,7 +1175,7 @@ export class Vec4Data extends ValueType {
         return v
     }
     get out_zxx() {
-        let v = new Vec3Data()
+        let v = outVec3Data.getData()
         v.outSet_N_N_N(this.out_z, this.out_x, this.out_x)
         return v
     }
@@ -1176,7 +1185,7 @@ export class Vec4Data extends ValueType {
         return v
     }
     get out_wxx() {
-        let v = new Vec3Data()
+        let v = outVec3Data.getData()
         v.outSet_N_N_N(this.out_w, this.out_x, this.out_x)
         return v
     }
@@ -1186,7 +1195,7 @@ export class Vec4Data extends ValueType {
         return v
     }
     get out_xyx() {
-        let v = new Vec3Data()
+        let v = outVec3Data.getData()
         v.outSet_N_N_N(this.out_x, this.out_y, this.out_x)
         return v
     }
@@ -1196,7 +1205,7 @@ export class Vec4Data extends ValueType {
         return v
     }
     get out_yyx() {
-        let v = new Vec3Data()
+        let v = outVec3Data.getData()
         v.outSet_N_N_N(this.out_y, this.out_y, this.out_x)
         return v
     }
@@ -1206,7 +1215,7 @@ export class Vec4Data extends ValueType {
         return v
     }
     get out_zyx() {
-        let v = new Vec3Data()
+        let v = outVec3Data.getData()
         v.outSet_N_N_N(this.out_z, this.out_y, this.out_x)
         return v
     }
@@ -1221,7 +1230,7 @@ export class Vec4Data extends ValueType {
         return v
     }
     get out_wyx() {
-        let v = new Vec3Data()
+        let v = outVec3Data.getData()
         v.outSet_N_N_N(this.out_w, this.out_y, this.out_x)
         return v
     }
@@ -1236,7 +1245,7 @@ export class Vec4Data extends ValueType {
         return v
     }
     get out_xzx() {
-        let v = new Vec3Data()
+        let v = outVec3Data.getData()
         v.outSet_N_N_N(this.out_x, this.out_z, this.out_x)
         return v
     }
@@ -1246,7 +1255,7 @@ export class Vec4Data extends ValueType {
         return v
     }
     get out_yzx() {
-        let v = new Vec3Data()
+        let v = outVec3Data.getData()
         v.outSet_N_N_N(this.out_y, this.out_z, this.out_x)
         return v
     }
@@ -1261,7 +1270,7 @@ export class Vec4Data extends ValueType {
         return v
     }
     get out_zzx() {
-        let v = new Vec3Data()
+        let v = outVec3Data.getData()
         v.outSet_N_N_N(this.out_z, this.out_z, this.out_x)
         return v
     }
@@ -1271,7 +1280,7 @@ export class Vec4Data extends ValueType {
         return v
     }
     get out_wzx() {
-        let v = new Vec3Data()
+        let v = outVec3Data.getData()
         v.outSet_N_N_N(this.out_w, this.out_z, this.out_x)
         return v
     }
@@ -1286,7 +1295,7 @@ export class Vec4Data extends ValueType {
         return v
     }
     get out_xwx() {
-        let v = new Vec3Data()
+        let v = outVec3Data.getData()
         v.outSet_N_N_N(this.out_x, this.out_w, this.out_x)
         return v
     }
@@ -1296,7 +1305,7 @@ export class Vec4Data extends ValueType {
         return v
     }
     get out_ywx() {
-        let v = new Vec3Data()
+        let v = outVec3Data.getData()
         v.outSet_N_N_N(this.out_y, this.out_w, this.out_x)
         return v
     }
@@ -1311,7 +1320,7 @@ export class Vec4Data extends ValueType {
         return v
     }
     get out_zwx() {
-        let v = new Vec3Data()
+        let v = outVec3Data.getData()
         v.outSet_N_N_N(this.out_z, this.out_w, this.out_x)
         return v
     }
@@ -1326,7 +1335,7 @@ export class Vec4Data extends ValueType {
         return v
     }
     get out_wwx() {
-        let v = new Vec3Data()
+        let v = outVec3Data.getData()
         v.outSet_N_N_N(this.out_w, this.out_w, this.out_x)
         return v
     }
@@ -1336,7 +1345,7 @@ export class Vec4Data extends ValueType {
         return v
     }
     get out_xxy() {
-        let v = new Vec3Data()
+        let v = outVec3Data.getData()
         v.outSet_N_N_N(this.out_x, this.out_x, this.out_y)
         return v
     }
@@ -1346,7 +1355,7 @@ export class Vec4Data extends ValueType {
         return v
     }
     get out_yxy() {
-        let v = new Vec3Data()
+        let v = outVec3Data.getData()
         v.outSet_N_N_N(this.out_y, this.out_x, this.out_y)
         return v
     }
@@ -1356,7 +1365,7 @@ export class Vec4Data extends ValueType {
         return v
     }
     get out_zxy() {
-        let v = new Vec3Data()
+        let v = outVec3Data.getData()
         v.outSet_N_N_N(this.out_z, this.out_x, this.out_y)
         return v
     }
@@ -1371,7 +1380,7 @@ export class Vec4Data extends ValueType {
         return v
     }
     get out_wxy() {
-        let v = new Vec3Data()
+        let v = outVec3Data.getData()
         v.outSet_N_N_N(this.out_w, this.out_x, this.out_y)
         return v
     }
@@ -1386,7 +1395,7 @@ export class Vec4Data extends ValueType {
         return v
     }
     get out_xyy() {
-        let v = new Vec3Data()
+        let v = outVec3Data.getData()
         v.outSet_N_N_N(this.out_x, this.out_y, this.out_y)
         return v
     }
@@ -1396,7 +1405,7 @@ export class Vec4Data extends ValueType {
         return v
     }
     get out_yyy() {
-        let v = new Vec3Data()
+        let v = outVec3Data.getData()
         v.outSet_N_N_N(this.out_y, this.out_y, this.out_y)
         return v
     }
@@ -1406,7 +1415,7 @@ export class Vec4Data extends ValueType {
         return v
     }
     get out_zyy() {
-        let v = new Vec3Data()
+        let v = outVec3Data.getData()
         v.outSet_N_N_N(this.out_z, this.out_y, this.out_y)
         return v
     }
@@ -1416,7 +1425,7 @@ export class Vec4Data extends ValueType {
         return v
     }
     get out_wyy() {
-        let v = new Vec3Data()
+        let v = outVec3Data.getData()
         v.outSet_N_N_N(this.out_w, this.out_y, this.out_y)
         return v
     }
@@ -1426,7 +1435,7 @@ export class Vec4Data extends ValueType {
         return v
     }
     get out_xzy() {
-        let v = new Vec3Data()
+        let v = outVec3Data.getData()
         v.outSet_N_N_N(this.out_x, this.out_z, this.out_y)
         return v
     }
@@ -1441,7 +1450,7 @@ export class Vec4Data extends ValueType {
         return v
     }
     get out_yzy() {
-        let v = new Vec3Data()
+        let v = outVec3Data.getData()
         v.outSet_N_N_N(this.out_y, this.out_z, this.out_y)
         return v
     }
@@ -1451,7 +1460,7 @@ export class Vec4Data extends ValueType {
         return v
     }
     get out_zzy() {
-        let v = new Vec3Data()
+        let v = outVec3Data.getData()
         v.outSet_N_N_N(this.out_z, this.out_z, this.out_y)
         return v
     }
@@ -1461,7 +1470,7 @@ export class Vec4Data extends ValueType {
         return v
     }
     get out_wzy() {
-        let v = new Vec3Data()
+        let v = outVec3Data.getData()
         v.outSet_N_N_N(this.out_w, this.out_z, this.out_y)
         return v
     }
@@ -1476,7 +1485,7 @@ export class Vec4Data extends ValueType {
         return v
     }
     get out_xwy() {
-        let v = new Vec3Data()
+        let v = outVec3Data.getData()
         v.outSet_N_N_N(this.out_x, this.out_w, this.out_y)
         return v
     }
@@ -1491,7 +1500,7 @@ export class Vec4Data extends ValueType {
         return v
     }
     get out_ywy() {
-        let v = new Vec3Data()
+        let v = outVec3Data.getData()
         v.outSet_N_N_N(this.out_y, this.out_w, this.out_y)
         return v
     }
@@ -1501,7 +1510,7 @@ export class Vec4Data extends ValueType {
         return v
     }
     get out_zwy() {
-        let v = new Vec3Data()
+        let v = outVec3Data.getData()
         v.outSet_N_N_N(this.out_z, this.out_w, this.out_y)
         return v
     }
@@ -1516,7 +1525,7 @@ export class Vec4Data extends ValueType {
         return v
     }
     get out_wwy() {
-        let v = new Vec3Data()
+        let v = outVec3Data.getData()
         v.outSet_N_N_N(this.out_w, this.out_w, this.out_y)
         return v
     }
@@ -1526,7 +1535,7 @@ export class Vec4Data extends ValueType {
         return v
     }
     get out_xxz() {
-        let v = new Vec3Data()
+        let v = outVec3Data.getData()
         v.outSet_N_N_N(this.out_x, this.out_x, this.out_z)
         return v
     }
@@ -1536,7 +1545,7 @@ export class Vec4Data extends ValueType {
         return v
     }
     get out_yxz() {
-        let v = new Vec3Data()
+        let v = outVec3Data.getData()
         v.outSet_N_N_N(this.out_y, this.out_x, this.out_z)
         return v
     }
@@ -1551,7 +1560,7 @@ export class Vec4Data extends ValueType {
         return v
     }
     get out_zxz() {
-        let v = new Vec3Data()
+        let v = outVec3Data.getData()
         v.outSet_N_N_N(this.out_z, this.out_x, this.out_z)
         return v
     }
@@ -1561,7 +1570,7 @@ export class Vec4Data extends ValueType {
         return v
     }
     get out_wxz() {
-        let v = new Vec3Data()
+        let v = outVec3Data.getData()
         v.outSet_N_N_N(this.out_w, this.out_x, this.out_z)
         return v
     }
@@ -1576,7 +1585,7 @@ export class Vec4Data extends ValueType {
         return v
     }
     get out_xyz() {
-        let v = new Vec3Data()
+        let v = outVec3Data.getData()
         v.outSet_N_N_N(this.out_x, this.out_y, this.out_z)
         return v
     }
@@ -1591,7 +1600,7 @@ export class Vec4Data extends ValueType {
         return v
     }
     get out_yyz() {
-        let v = new Vec3Data()
+        let v = outVec3Data.getData()
         v.outSet_N_N_N(this.out_y, this.out_y, this.out_z)
         return v
     }
@@ -1601,7 +1610,7 @@ export class Vec4Data extends ValueType {
         return v
     }
     get out_zyz() {
-        let v = new Vec3Data()
+        let v = outVec3Data.getData()
         v.outSet_N_N_N(this.out_z, this.out_y, this.out_z)
         return v
     }
@@ -1611,7 +1620,7 @@ export class Vec4Data extends ValueType {
         return v
     }
     get out_wyz() {
-        let v = new Vec3Data()
+        let v = outVec3Data.getData()
         v.outSet_N_N_N(this.out_w, this.out_y, this.out_z)
         return v
     }
@@ -1626,7 +1635,7 @@ export class Vec4Data extends ValueType {
         return v
     }
     get out_xzz() {
-        let v = new Vec3Data()
+        let v = outVec3Data.getData()
         v.outSet_N_N_N(this.out_x, this.out_z, this.out_z)
         return v
     }
@@ -1636,7 +1645,7 @@ export class Vec4Data extends ValueType {
         return v
     }
     get out_yzz() {
-        let v = new Vec3Data()
+        let v = outVec3Data.getData()
         v.outSet_N_N_N(this.out_y, this.out_z, this.out_z)
         return v
     }
@@ -1646,7 +1655,7 @@ export class Vec4Data extends ValueType {
         return v
     }
     get out_zzz() {
-        let v = new Vec3Data()
+        let v = outVec3Data.getData()
         v.outSet_N_N_N(this.out_z, this.out_z, this.out_z)
         return v
     }
@@ -1656,7 +1665,7 @@ export class Vec4Data extends ValueType {
         return v
     }
     get out_wzz() {
-        let v = new Vec3Data()
+        let v = outVec3Data.getData()
         v.outSet_N_N_N(this.out_w, this.out_z, this.out_z)
         return v
     }
@@ -1666,7 +1675,7 @@ export class Vec4Data extends ValueType {
         return v
     }
     get out_xwz() {
-        let v = new Vec3Data()
+        let v = outVec3Data.getData()
         v.outSet_N_N_N(this.out_x, this.out_w, this.out_z)
         return v
     }
@@ -1681,7 +1690,7 @@ export class Vec4Data extends ValueType {
         return v
     }
     get out_ywz() {
-        let v = new Vec3Data()
+        let v = outVec3Data.getData()
         v.outSet_N_N_N(this.out_y, this.out_w, this.out_z)
         return v
     }
@@ -1696,7 +1705,7 @@ export class Vec4Data extends ValueType {
         return v
     }
     get out_zwz() {
-        let v = new Vec3Data()
+        let v = outVec3Data.getData()
         v.outSet_N_N_N(this.out_z, this.out_w, this.out_z)
         return v
     }
@@ -1706,7 +1715,7 @@ export class Vec4Data extends ValueType {
         return v
     }
     get out_wwz() {
-        let v = new Vec3Data()
+        let v = outVec3Data.getData()
         v.outSet_N_N_N(this.out_w, this.out_w, this.out_z)
         return v
     }
@@ -1716,7 +1725,7 @@ export class Vec4Data extends ValueType {
         return v
     }
     get out_xxw() {
-        let v = new Vec3Data()
+        let v = outVec3Data.getData()
         v.outSet_N_N_N(this.out_x, this.out_x, this.out_w)
         return v
     }
@@ -1726,7 +1735,7 @@ export class Vec4Data extends ValueType {
         return v
     }
     get out_yxw() {
-        let v = new Vec3Data()
+        let v = outVec3Data.getData()
         v.outSet_N_N_N(this.out_y, this.out_x, this.out_w)
         return v
     }
@@ -1741,7 +1750,7 @@ export class Vec4Data extends ValueType {
         return v
     }
     get out_zxw() {
-        let v = new Vec3Data()
+        let v = outVec3Data.getData()
         v.outSet_N_N_N(this.out_z, this.out_x, this.out_w)
         return v
     }
@@ -1756,7 +1765,7 @@ export class Vec4Data extends ValueType {
         return v
     }
     get out_wxw() {
-        let v = new Vec3Data()
+        let v = outVec3Data.getData()
         v.outSet_N_N_N(this.out_w, this.out_x, this.out_w)
         return v
     }
@@ -1766,7 +1775,7 @@ export class Vec4Data extends ValueType {
         return v
     }
     get out_xyw() {
-        let v = new Vec3Data()
+        let v = outVec3Data.getData()
         v.outSet_N_N_N(this.out_x, this.out_y, this.out_w)
         return v
     }
@@ -1781,7 +1790,7 @@ export class Vec4Data extends ValueType {
         return v
     }
     get out_yyw() {
-        let v = new Vec3Data()
+        let v = outVec3Data.getData()
         v.outSet_N_N_N(this.out_y, this.out_y, this.out_w)
         return v
     }
@@ -1791,7 +1800,7 @@ export class Vec4Data extends ValueType {
         return v
     }
     get out_zyw() {
-        let v = new Vec3Data()
+        let v = outVec3Data.getData()
         v.outSet_N_N_N(this.out_z, this.out_y, this.out_w)
         return v
     }
@@ -1806,7 +1815,7 @@ export class Vec4Data extends ValueType {
         return v
     }
     get out_wyw() {
-        let v = new Vec3Data()
+        let v = outVec3Data.getData()
         v.outSet_N_N_N(this.out_w, this.out_y, this.out_w)
         return v
     }
@@ -1816,7 +1825,7 @@ export class Vec4Data extends ValueType {
         return v
     }
     get out_xzw() {
-        let v = new Vec3Data()
+        let v = outVec3Data.getData()
         v.outSet_N_N_N(this.out_x, this.out_z, this.out_w)
         return v
     }
@@ -1831,7 +1840,7 @@ export class Vec4Data extends ValueType {
         return v
     }
     get out_yzw() {
-        let v = new Vec3Data()
+        let v = outVec3Data.getData()
         v.outSet_N_N_N(this.out_y, this.out_z, this.out_w)
         return v
     }
@@ -1846,7 +1855,7 @@ export class Vec4Data extends ValueType {
         return v
     }
     get out_zzw() {
-        let v = new Vec3Data()
+        let v = outVec3Data.getData()
         v.outSet_N_N_N(this.out_z, this.out_z, this.out_w)
         return v
     }
@@ -1856,7 +1865,7 @@ export class Vec4Data extends ValueType {
         return v
     }
     get out_wzw() {
-        let v = new Vec3Data()
+        let v = outVec3Data.getData()
         v.outSet_N_N_N(this.out_w, this.out_z, this.out_w)
         return v
     }
@@ -1866,7 +1875,7 @@ export class Vec4Data extends ValueType {
         return v
     }
     get out_xww() {
-        let v = new Vec3Data()
+        let v = outVec3Data.getData()
         v.outSet_N_N_N(this.out_x, this.out_w, this.out_w)
         return v
     }
@@ -1876,7 +1885,7 @@ export class Vec4Data extends ValueType {
         return v
     }
     get out_yww() {
-        let v = new Vec3Data()
+        let v = outVec3Data.getData()
         v.outSet_N_N_N(this.out_y, this.out_w, this.out_w)
         return v
     }
@@ -1886,7 +1895,7 @@ export class Vec4Data extends ValueType {
         return v
     }
     get out_zww() {
-        let v = new Vec3Data()
+        let v = outVec3Data.getData()
         v.outSet_N_N_N(this.out_z, this.out_w, this.out_w)
         return v
     }
@@ -1896,7 +1905,7 @@ export class Vec4Data extends ValueType {
         return v
     }
     get out_www() {
-        let v = new Vec3Data()
+        let v = outVec3Data.getData()
         v.outSet_N_N_N(this.out_w, this.out_w, this.out_w)
         return v
     }
@@ -1907,7 +1916,7 @@ export class Vec4Data extends ValueType {
         return v
     }
     get out_xxxx() {
-        let v = new Vec4Data()
+        let v = outVec4Data.getData()
         v.outSet_N_N_N_N(this.out_x, this.out_x, this.out_x, this.out_x)
         return v
     }
@@ -1917,7 +1926,7 @@ export class Vec4Data extends ValueType {
         return v
     }
     get out_yxxx() {
-        let v = new Vec4Data()
+        let v = outVec4Data.getData()
         v.outSet_N_N_N_N(this.out_y, this.out_x, this.out_x, this.out_x)
         return v
     }
@@ -1927,7 +1936,7 @@ export class Vec4Data extends ValueType {
         return v
     }
     get out_zxxx() {
-        let v = new Vec4Data()
+        let v = outVec4Data.getData()
         v.outSet_N_N_N_N(this.out_z, this.out_x, this.out_x, this.out_x)
         return v
     }
@@ -1937,7 +1946,7 @@ export class Vec4Data extends ValueType {
         return v
     }
     get out_wxxx() {
-        let v = new Vec4Data()
+        let v = outVec4Data.getData()
         v.outSet_N_N_N_N(this.out_w, this.out_x, this.out_x, this.out_x)
         return v
     }
@@ -1947,7 +1956,7 @@ export class Vec4Data extends ValueType {
         return v
     }
     get out_xyxx() {
-        let v = new Vec4Data()
+        let v = outVec4Data.getData()
         v.outSet_N_N_N_N(this.out_x, this.out_y, this.out_x, this.out_x)
         return v
     }
@@ -1957,7 +1966,7 @@ export class Vec4Data extends ValueType {
         return v
     }
     get out_yyxx() {
-        let v = new Vec4Data()
+        let v = outVec4Data.getData()
         v.outSet_N_N_N_N(this.out_y, this.out_y, this.out_x, this.out_x)
         return v
     }
@@ -1967,7 +1976,7 @@ export class Vec4Data extends ValueType {
         return v
     }
     get out_zyxx() {
-        let v = new Vec4Data()
+        let v = outVec4Data.getData()
         v.outSet_N_N_N_N(this.out_z, this.out_y, this.out_x, this.out_x)
         return v
     }
@@ -1977,7 +1986,7 @@ export class Vec4Data extends ValueType {
         return v
     }
     get out_wyxx() {
-        let v = new Vec4Data()
+        let v = outVec4Data.getData()
         v.outSet_N_N_N_N(this.out_w, this.out_y, this.out_x, this.out_x)
         return v
     }
@@ -1987,7 +1996,7 @@ export class Vec4Data extends ValueType {
         return v
     }
     get out_xzxx() {
-        let v = new Vec4Data()
+        let v = outVec4Data.getData()
         v.outSet_N_N_N_N(this.out_x, this.out_z, this.out_x, this.out_x)
         return v
     }
@@ -1997,7 +2006,7 @@ export class Vec4Data extends ValueType {
         return v
     }
     get out_yzxx() {
-        let v = new Vec4Data()
+        let v = outVec4Data.getData()
         v.outSet_N_N_N_N(this.out_y, this.out_z, this.out_x, this.out_x)
         return v
     }
@@ -2007,7 +2016,7 @@ export class Vec4Data extends ValueType {
         return v
     }
     get out_zzxx() {
-        let v = new Vec4Data()
+        let v = outVec4Data.getData()
         v.outSet_N_N_N_N(this.out_z, this.out_z, this.out_x, this.out_x)
         return v
     }
@@ -2017,7 +2026,7 @@ export class Vec4Data extends ValueType {
         return v
     }
     get out_wzxx() {
-        let v = new Vec4Data()
+        let v = outVec4Data.getData()
         v.outSet_N_N_N_N(this.out_w, this.out_z, this.out_x, this.out_x)
         return v
     }
@@ -2027,7 +2036,7 @@ export class Vec4Data extends ValueType {
         return v
     }
     get out_xwxx() {
-        let v = new Vec4Data()
+        let v = outVec4Data.getData()
         v.outSet_N_N_N_N(this.out_x, this.out_w, this.out_x, this.out_x)
         return v
     }
@@ -2037,7 +2046,7 @@ export class Vec4Data extends ValueType {
         return v
     }
     get out_ywxx() {
-        let v = new Vec4Data()
+        let v = outVec4Data.getData()
         v.outSet_N_N_N_N(this.out_y, this.out_w, this.out_x, this.out_x)
         return v
     }
@@ -2047,7 +2056,7 @@ export class Vec4Data extends ValueType {
         return v
     }
     get out_zwxx() {
-        let v = new Vec4Data()
+        let v = outVec4Data.getData()
         v.outSet_N_N_N_N(this.out_z, this.out_w, this.out_x, this.out_x)
         return v
     }
@@ -2057,7 +2066,7 @@ export class Vec4Data extends ValueType {
         return v
     }
     get out_wwxx() {
-        let v = new Vec4Data()
+        let v = outVec4Data.getData()
         v.outSet_N_N_N_N(this.out_w, this.out_w, this.out_x, this.out_x)
         return v
     }
@@ -2067,7 +2076,7 @@ export class Vec4Data extends ValueType {
         return v
     }
     get out_xxyx() {
-        let v = new Vec4Data()
+        let v = outVec4Data.getData()
         v.outSet_N_N_N_N(this.out_x, this.out_x, this.out_y, this.out_x)
         return v
     }
@@ -2077,7 +2086,7 @@ export class Vec4Data extends ValueType {
         return v
     }
     get out_yxyx() {
-        let v = new Vec4Data()
+        let v = outVec4Data.getData()
         v.outSet_N_N_N_N(this.out_y, this.out_x, this.out_y, this.out_x)
         return v
     }
@@ -2087,7 +2096,7 @@ export class Vec4Data extends ValueType {
         return v
     }
     get out_zxyx() {
-        let v = new Vec4Data()
+        let v = outVec4Data.getData()
         v.outSet_N_N_N_N(this.out_z, this.out_x, this.out_y, this.out_x)
         return v
     }
@@ -2097,7 +2106,7 @@ export class Vec4Data extends ValueType {
         return v
     }
     get out_wxyx() {
-        let v = new Vec4Data()
+        let v = outVec4Data.getData()
         v.outSet_N_N_N_N(this.out_w, this.out_x, this.out_y, this.out_x)
         return v
     }
@@ -2107,7 +2116,7 @@ export class Vec4Data extends ValueType {
         return v
     }
     get out_xyyx() {
-        let v = new Vec4Data()
+        let v = outVec4Data.getData()
         v.outSet_N_N_N_N(this.out_x, this.out_y, this.out_y, this.out_x)
         return v
     }
@@ -2117,7 +2126,7 @@ export class Vec4Data extends ValueType {
         return v
     }
     get out_yyyx() {
-        let v = new Vec4Data()
+        let v = outVec4Data.getData()
         v.outSet_N_N_N_N(this.out_y, this.out_y, this.out_y, this.out_x)
         return v
     }
@@ -2127,7 +2136,7 @@ export class Vec4Data extends ValueType {
         return v
     }
     get out_zyyx() {
-        let v = new Vec4Data()
+        let v = outVec4Data.getData()
         v.outSet_N_N_N_N(this.out_z, this.out_y, this.out_y, this.out_x)
         return v
     }
@@ -2137,7 +2146,7 @@ export class Vec4Data extends ValueType {
         return v
     }
     get out_wyyx() {
-        let v = new Vec4Data()
+        let v = outVec4Data.getData()
         v.outSet_N_N_N_N(this.out_w, this.out_y, this.out_y, this.out_x)
         return v
     }
@@ -2147,7 +2156,7 @@ export class Vec4Data extends ValueType {
         return v
     }
     get out_xzyx() {
-        let v = new Vec4Data()
+        let v = outVec4Data.getData()
         v.outSet_N_N_N_N(this.out_x, this.out_z, this.out_y, this.out_x)
         return v
     }
@@ -2157,7 +2166,7 @@ export class Vec4Data extends ValueType {
         return v
     }
     get out_yzyx() {
-        let v = new Vec4Data()
+        let v = outVec4Data.getData()
         v.outSet_N_N_N_N(this.out_y, this.out_z, this.out_y, this.out_x)
         return v
     }
@@ -2167,7 +2176,7 @@ export class Vec4Data extends ValueType {
         return v
     }
     get out_zzyx() {
-        let v = new Vec4Data()
+        let v = outVec4Data.getData()
         v.outSet_N_N_N_N(this.out_z, this.out_z, this.out_y, this.out_x)
         return v
     }
@@ -2177,7 +2186,7 @@ export class Vec4Data extends ValueType {
         return v
     }
     get out_wzyx() {
-        let v = new Vec4Data()
+        let v = outVec4Data.getData()
         v.outSet_N_N_N_N(this.out_w, this.out_z, this.out_y, this.out_x)
         return v
     }
@@ -2193,7 +2202,7 @@ export class Vec4Data extends ValueType {
         return v
     }
     get out_xwyx() {
-        let v = new Vec4Data()
+        let v = outVec4Data.getData()
         v.outSet_N_N_N_N(this.out_x, this.out_w, this.out_y, this.out_x)
         return v
     }
@@ -2203,7 +2212,7 @@ export class Vec4Data extends ValueType {
         return v
     }
     get out_ywyx() {
-        let v = new Vec4Data()
+        let v = outVec4Data.getData()
         v.outSet_N_N_N_N(this.out_y, this.out_w, this.out_y, this.out_x)
         return v
     }
@@ -2213,7 +2222,7 @@ export class Vec4Data extends ValueType {
         return v
     }
     get out_zwyx() {
-        let v = new Vec4Data()
+        let v = outVec4Data.getData()
         v.outSet_N_N_N_N(this.out_z, this.out_w, this.out_y, this.out_x)
         return v
     }
@@ -2229,7 +2238,7 @@ export class Vec4Data extends ValueType {
         return v
     }
     get out_wwyx() {
-        let v = new Vec4Data()
+        let v = outVec4Data.getData()
         v.outSet_N_N_N_N(this.out_w, this.out_w, this.out_y, this.out_x)
         return v
     }
@@ -2239,7 +2248,7 @@ export class Vec4Data extends ValueType {
         return v
     }
     get out_xxzx() {
-        let v = new Vec4Data()
+        let v = outVec4Data.getData()
         v.outSet_N_N_N_N(this.out_x, this.out_x, this.out_z, this.out_x)
         return v
     }
@@ -2249,7 +2258,7 @@ export class Vec4Data extends ValueType {
         return v
     }
     get out_yxzx() {
-        let v = new Vec4Data()
+        let v = outVec4Data.getData()
         v.outSet_N_N_N_N(this.out_y, this.out_x, this.out_z, this.out_x)
         return v
     }
@@ -2259,7 +2268,7 @@ export class Vec4Data extends ValueType {
         return v
     }
     get out_zxzx() {
-        let v = new Vec4Data()
+        let v = outVec4Data.getData()
         v.outSet_N_N_N_N(this.out_z, this.out_x, this.out_z, this.out_x)
         return v
     }
@@ -2269,7 +2278,7 @@ export class Vec4Data extends ValueType {
         return v
     }
     get out_wxzx() {
-        let v = new Vec4Data()
+        let v = outVec4Data.getData()
         v.outSet_N_N_N_N(this.out_w, this.out_x, this.out_z, this.out_x)
         return v
     }
@@ -2279,7 +2288,7 @@ export class Vec4Data extends ValueType {
         return v
     }
     get out_xyzx() {
-        let v = new Vec4Data()
+        let v = outVec4Data.getData()
         v.outSet_N_N_N_N(this.out_x, this.out_y, this.out_z, this.out_x)
         return v
     }
@@ -2289,7 +2298,7 @@ export class Vec4Data extends ValueType {
         return v
     }
     get out_yyzx() {
-        let v = new Vec4Data()
+        let v = outVec4Data.getData()
         v.outSet_N_N_N_N(this.out_y, this.out_y, this.out_z, this.out_x)
         return v
     }
@@ -2299,7 +2308,7 @@ export class Vec4Data extends ValueType {
         return v
     }
     get out_zyzx() {
-        let v = new Vec4Data()
+        let v = outVec4Data.getData()
         v.outSet_N_N_N_N(this.out_z, this.out_y, this.out_z, this.out_x)
         return v
     }
@@ -2309,7 +2318,7 @@ export class Vec4Data extends ValueType {
         return v
     }
     get out_wyzx() {
-        let v = new Vec4Data()
+        let v = outVec4Data.getData()
         v.outSet_N_N_N_N(this.out_w, this.out_y, this.out_z, this.out_x)
         return v
     }
@@ -2325,7 +2334,7 @@ export class Vec4Data extends ValueType {
         return v
     }
     get out_xzzx() {
-        let v = new Vec4Data()
+        let v = outVec4Data.getData()
         v.outSet_N_N_N_N(this.out_x, this.out_z, this.out_z, this.out_x)
         return v
     }
@@ -2335,7 +2344,7 @@ export class Vec4Data extends ValueType {
         return v
     }
     get out_yzzx() {
-        let v = new Vec4Data()
+        let v = outVec4Data.getData()
         v.outSet_N_N_N_N(this.out_y, this.out_z, this.out_z, this.out_x)
         return v
     }
@@ -2345,7 +2354,7 @@ export class Vec4Data extends ValueType {
         return v
     }
     get out_zzzx() {
-        let v = new Vec4Data()
+        let v = outVec4Data.getData()
         v.outSet_N_N_N_N(this.out_z, this.out_z, this.out_z, this.out_x)
         return v
     }
@@ -2355,7 +2364,7 @@ export class Vec4Data extends ValueType {
         return v
     }
     get out_wzzx() {
-        let v = new Vec4Data()
+        let v = outVec4Data.getData()
         v.outSet_N_N_N_N(this.out_w, this.out_z, this.out_z, this.out_x)
         return v
     }
@@ -2365,7 +2374,7 @@ export class Vec4Data extends ValueType {
         return v
     }
     get out_xwzx() {
-        let v = new Vec4Data()
+        let v = outVec4Data.getData()
         v.outSet_N_N_N_N(this.out_x, this.out_w, this.out_z, this.out_x)
         return v
     }
@@ -2375,7 +2384,7 @@ export class Vec4Data extends ValueType {
         return v
     }
     get out_ywzx() {
-        let v = new Vec4Data()
+        let v = outVec4Data.getData()
         v.outSet_N_N_N_N(this.out_y, this.out_w, this.out_z, this.out_x)
         return v
     }
@@ -2391,7 +2400,7 @@ export class Vec4Data extends ValueType {
         return v
     }
     get out_zwzx() {
-        let v = new Vec4Data()
+        let v = outVec4Data.getData()
         v.outSet_N_N_N_N(this.out_z, this.out_w, this.out_z, this.out_x)
         return v
     }
@@ -2401,7 +2410,7 @@ export class Vec4Data extends ValueType {
         return v
     }
     get out_wwzx() {
-        let v = new Vec4Data()
+        let v = outVec4Data.getData()
         v.outSet_N_N_N_N(this.out_w, this.out_w, this.out_z, this.out_x)
         return v
     }
@@ -2411,7 +2420,7 @@ export class Vec4Data extends ValueType {
         return v
     }
     get out_xxwx() {
-        let v = new Vec4Data()
+        let v = outVec4Data.getData()
         v.outSet_N_N_N_N(this.out_x, this.out_x, this.out_w, this.out_x)
         return v
     }
@@ -2421,7 +2430,7 @@ export class Vec4Data extends ValueType {
         return v
     }
     get out_yxwx() {
-        let v = new Vec4Data()
+        let v = outVec4Data.getData()
         v.outSet_N_N_N_N(this.out_y, this.out_x, this.out_w, this.out_x)
         return v
     }
@@ -2431,7 +2440,7 @@ export class Vec4Data extends ValueType {
         return v
     }
     get out_zxwx() {
-        let v = new Vec4Data()
+        let v = outVec4Data.getData()
         v.outSet_N_N_N_N(this.out_z, this.out_x, this.out_w, this.out_x)
         return v
     }
@@ -2441,7 +2450,7 @@ export class Vec4Data extends ValueType {
         return v
     }
     get out_wxwx() {
-        let v = new Vec4Data()
+        let v = outVec4Data.getData()
         v.outSet_N_N_N_N(this.out_w, this.out_x, this.out_w, this.out_x)
         return v
     }
@@ -2451,7 +2460,7 @@ export class Vec4Data extends ValueType {
         return v
     }
     get out_xywx() {
-        let v = new Vec4Data()
+        let v = outVec4Data.getData()
         v.outSet_N_N_N_N(this.out_x, this.out_y, this.out_w, this.out_x)
         return v
     }
@@ -2461,7 +2470,7 @@ export class Vec4Data extends ValueType {
         return v
     }
     get out_yywx() {
-        let v = new Vec4Data()
+        let v = outVec4Data.getData()
         v.outSet_N_N_N_N(this.out_y, this.out_y, this.out_w, this.out_x)
         return v
     }
@@ -2471,7 +2480,7 @@ export class Vec4Data extends ValueType {
         return v
     }
     get out_zywx() {
-        let v = new Vec4Data()
+        let v = outVec4Data.getData()
         v.outSet_N_N_N_N(this.out_z, this.out_y, this.out_w, this.out_x)
         return v
     }
@@ -2487,7 +2496,7 @@ export class Vec4Data extends ValueType {
         return v
     }
     get out_wywx() {
-        let v = new Vec4Data()
+        let v = outVec4Data.getData()
         v.outSet_N_N_N_N(this.out_w, this.out_y, this.out_w, this.out_x)
         return v
     }
@@ -2497,7 +2506,7 @@ export class Vec4Data extends ValueType {
         return v
     }
     get out_xzwx() {
-        let v = new Vec4Data()
+        let v = outVec4Data.getData()
         v.outSet_N_N_N_N(this.out_x, this.out_z, this.out_w, this.out_x)
         return v
     }
@@ -2507,7 +2516,7 @@ export class Vec4Data extends ValueType {
         return v
     }
     get out_yzwx() {
-        let v = new Vec4Data()
+        let v = outVec4Data.getData()
         v.outSet_N_N_N_N(this.out_y, this.out_z, this.out_w, this.out_x)
         return v
     }
@@ -2523,7 +2532,7 @@ export class Vec4Data extends ValueType {
         return v
     }
     get out_zzwx() {
-        let v = new Vec4Data()
+        let v = outVec4Data.getData()
         v.outSet_N_N_N_N(this.out_z, this.out_z, this.out_w, this.out_x)
         return v
     }
@@ -2533,7 +2542,7 @@ export class Vec4Data extends ValueType {
         return v
     }
     get out_wzwx() {
-        let v = new Vec4Data()
+        let v = outVec4Data.getData()
         v.outSet_N_N_N_N(this.out_w, this.out_z, this.out_w, this.out_x)
         return v
     }
@@ -2543,7 +2552,7 @@ export class Vec4Data extends ValueType {
         return v
     }
     get out_xwwx() {
-        let v = new Vec4Data()
+        let v = outVec4Data.getData()
         v.outSet_N_N_N_N(this.out_x, this.out_w, this.out_w, this.out_x)
         return v
     }
@@ -2553,7 +2562,7 @@ export class Vec4Data extends ValueType {
         return v
     }
     get out_ywwx() {
-        let v = new Vec4Data()
+        let v = outVec4Data.getData()
         v.outSet_N_N_N_N(this.out_y, this.out_w, this.out_w, this.out_x)
         return v
     }
@@ -2563,7 +2572,7 @@ export class Vec4Data extends ValueType {
         return v
     }
     get out_zwwx() {
-        let v = new Vec4Data()
+        let v = outVec4Data.getData()
         v.outSet_N_N_N_N(this.out_z, this.out_w, this.out_w, this.out_x)
         return v
     }
@@ -2573,7 +2582,7 @@ export class Vec4Data extends ValueType {
         return v
     }
     get out_wwwx() {
-        let v = new Vec4Data()
+        let v = outVec4Data.getData()
         v.outSet_N_N_N_N(this.out_w, this.out_w, this.out_w, this.out_x)
         return v
     }
@@ -2583,7 +2592,7 @@ export class Vec4Data extends ValueType {
         return v
     }
     get out_xxxy() {
-        let v = new Vec4Data()
+        let v = outVec4Data.getData()
         v.outSet_N_N_N_N(this.out_x, this.out_x, this.out_x, this.out_y)
         return v
     }
@@ -2593,7 +2602,7 @@ export class Vec4Data extends ValueType {
         return v
     }
     get out_yxxy() {
-        let v = new Vec4Data()
+        let v = outVec4Data.getData()
         v.outSet_N_N_N_N(this.out_y, this.out_x, this.out_x, this.out_y)
         return v
     }
@@ -2603,7 +2612,7 @@ export class Vec4Data extends ValueType {
         return v
     }
     get out_zxxy() {
-        let v = new Vec4Data()
+        let v = outVec4Data.getData()
         v.outSet_N_N_N_N(this.out_z, this.out_x, this.out_x, this.out_y)
         return v
     }
@@ -2613,7 +2622,7 @@ export class Vec4Data extends ValueType {
         return v
     }
     get out_wxxy() {
-        let v = new Vec4Data()
+        let v = outVec4Data.getData()
         v.outSet_N_N_N_N(this.out_w, this.out_x, this.out_x, this.out_y)
         return v
     }
@@ -2623,7 +2632,7 @@ export class Vec4Data extends ValueType {
         return v
     }
     get out_xyxy() {
-        let v = new Vec4Data()
+        let v = outVec4Data.getData()
         v.outSet_N_N_N_N(this.out_x, this.out_y, this.out_x, this.out_y)
         return v
     }
@@ -2633,7 +2642,7 @@ export class Vec4Data extends ValueType {
         return v
     }
     get out_yyxy() {
-        let v = new Vec4Data()
+        let v = outVec4Data.getData()
         v.outSet_N_N_N_N(this.out_y, this.out_y, this.out_x, this.out_y)
         return v
     }
@@ -2643,7 +2652,7 @@ export class Vec4Data extends ValueType {
         return v
     }
     get out_zyxy() {
-        let v = new Vec4Data()
+        let v = outVec4Data.getData()
         v.outSet_N_N_N_N(this.out_z, this.out_y, this.out_x, this.out_y)
         return v
     }
@@ -2653,7 +2662,7 @@ export class Vec4Data extends ValueType {
         return v
     }
     get out_wyxy() {
-        let v = new Vec4Data()
+        let v = outVec4Data.getData()
         v.outSet_N_N_N_N(this.out_w, this.out_y, this.out_x, this.out_y)
         return v
     }
@@ -2663,7 +2672,7 @@ export class Vec4Data extends ValueType {
         return v
     }
     get out_xzxy() {
-        let v = new Vec4Data()
+        let v = outVec4Data.getData()
         v.outSet_N_N_N_N(this.out_x, this.out_z, this.out_x, this.out_y)
         return v
     }
@@ -2673,7 +2682,7 @@ export class Vec4Data extends ValueType {
         return v
     }
     get out_yzxy() {
-        let v = new Vec4Data()
+        let v = outVec4Data.getData()
         v.outSet_N_N_N_N(this.out_y, this.out_z, this.out_x, this.out_y)
         return v
     }
@@ -2683,7 +2692,7 @@ export class Vec4Data extends ValueType {
         return v
     }
     get out_zzxy() {
-        let v = new Vec4Data()
+        let v = outVec4Data.getData()
         v.outSet_N_N_N_N(this.out_z, this.out_z, this.out_x, this.out_y)
         return v
     }
@@ -2693,7 +2702,7 @@ export class Vec4Data extends ValueType {
         return v
     }
     get out_wzxy() {
-        let v = new Vec4Data()
+        let v = outVec4Data.getData()
         v.outSet_N_N_N_N(this.out_w, this.out_z, this.out_x, this.out_y)
         return v
     }
@@ -2709,7 +2718,7 @@ export class Vec4Data extends ValueType {
         return v
     }
     get out_xwxy() {
-        let v = new Vec4Data()
+        let v = outVec4Data.getData()
         v.outSet_N_N_N_N(this.out_x, this.out_w, this.out_x, this.out_y)
         return v
     }
@@ -2719,7 +2728,7 @@ export class Vec4Data extends ValueType {
         return v
     }
     get out_ywxy() {
-        let v = new Vec4Data()
+        let v = outVec4Data.getData()
         v.outSet_N_N_N_N(this.out_y, this.out_w, this.out_x, this.out_y)
         return v
     }
@@ -2729,7 +2738,7 @@ export class Vec4Data extends ValueType {
         return v
     }
     get out_zwxy() {
-        let v = new Vec4Data()
+        let v = outVec4Data.getData()
         v.outSet_N_N_N_N(this.out_z, this.out_w, this.out_x, this.out_y)
         return v
     }
@@ -2745,7 +2754,7 @@ export class Vec4Data extends ValueType {
         return v
     }
     get out_wwxy() {
-        let v = new Vec4Data()
+        let v = outVec4Data.getData()
         v.outSet_N_N_N_N(this.out_w, this.out_w, this.out_x, this.out_y)
         return v
     }
@@ -2755,7 +2764,7 @@ export class Vec4Data extends ValueType {
         return v
     }
     get out_xxyy() {
-        let v = new Vec4Data()
+        let v = outVec4Data.getData()
         v.outSet_N_N_N_N(this.out_x, this.out_x, this.out_y, this.out_y)
         return v
     }
@@ -2765,7 +2774,7 @@ export class Vec4Data extends ValueType {
         return v
     }
     get out_yxyy() {
-        let v = new Vec4Data()
+        let v = outVec4Data.getData()
         v.outSet_N_N_N_N(this.out_y, this.out_x, this.out_y, this.out_y)
         return v
     }
@@ -2775,7 +2784,7 @@ export class Vec4Data extends ValueType {
         return v
     }
     get out_zxyy() {
-        let v = new Vec4Data()
+        let v = outVec4Data.getData()
         v.outSet_N_N_N_N(this.out_z, this.out_x, this.out_y, this.out_y)
         return v
     }
@@ -2785,7 +2794,7 @@ export class Vec4Data extends ValueType {
         return v
     }
     get out_wxyy() {
-        let v = new Vec4Data()
+        let v = outVec4Data.getData()
         v.outSet_N_N_N_N(this.out_w, this.out_x, this.out_y, this.out_y)
         return v
     }
@@ -2795,7 +2804,7 @@ export class Vec4Data extends ValueType {
         return v
     }
     get out_xyyy() {
-        let v = new Vec4Data()
+        let v = outVec4Data.getData()
         v.outSet_N_N_N_N(this.out_x, this.out_y, this.out_y, this.out_y)
         return v
     }
@@ -2805,7 +2814,7 @@ export class Vec4Data extends ValueType {
         return v
     }
     get out_yyyy() {
-        let v = new Vec4Data()
+        let v = outVec4Data.getData()
         v.outSet_N_N_N_N(this.out_y, this.out_y, this.out_y, this.out_y)
         return v
     }
@@ -2815,7 +2824,7 @@ export class Vec4Data extends ValueType {
         return v
     }
     get out_zyyy() {
-        let v = new Vec4Data()
+        let v = outVec4Data.getData()
         v.outSet_N_N_N_N(this.out_z, this.out_y, this.out_y, this.out_y)
         return v
     }
@@ -2825,7 +2834,7 @@ export class Vec4Data extends ValueType {
         return v
     }
     get out_wyyy() {
-        let v = new Vec4Data()
+        let v = outVec4Data.getData()
         v.outSet_N_N_N_N(this.out_w, this.out_y, this.out_y, this.out_y)
         return v
     }
@@ -2835,7 +2844,7 @@ export class Vec4Data extends ValueType {
         return v
     }
     get out_xzyy() {
-        let v = new Vec4Data()
+        let v = outVec4Data.getData()
         v.outSet_N_N_N_N(this.out_x, this.out_z, this.out_y, this.out_y)
         return v
     }
@@ -2845,7 +2854,7 @@ export class Vec4Data extends ValueType {
         return v
     }
     get out_yzyy() {
-        let v = new Vec4Data()
+        let v = outVec4Data.getData()
         v.outSet_N_N_N_N(this.out_y, this.out_z, this.out_y, this.out_y)
         return v
     }
@@ -2855,7 +2864,7 @@ export class Vec4Data extends ValueType {
         return v
     }
     get out_zzyy() {
-        let v = new Vec4Data()
+        let v = outVec4Data.getData()
         v.outSet_N_N_N_N(this.out_z, this.out_z, this.out_y, this.out_y)
         return v
     }
@@ -2865,7 +2874,7 @@ export class Vec4Data extends ValueType {
         return v
     }
     get out_wzyy() {
-        let v = new Vec4Data()
+        let v = outVec4Data.getData()
         v.outSet_N_N_N_N(this.out_w, this.out_z, this.out_y, this.out_y)
         return v
     }
@@ -2875,7 +2884,7 @@ export class Vec4Data extends ValueType {
         return v
     }
     get out_xwyy() {
-        let v = new Vec4Data()
+        let v = outVec4Data.getData()
         v.outSet_N_N_N_N(this.out_x, this.out_w, this.out_y, this.out_y)
         return v
     }
@@ -2885,7 +2894,7 @@ export class Vec4Data extends ValueType {
         return v
     }
     get out_ywyy() {
-        let v = new Vec4Data()
+        let v = outVec4Data.getData()
         v.outSet_N_N_N_N(this.out_y, this.out_w, this.out_y, this.out_y)
         return v
     }
@@ -2895,7 +2904,7 @@ export class Vec4Data extends ValueType {
         return v
     }
     get out_zwyy() {
-        let v = new Vec4Data()
+        let v = outVec4Data.getData()
         v.outSet_N_N_N_N(this.out_z, this.out_w, this.out_y, this.out_y)
         return v
     }
@@ -2905,7 +2914,7 @@ export class Vec4Data extends ValueType {
         return v
     }
     get out_wwyy() {
-        let v = new Vec4Data()
+        let v = outVec4Data.getData()
         v.outSet_N_N_N_N(this.out_w, this.out_w, this.out_y, this.out_y)
         return v
     }
@@ -2915,7 +2924,7 @@ export class Vec4Data extends ValueType {
         return v
     }
     get out_xxzy() {
-        let v = new Vec4Data()
+        let v = outVec4Data.getData()
         v.outSet_N_N_N_N(this.out_x, this.out_x, this.out_z, this.out_y)
         return v
     }
@@ -2925,7 +2934,7 @@ export class Vec4Data extends ValueType {
         return v
     }
     get out_yxzy() {
-        let v = new Vec4Data()
+        let v = outVec4Data.getData()
         v.outSet_N_N_N_N(this.out_y, this.out_x, this.out_z, this.out_y)
         return v
     }
@@ -2935,7 +2944,7 @@ export class Vec4Data extends ValueType {
         return v
     }
     get out_zxzy() {
-        let v = new Vec4Data()
+        let v = outVec4Data.getData()
         v.outSet_N_N_N_N(this.out_z, this.out_x, this.out_z, this.out_y)
         return v
     }
@@ -2945,7 +2954,7 @@ export class Vec4Data extends ValueType {
         return v
     }
     get out_wxzy() {
-        let v = new Vec4Data()
+        let v = outVec4Data.getData()
         v.outSet_N_N_N_N(this.out_w, this.out_x, this.out_z, this.out_y)
         return v
     }
@@ -2961,7 +2970,7 @@ export class Vec4Data extends ValueType {
         return v
     }
     get out_xyzy() {
-        let v = new Vec4Data()
+        let v = outVec4Data.getData()
         v.outSet_N_N_N_N(this.out_x, this.out_y, this.out_z, this.out_y)
         return v
     }
@@ -2971,7 +2980,7 @@ export class Vec4Data extends ValueType {
         return v
     }
     get out_yyzy() {
-        let v = new Vec4Data()
+        let v = outVec4Data.getData()
         v.outSet_N_N_N_N(this.out_y, this.out_y, this.out_z, this.out_y)
         return v
     }
@@ -2981,7 +2990,7 @@ export class Vec4Data extends ValueType {
         return v
     }
     get out_zyzy() {
-        let v = new Vec4Data()
+        let v = outVec4Data.getData()
         v.outSet_N_N_N_N(this.out_z, this.out_y, this.out_z, this.out_y)
         return v
     }
@@ -2991,7 +3000,7 @@ export class Vec4Data extends ValueType {
         return v
     }
     get out_wyzy() {
-        let v = new Vec4Data()
+        let v = outVec4Data.getData()
         v.outSet_N_N_N_N(this.out_w, this.out_y, this.out_z, this.out_y)
         return v
     }
@@ -3001,7 +3010,7 @@ export class Vec4Data extends ValueType {
         return v
     }
     get out_xzzy() {
-        let v = new Vec4Data()
+        let v = outVec4Data.getData()
         v.outSet_N_N_N_N(this.out_x, this.out_z, this.out_z, this.out_y)
         return v
     }
@@ -3011,7 +3020,7 @@ export class Vec4Data extends ValueType {
         return v
     }
     get out_yzzy() {
-        let v = new Vec4Data()
+        let v = outVec4Data.getData()
         v.outSet_N_N_N_N(this.out_y, this.out_z, this.out_z, this.out_y)
         return v
     }
@@ -3021,7 +3030,7 @@ export class Vec4Data extends ValueType {
         return v
     }
     get out_zzzy() {
-        let v = new Vec4Data()
+        let v = outVec4Data.getData()
         v.outSet_N_N_N_N(this.out_z, this.out_z, this.out_z, this.out_y)
         return v
     }
@@ -3031,7 +3040,7 @@ export class Vec4Data extends ValueType {
         return v
     }
     get out_wzzy() {
-        let v = new Vec4Data()
+        let v = outVec4Data.getData()
         v.outSet_N_N_N_N(this.out_w, this.out_z, this.out_z, this.out_y)
         return v
     }
@@ -3041,7 +3050,7 @@ export class Vec4Data extends ValueType {
         return v
     }
     get out_xwzy() {
-        let v = new Vec4Data()
+        let v = outVec4Data.getData()
         v.outSet_N_N_N_N(this.out_x, this.out_w, this.out_z, this.out_y)
         return v
     }
@@ -3057,7 +3066,7 @@ export class Vec4Data extends ValueType {
         return v
     }
     get out_ywzy() {
-        let v = new Vec4Data()
+        let v = outVec4Data.getData()
         v.outSet_N_N_N_N(this.out_y, this.out_w, this.out_z, this.out_y)
         return v
     }
@@ -3067,7 +3076,7 @@ export class Vec4Data extends ValueType {
         return v
     }
     get out_zwzy() {
-        let v = new Vec4Data()
+        let v = outVec4Data.getData()
         v.outSet_N_N_N_N(this.out_z, this.out_w, this.out_z, this.out_y)
         return v
     }
@@ -3077,7 +3086,7 @@ export class Vec4Data extends ValueType {
         return v
     }
     get out_wwzy() {
-        let v = new Vec4Data()
+        let v = outVec4Data.getData()
         v.outSet_N_N_N_N(this.out_w, this.out_w, this.out_z, this.out_y)
         return v
     }
@@ -3087,7 +3096,7 @@ export class Vec4Data extends ValueType {
         return v
     }
     get out_xxwy() {
-        let v = new Vec4Data()
+        let v = outVec4Data.getData()
         v.outSet_N_N_N_N(this.out_x, this.out_x, this.out_w, this.out_y)
         return v
     }
@@ -3097,7 +3106,7 @@ export class Vec4Data extends ValueType {
         return v
     }
     get out_yxwy() {
-        let v = new Vec4Data()
+        let v = outVec4Data.getData()
         v.outSet_N_N_N_N(this.out_y, this.out_x, this.out_w, this.out_y)
         return v
     }
@@ -3107,7 +3116,7 @@ export class Vec4Data extends ValueType {
         return v
     }
     get out_zxwy() {
-        let v = new Vec4Data()
+        let v = outVec4Data.getData()
         v.outSet_N_N_N_N(this.out_z, this.out_x, this.out_w, this.out_y)
         return v
     }
@@ -3123,7 +3132,7 @@ export class Vec4Data extends ValueType {
         return v
     }
     get out_wxwy() {
-        let v = new Vec4Data()
+        let v = outVec4Data.getData()
         v.outSet_N_N_N_N(this.out_w, this.out_x, this.out_w, this.out_y)
         return v
     }
@@ -3133,7 +3142,7 @@ export class Vec4Data extends ValueType {
         return v
     }
     get out_xywy() {
-        let v = new Vec4Data()
+        let v = outVec4Data.getData()
         v.outSet_N_N_N_N(this.out_x, this.out_y, this.out_w, this.out_y)
         return v
     }
@@ -3143,7 +3152,7 @@ export class Vec4Data extends ValueType {
         return v
     }
     get out_yywy() {
-        let v = new Vec4Data()
+        let v = outVec4Data.getData()
         v.outSet_N_N_N_N(this.out_y, this.out_y, this.out_w, this.out_y)
         return v
     }
@@ -3153,7 +3162,7 @@ export class Vec4Data extends ValueType {
         return v
     }
     get out_zywy() {
-        let v = new Vec4Data()
+        let v = outVec4Data.getData()
         v.outSet_N_N_N_N(this.out_z, this.out_y, this.out_w, this.out_y)
         return v
     }
@@ -3163,7 +3172,7 @@ export class Vec4Data extends ValueType {
         return v
     }
     get out_wywy() {
-        let v = new Vec4Data()
+        let v = outVec4Data.getData()
         v.outSet_N_N_N_N(this.out_w, this.out_y, this.out_w, this.out_y)
         return v
     }
@@ -3173,7 +3182,7 @@ export class Vec4Data extends ValueType {
         return v
     }
     get out_xzwy() {
-        let v = new Vec4Data()
+        let v = outVec4Data.getData()
         v.outSet_N_N_N_N(this.out_x, this.out_z, this.out_w, this.out_y)
         return v
     }
@@ -3189,7 +3198,7 @@ export class Vec4Data extends ValueType {
         return v
     }
     get out_yzwy() {
-        let v = new Vec4Data()
+        let v = outVec4Data.getData()
         v.outSet_N_N_N_N(this.out_y, this.out_z, this.out_w, this.out_y)
         return v
     }
@@ -3199,7 +3208,7 @@ export class Vec4Data extends ValueType {
         return v
     }
     get out_zzwy() {
-        let v = new Vec4Data()
+        let v = outVec4Data.getData()
         v.outSet_N_N_N_N(this.out_z, this.out_z, this.out_w, this.out_y)
         return v
     }
@@ -3209,7 +3218,7 @@ export class Vec4Data extends ValueType {
         return v
     }
     get out_wzwy() {
-        let v = new Vec4Data()
+        let v = outVec4Data.getData()
         v.outSet_N_N_N_N(this.out_w, this.out_z, this.out_w, this.out_y)
         return v
     }
@@ -3219,7 +3228,7 @@ export class Vec4Data extends ValueType {
         return v
     }
     get out_xwwy() {
-        let v = new Vec4Data()
+        let v = outVec4Data.getData()
         v.outSet_N_N_N_N(this.out_x, this.out_w, this.out_w, this.out_y)
         return v
     }
@@ -3229,7 +3238,7 @@ export class Vec4Data extends ValueType {
         return v
     }
     get out_ywwy() {
-        let v = new Vec4Data()
+        let v = outVec4Data.getData()
         v.outSet_N_N_N_N(this.out_y, this.out_w, this.out_w, this.out_y)
         return v
     }
@@ -3239,7 +3248,7 @@ export class Vec4Data extends ValueType {
         return v
     }
     get out_zwwy() {
-        let v = new Vec4Data()
+        let v = outVec4Data.getData()
         v.outSet_N_N_N_N(this.out_z, this.out_w, this.out_w, this.out_y)
         return v
     }
@@ -3249,7 +3258,7 @@ export class Vec4Data extends ValueType {
         return v
     }
     get out_wwwy() {
-        let v = new Vec4Data()
+        let v = outVec4Data.getData()
         v.outSet_N_N_N_N(this.out_w, this.out_w, this.out_w, this.out_y)
         return v
     }
@@ -3259,7 +3268,7 @@ export class Vec4Data extends ValueType {
         return v
     }
     get out_xxxz() {
-        let v = new Vec4Data()
+        let v = outVec4Data.getData()
         v.outSet_N_N_N_N(this.out_x, this.out_x, this.out_x, this.out_z)
         return v
     }
@@ -3269,7 +3278,7 @@ export class Vec4Data extends ValueType {
         return v
     }
     get out_yxxz() {
-        let v = new Vec4Data()
+        let v = outVec4Data.getData()
         v.outSet_N_N_N_N(this.out_y, this.out_x, this.out_x, this.out_z)
         return v
     }
@@ -3279,7 +3288,7 @@ export class Vec4Data extends ValueType {
         return v
     }
     get out_zxxz() {
-        let v = new Vec4Data()
+        let v = outVec4Data.getData()
         v.outSet_N_N_N_N(this.out_z, this.out_x, this.out_x, this.out_z)
         return v
     }
@@ -3289,7 +3298,7 @@ export class Vec4Data extends ValueType {
         return v
     }
     get out_wxxz() {
-        let v = new Vec4Data()
+        let v = outVec4Data.getData()
         v.outSet_N_N_N_N(this.out_w, this.out_x, this.out_x, this.out_z)
         return v
     }
@@ -3299,7 +3308,7 @@ export class Vec4Data extends ValueType {
         return v
     }
     get out_xyxz() {
-        let v = new Vec4Data()
+        let v = outVec4Data.getData()
         v.outSet_N_N_N_N(this.out_x, this.out_y, this.out_x, this.out_z)
         return v
     }
@@ -3309,7 +3318,7 @@ export class Vec4Data extends ValueType {
         return v
     }
     get out_yyxz() {
-        let v = new Vec4Data()
+        let v = outVec4Data.getData()
         v.outSet_N_N_N_N(this.out_y, this.out_y, this.out_x, this.out_z)
         return v
     }
@@ -3319,7 +3328,7 @@ export class Vec4Data extends ValueType {
         return v
     }
     get out_zyxz() {
-        let v = new Vec4Data()
+        let v = outVec4Data.getData()
         v.outSet_N_N_N_N(this.out_z, this.out_y, this.out_x, this.out_z)
         return v
     }
@@ -3329,7 +3338,7 @@ export class Vec4Data extends ValueType {
         return v
     }
     get out_wyxz() {
-        let v = new Vec4Data()
+        let v = outVec4Data.getData()
         v.outSet_N_N_N_N(this.out_w, this.out_y, this.out_x, this.out_z)
         return v
     }
@@ -3345,7 +3354,7 @@ export class Vec4Data extends ValueType {
         return v
     }
     get out_xzxz() {
-        let v = new Vec4Data()
+        let v = outVec4Data.getData()
         v.outSet_N_N_N_N(this.out_x, this.out_z, this.out_x, this.out_z)
         return v
     }
@@ -3355,7 +3364,7 @@ export class Vec4Data extends ValueType {
         return v
     }
     get out_yzxz() {
-        let v = new Vec4Data()
+        let v = outVec4Data.getData()
         v.outSet_N_N_N_N(this.out_y, this.out_z, this.out_x, this.out_z)
         return v
     }
@@ -3365,7 +3374,7 @@ export class Vec4Data extends ValueType {
         return v
     }
     get out_zzxz() {
-        let v = new Vec4Data()
+        let v = outVec4Data.getData()
         v.outSet_N_N_N_N(this.out_z, this.out_z, this.out_x, this.out_z)
         return v
     }
@@ -3375,7 +3384,7 @@ export class Vec4Data extends ValueType {
         return v
     }
     get out_wzxz() {
-        let v = new Vec4Data()
+        let v = outVec4Data.getData()
         v.outSet_N_N_N_N(this.out_w, this.out_z, this.out_x, this.out_z)
         return v
     }
@@ -3385,7 +3394,7 @@ export class Vec4Data extends ValueType {
         return v
     }
     get out_xwxz() {
-        let v = new Vec4Data()
+        let v = outVec4Data.getData()
         v.outSet_N_N_N_N(this.out_x, this.out_w, this.out_x, this.out_z)
         return v
     }
@@ -3395,7 +3404,7 @@ export class Vec4Data extends ValueType {
         return v
     }
     get out_ywxz() {
-        let v = new Vec4Data()
+        let v = outVec4Data.getData()
         v.outSet_N_N_N_N(this.out_y, this.out_w, this.out_x, this.out_z)
         return v
     }
@@ -3411,7 +3420,7 @@ export class Vec4Data extends ValueType {
         return v
     }
     get out_zwxz() {
-        let v = new Vec4Data()
+        let v = outVec4Data.getData()
         v.outSet_N_N_N_N(this.out_z, this.out_w, this.out_x, this.out_z)
         return v
     }
@@ -3421,7 +3430,7 @@ export class Vec4Data extends ValueType {
         return v
     }
     get out_wwxz() {
-        let v = new Vec4Data()
+        let v = outVec4Data.getData()
         v.outSet_N_N_N_N(this.out_w, this.out_w, this.out_x, this.out_z)
         return v
     }
@@ -3431,7 +3440,7 @@ export class Vec4Data extends ValueType {
         return v
     }
     get out_xxyz() {
-        let v = new Vec4Data()
+        let v = outVec4Data.getData()
         v.outSet_N_N_N_N(this.out_x, this.out_x, this.out_y, this.out_z)
         return v
     }
@@ -3441,7 +3450,7 @@ export class Vec4Data extends ValueType {
         return v
     }
     get out_yxyz() {
-        let v = new Vec4Data()
+        let v = outVec4Data.getData()
         v.outSet_N_N_N_N(this.out_y, this.out_x, this.out_y, this.out_z)
         return v
     }
@@ -3451,7 +3460,7 @@ export class Vec4Data extends ValueType {
         return v
     }
     get out_zxyz() {
-        let v = new Vec4Data()
+        let v = outVec4Data.getData()
         v.outSet_N_N_N_N(this.out_z, this.out_x, this.out_y, this.out_z)
         return v
     }
@@ -3461,7 +3470,7 @@ export class Vec4Data extends ValueType {
         return v
     }
     get out_wxyz() {
-        let v = new Vec4Data()
+        let v = outVec4Data.getData()
         v.outSet_N_N_N_N(this.out_w, this.out_x, this.out_y, this.out_z)
         return v
     }
@@ -3477,7 +3486,7 @@ export class Vec4Data extends ValueType {
         return v
     }
     get out_xyyz() {
-        let v = new Vec4Data()
+        let v = outVec4Data.getData()
         v.outSet_N_N_N_N(this.out_x, this.out_y, this.out_y, this.out_z)
         return v
     }
@@ -3487,7 +3496,7 @@ export class Vec4Data extends ValueType {
         return v
     }
     get out_yyyz() {
-        let v = new Vec4Data()
+        let v = outVec4Data.getData()
         v.outSet_N_N_N_N(this.out_y, this.out_y, this.out_y, this.out_z)
         return v
     }
@@ -3497,7 +3506,7 @@ export class Vec4Data extends ValueType {
         return v
     }
     get out_zyyz() {
-        let v = new Vec4Data()
+        let v = outVec4Data.getData()
         v.outSet_N_N_N_N(this.out_z, this.out_y, this.out_y, this.out_z)
         return v
     }
@@ -3507,7 +3516,7 @@ export class Vec4Data extends ValueType {
         return v
     }
     get out_wyyz() {
-        let v = new Vec4Data()
+        let v = outVec4Data.getData()
         v.outSet_N_N_N_N(this.out_w, this.out_y, this.out_y, this.out_z)
         return v
     }
@@ -3517,7 +3526,7 @@ export class Vec4Data extends ValueType {
         return v
     }
     get out_xzyz() {
-        let v = new Vec4Data()
+        let v = outVec4Data.getData()
         v.outSet_N_N_N_N(this.out_x, this.out_z, this.out_y, this.out_z)
         return v
     }
@@ -3527,7 +3536,7 @@ export class Vec4Data extends ValueType {
         return v
     }
     get out_yzyz() {
-        let v = new Vec4Data()
+        let v = outVec4Data.getData()
         v.outSet_N_N_N_N(this.out_y, this.out_z, this.out_y, this.out_z)
         return v
     }
@@ -3537,7 +3546,7 @@ export class Vec4Data extends ValueType {
         return v
     }
     get out_zzyz() {
-        let v = new Vec4Data()
+        let v = outVec4Data.getData()
         v.outSet_N_N_N_N(this.out_z, this.out_z, this.out_y, this.out_z)
         return v
     }
@@ -3547,7 +3556,7 @@ export class Vec4Data extends ValueType {
         return v
     }
     get out_wzyz() {
-        let v = new Vec4Data()
+        let v = outVec4Data.getData()
         v.outSet_N_N_N_N(this.out_w, this.out_z, this.out_y, this.out_z)
         return v
     }
@@ -3557,7 +3566,7 @@ export class Vec4Data extends ValueType {
         return v
     }
     get out_xwyz() {
-        let v = new Vec4Data()
+        let v = outVec4Data.getData()
         v.outSet_N_N_N_N(this.out_x, this.out_w, this.out_y, this.out_z)
         return v
     }
@@ -3573,7 +3582,7 @@ export class Vec4Data extends ValueType {
         return v
     }
     get out_ywyz() {
-        let v = new Vec4Data()
+        let v = outVec4Data.getData()
         v.outSet_N_N_N_N(this.out_y, this.out_w, this.out_y, this.out_z)
         return v
     }
@@ -3583,7 +3592,7 @@ export class Vec4Data extends ValueType {
         return v
     }
     get out_zwyz() {
-        let v = new Vec4Data()
+        let v = outVec4Data.getData()
         v.outSet_N_N_N_N(this.out_z, this.out_w, this.out_y, this.out_z)
         return v
     }
@@ -3593,7 +3602,7 @@ export class Vec4Data extends ValueType {
         return v
     }
     get out_wwyz() {
-        let v = new Vec4Data()
+        let v = outVec4Data.getData()
         v.outSet_N_N_N_N(this.out_w, this.out_w, this.out_y, this.out_z)
         return v
     }
@@ -3603,7 +3612,7 @@ export class Vec4Data extends ValueType {
         return v
     }
     get out_xxzz() {
-        let v = new Vec4Data()
+        let v = outVec4Data.getData()
         v.outSet_N_N_N_N(this.out_x, this.out_x, this.out_z, this.out_z)
         return v
     }
@@ -3613,7 +3622,7 @@ export class Vec4Data extends ValueType {
         return v
     }
     get out_yxzz() {
-        let v = new Vec4Data()
+        let v = outVec4Data.getData()
         v.outSet_N_N_N_N(this.out_y, this.out_x, this.out_z, this.out_z)
         return v
     }
@@ -3623,7 +3632,7 @@ export class Vec4Data extends ValueType {
         return v
     }
     get out_zxzz() {
-        let v = new Vec4Data()
+        let v = outVec4Data.getData()
         v.outSet_N_N_N_N(this.out_z, this.out_x, this.out_z, this.out_z)
         return v
     }
@@ -3633,7 +3642,7 @@ export class Vec4Data extends ValueType {
         return v
     }
     get out_wxzz() {
-        let v = new Vec4Data()
+        let v = outVec4Data.getData()
         v.outSet_N_N_N_N(this.out_w, this.out_x, this.out_z, this.out_z)
         return v
     }
@@ -3643,7 +3652,7 @@ export class Vec4Data extends ValueType {
         return v
     }
     get out_xyzz() {
-        let v = new Vec4Data()
+        let v = outVec4Data.getData()
         v.outSet_N_N_N_N(this.out_x, this.out_y, this.out_z, this.out_z)
         return v
     }
@@ -3653,7 +3662,7 @@ export class Vec4Data extends ValueType {
         return v
     }
     get out_yyzz() {
-        let v = new Vec4Data()
+        let v = outVec4Data.getData()
         v.outSet_N_N_N_N(this.out_y, this.out_y, this.out_z, this.out_z)
         return v
     }
@@ -3663,7 +3672,7 @@ export class Vec4Data extends ValueType {
         return v
     }
     get out_zyzz() {
-        let v = new Vec4Data()
+        let v = outVec4Data.getData()
         v.outSet_N_N_N_N(this.out_z, this.out_y, this.out_z, this.out_z)
         return v
     }
@@ -3673,7 +3682,7 @@ export class Vec4Data extends ValueType {
         return v
     }
     get out_wyzz() {
-        let v = new Vec4Data()
+        let v = outVec4Data.getData()
         v.outSet_N_N_N_N(this.out_w, this.out_y, this.out_z, this.out_z)
         return v
     }
@@ -3683,7 +3692,7 @@ export class Vec4Data extends ValueType {
         return v
     }
     get out_xzzz() {
-        let v = new Vec4Data()
+        let v = outVec4Data.getData()
         v.outSet_N_N_N_N(this.out_x, this.out_z, this.out_z, this.out_z)
         return v
     }
@@ -3693,7 +3702,7 @@ export class Vec4Data extends ValueType {
         return v
     }
     get out_yzzz() {
-        let v = new Vec4Data()
+        let v = outVec4Data.getData()
         v.outSet_N_N_N_N(this.out_y, this.out_z, this.out_z, this.out_z)
         return v
     }
@@ -3703,7 +3712,7 @@ export class Vec4Data extends ValueType {
         return v
     }
     get out_zzzz() {
-        let v = new Vec4Data()
+        let v = outVec4Data.getData()
         v.outSet_N_N_N_N(this.out_z, this.out_z, this.out_z, this.out_z)
         return v
     }
@@ -3713,7 +3722,7 @@ export class Vec4Data extends ValueType {
         return v
     }
     get out_wzzz() {
-        let v = new Vec4Data()
+        let v = outVec4Data.getData()
         v.outSet_N_N_N_N(this.out_w, this.out_z, this.out_z, this.out_z)
         return v
     }
@@ -3723,7 +3732,7 @@ export class Vec4Data extends ValueType {
         return v
     }
     get out_xwzz() {
-        let v = new Vec4Data()
+        let v = outVec4Data.getData()
         v.outSet_N_N_N_N(this.out_x, this.out_w, this.out_z, this.out_z)
         return v
     }
@@ -3733,7 +3742,7 @@ export class Vec4Data extends ValueType {
         return v
     }
     get out_ywzz() {
-        let v = new Vec4Data()
+        let v = outVec4Data.getData()
         v.outSet_N_N_N_N(this.out_y, this.out_w, this.out_z, this.out_z)
         return v
     }
@@ -3743,7 +3752,7 @@ export class Vec4Data extends ValueType {
         return v
     }
     get out_zwzz() {
-        let v = new Vec4Data()
+        let v = outVec4Data.getData()
         v.outSet_N_N_N_N(this.out_z, this.out_w, this.out_z, this.out_z)
         return v
     }
@@ -3753,7 +3762,7 @@ export class Vec4Data extends ValueType {
         return v
     }
     get out_wwzz() {
-        let v = new Vec4Data()
+        let v = outVec4Data.getData()
         v.outSet_N_N_N_N(this.out_w, this.out_w, this.out_z, this.out_z)
         return v
     }
@@ -3763,7 +3772,7 @@ export class Vec4Data extends ValueType {
         return v
     }
     get out_xxwz() {
-        let v = new Vec4Data()
+        let v = outVec4Data.getData()
         v.outSet_N_N_N_N(this.out_x, this.out_x, this.out_w, this.out_z)
         return v
     }
@@ -3773,7 +3782,7 @@ export class Vec4Data extends ValueType {
         return v
     }
     get out_yxwz() {
-        let v = new Vec4Data()
+        let v = outVec4Data.getData()
         v.outSet_N_N_N_N(this.out_y, this.out_x, this.out_w, this.out_z)
         return v
     }
@@ -3789,7 +3798,7 @@ export class Vec4Data extends ValueType {
         return v
     }
     get out_zxwz() {
-        let v = new Vec4Data()
+        let v = outVec4Data.getData()
         v.outSet_N_N_N_N(this.out_z, this.out_x, this.out_w, this.out_z)
         return v
     }
@@ -3799,7 +3808,7 @@ export class Vec4Data extends ValueType {
         return v
     }
     get out_wxwz() {
-        let v = new Vec4Data()
+        let v = outVec4Data.getData()
         v.outSet_N_N_N_N(this.out_w, this.out_x, this.out_w, this.out_z)
         return v
     }
@@ -3809,7 +3818,7 @@ export class Vec4Data extends ValueType {
         return v
     }
     get out_xywz() {
-        let v = new Vec4Data()
+        let v = outVec4Data.getData()
         v.outSet_N_N_N_N(this.out_x, this.out_y, this.out_w, this.out_z)
         return v
     }
@@ -3825,7 +3834,7 @@ export class Vec4Data extends ValueType {
         return v
     }
     get out_yywz() {
-        let v = new Vec4Data()
+        let v = outVec4Data.getData()
         v.outSet_N_N_N_N(this.out_y, this.out_y, this.out_w, this.out_z)
         return v
     }
@@ -3835,7 +3844,7 @@ export class Vec4Data extends ValueType {
         return v
     }
     get out_zywz() {
-        let v = new Vec4Data()
+        let v = outVec4Data.getData()
         v.outSet_N_N_N_N(this.out_z, this.out_y, this.out_w, this.out_z)
         return v
     }
@@ -3845,7 +3854,7 @@ export class Vec4Data extends ValueType {
         return v
     }
     get out_wywz() {
-        let v = new Vec4Data()
+        let v = outVec4Data.getData()
         v.outSet_N_N_N_N(this.out_w, this.out_y, this.out_w, this.out_z)
         return v
     }
@@ -3855,7 +3864,7 @@ export class Vec4Data extends ValueType {
         return v
     }
     get out_xzwz() {
-        let v = new Vec4Data()
+        let v = outVec4Data.getData()
         v.outSet_N_N_N_N(this.out_x, this.out_z, this.out_w, this.out_z)
         return v
     }
@@ -3865,7 +3874,7 @@ export class Vec4Data extends ValueType {
         return v
     }
     get out_yzwz() {
-        let v = new Vec4Data()
+        let v = outVec4Data.getData()
         v.outSet_N_N_N_N(this.out_y, this.out_z, this.out_w, this.out_z)
         return v
     }
@@ -3875,7 +3884,7 @@ export class Vec4Data extends ValueType {
         return v
     }
     get out_zzwz() {
-        let v = new Vec4Data()
+        let v = outVec4Data.getData()
         v.outSet_N_N_N_N(this.out_z, this.out_z, this.out_w, this.out_z)
         return v
     }
@@ -3885,7 +3894,7 @@ export class Vec4Data extends ValueType {
         return v
     }
     get out_wzwz() {
-        let v = new Vec4Data()
+        let v = outVec4Data.getData()
         v.outSet_N_N_N_N(this.out_w, this.out_z, this.out_w, this.out_z)
         return v
     }
@@ -3895,7 +3904,7 @@ export class Vec4Data extends ValueType {
         return v
     }
     get out_xwwz() {
-        let v = new Vec4Data()
+        let v = outVec4Data.getData()
         v.outSet_N_N_N_N(this.out_x, this.out_w, this.out_w, this.out_z)
         return v
     }
@@ -3905,7 +3914,7 @@ export class Vec4Data extends ValueType {
         return v
     }
     get out_ywwz() {
-        let v = new Vec4Data()
+        let v = outVec4Data.getData()
         v.outSet_N_N_N_N(this.out_y, this.out_w, this.out_w, this.out_z)
         return v
     }
@@ -3915,7 +3924,7 @@ export class Vec4Data extends ValueType {
         return v
     }
     get out_zwwz() {
-        let v = new Vec4Data()
+        let v = outVec4Data.getData()
         v.outSet_N_N_N_N(this.out_z, this.out_w, this.out_w, this.out_z)
         return v
     }
@@ -3925,7 +3934,7 @@ export class Vec4Data extends ValueType {
         return v
     }
     get out_wwwz() {
-        let v = new Vec4Data()
+        let v = outVec4Data.getData()
         v.outSet_N_N_N_N(this.out_w, this.out_w, this.out_w, this.out_z)
         return v
     }
@@ -3935,7 +3944,7 @@ export class Vec4Data extends ValueType {
         return v
     }
     get out_xxxw() {
-        let v = new Vec4Data()
+        let v = outVec4Data.getData()
         v.outSet_N_N_N_N(this.out_x, this.out_x, this.out_x, this.out_w)
         return v
     }
@@ -3945,7 +3954,7 @@ export class Vec4Data extends ValueType {
         return v
     }
     get out_yxxw() {
-        let v = new Vec4Data()
+        let v = outVec4Data.getData()
         v.outSet_N_N_N_N(this.out_y, this.out_x, this.out_x, this.out_w)
         return v
     }
@@ -3955,7 +3964,7 @@ export class Vec4Data extends ValueType {
         return v
     }
     get out_zxxw() {
-        let v = new Vec4Data()
+        let v = outVec4Data.getData()
         v.outSet_N_N_N_N(this.out_z, this.out_x, this.out_x, this.out_w)
         return v
     }
@@ -3965,7 +3974,7 @@ export class Vec4Data extends ValueType {
         return v
     }
     get out_wxxw() {
-        let v = new Vec4Data()
+        let v = outVec4Data.getData()
         v.outSet_N_N_N_N(this.out_w, this.out_x, this.out_x, this.out_w)
         return v
     }
@@ -3975,7 +3984,7 @@ export class Vec4Data extends ValueType {
         return v
     }
     get out_xyxw() {
-        let v = new Vec4Data()
+        let v = outVec4Data.getData()
         v.outSet_N_N_N_N(this.out_x, this.out_y, this.out_x, this.out_w)
         return v
     }
@@ -3985,7 +3994,7 @@ export class Vec4Data extends ValueType {
         return v
     }
     get out_yyxw() {
-        let v = new Vec4Data()
+        let v = outVec4Data.getData()
         v.outSet_N_N_N_N(this.out_y, this.out_y, this.out_x, this.out_w)
         return v
     }
@@ -3995,7 +4004,7 @@ export class Vec4Data extends ValueType {
         return v
     }
     get out_zyxw() {
-        let v = new Vec4Data()
+        let v = outVec4Data.getData()
         v.outSet_N_N_N_N(this.out_z, this.out_y, this.out_x, this.out_w)
         return v
     }
@@ -4011,7 +4020,7 @@ export class Vec4Data extends ValueType {
         return v
     }
     get out_wyxw() {
-        let v = new Vec4Data()
+        let v = outVec4Data.getData()
         v.outSet_N_N_N_N(this.out_w, this.out_y, this.out_x, this.out_w)
         return v
     }
@@ -4021,7 +4030,7 @@ export class Vec4Data extends ValueType {
         return v
     }
     get out_xzxw() {
-        let v = new Vec4Data()
+        let v = outVec4Data.getData()
         v.outSet_N_N_N_N(this.out_x, this.out_z, this.out_x, this.out_w)
         return v
     }
@@ -4031,7 +4040,7 @@ export class Vec4Data extends ValueType {
         return v
     }
     get out_yzxw() {
-        let v = new Vec4Data()
+        let v = outVec4Data.getData()
         v.outSet_N_N_N_N(this.out_y, this.out_z, this.out_x, this.out_w)
         return v
     }
@@ -4047,7 +4056,7 @@ export class Vec4Data extends ValueType {
         return v
     }
     get out_zzxw() {
-        let v = new Vec4Data()
+        let v = outVec4Data.getData()
         v.outSet_N_N_N_N(this.out_z, this.out_z, this.out_x, this.out_w)
         return v
     }
@@ -4057,7 +4066,7 @@ export class Vec4Data extends ValueType {
         return v
     }
     get out_wzxw() {
-        let v = new Vec4Data()
+        let v = outVec4Data.getData()
         v.outSet_N_N_N_N(this.out_w, this.out_z, this.out_x, this.out_w)
         return v
     }
@@ -4067,7 +4076,7 @@ export class Vec4Data extends ValueType {
         return v
     }
     get out_xwxw() {
-        let v = new Vec4Data()
+        let v = outVec4Data.getData()
         v.outSet_N_N_N_N(this.out_x, this.out_w, this.out_x, this.out_w)
         return v
     }
@@ -4077,7 +4086,7 @@ export class Vec4Data extends ValueType {
         return v
     }
     get out_ywxw() {
-        let v = new Vec4Data()
+        let v = outVec4Data.getData()
         v.outSet_N_N_N_N(this.out_y, this.out_w, this.out_x, this.out_w)
         return v
     }
@@ -4087,7 +4096,7 @@ export class Vec4Data extends ValueType {
         return v
     }
     get out_zwxw() {
-        let v = new Vec4Data()
+        let v = outVec4Data.getData()
         v.outSet_N_N_N_N(this.out_z, this.out_w, this.out_x, this.out_w)
         return v
     }
@@ -4097,7 +4106,7 @@ export class Vec4Data extends ValueType {
         return v
     }
     get out_wwxw() {
-        let v = new Vec4Data()
+        let v = outVec4Data.getData()
         v.outSet_N_N_N_N(this.out_w, this.out_w, this.out_x, this.out_w)
         return v
     }
@@ -4107,7 +4116,7 @@ export class Vec4Data extends ValueType {
         return v
     }
     get out_xxyw() {
-        let v = new Vec4Data()
+        let v = outVec4Data.getData()
         v.outSet_N_N_N_N(this.out_x, this.out_x, this.out_y, this.out_w)
         return v
     }
@@ -4117,7 +4126,7 @@ export class Vec4Data extends ValueType {
         return v
     }
     get out_yxyw() {
-        let v = new Vec4Data()
+        let v = outVec4Data.getData()
         v.outSet_N_N_N_N(this.out_y, this.out_x, this.out_y, this.out_w)
         return v
     }
@@ -4127,7 +4136,7 @@ export class Vec4Data extends ValueType {
         return v
     }
     get out_zxyw() {
-        let v = new Vec4Data()
+        let v = outVec4Data.getData()
         v.outSet_N_N_N_N(this.out_z, this.out_x, this.out_y, this.out_w)
         return v
     }
@@ -4143,7 +4152,7 @@ export class Vec4Data extends ValueType {
         return v
     }
     get out_wxyw() {
-        let v = new Vec4Data()
+        let v = outVec4Data.getData()
         v.outSet_N_N_N_N(this.out_w, this.out_x, this.out_y, this.out_w)
         return v
     }
@@ -4153,7 +4162,7 @@ export class Vec4Data extends ValueType {
         return v
     }
     get out_xyyw() {
-        let v = new Vec4Data()
+        let v = outVec4Data.getData()
         v.outSet_N_N_N_N(this.out_x, this.out_y, this.out_y, this.out_w)
         return v
     }
@@ -4163,7 +4172,7 @@ export class Vec4Data extends ValueType {
         return v
     }
     get out_yyyw() {
-        let v = new Vec4Data()
+        let v = outVec4Data.getData()
         v.outSet_N_N_N_N(this.out_y, this.out_y, this.out_y, this.out_w)
         return v
     }
@@ -4173,7 +4182,7 @@ export class Vec4Data extends ValueType {
         return v
     }
     get out_zyyw() {
-        let v = new Vec4Data()
+        let v = outVec4Data.getData()
         v.outSet_N_N_N_N(this.out_z, this.out_y, this.out_y, this.out_w)
         return v
     }
@@ -4183,7 +4192,7 @@ export class Vec4Data extends ValueType {
         return v
     }
     get out_wyyw() {
-        let v = new Vec4Data()
+        let v = outVec4Data.getData()
         v.outSet_N_N_N_N(this.out_w, this.out_y, this.out_y, this.out_w)
         return v
     }
@@ -4193,7 +4202,7 @@ export class Vec4Data extends ValueType {
         return v
     }
     get out_xzyw() {
-        let v = new Vec4Data()
+        let v = outVec4Data.getData()
         v.outSet_N_N_N_N(this.out_x, this.out_z, this.out_y, this.out_w)
         return v
     }
@@ -4209,7 +4218,7 @@ export class Vec4Data extends ValueType {
         return v
     }
     get out_yzyw() {
-        let v = new Vec4Data()
+        let v = outVec4Data.getData()
         v.outSet_N_N_N_N(this.out_y, this.out_z, this.out_y, this.out_w)
         return v
     }
@@ -4219,7 +4228,7 @@ export class Vec4Data extends ValueType {
         return v
     }
     get out_zzyw() {
-        let v = new Vec4Data()
+        let v = outVec4Data.getData()
         v.outSet_N_N_N_N(this.out_z, this.out_z, this.out_y, this.out_w)
         return v
     }
@@ -4229,7 +4238,7 @@ export class Vec4Data extends ValueType {
         return v
     }
     get out_wzyw() {
-        let v = new Vec4Data()
+        let v = outVec4Data.getData()
         v.outSet_N_N_N_N(this.out_w, this.out_z, this.out_y, this.out_w)
         return v
     }
@@ -4239,7 +4248,7 @@ export class Vec4Data extends ValueType {
         return v
     }
     get out_xwyw() {
-        let v = new Vec4Data()
+        let v = outVec4Data.getData()
         v.outSet_N_N_N_N(this.out_x, this.out_w, this.out_y, this.out_w)
         return v
     }
@@ -4249,7 +4258,7 @@ export class Vec4Data extends ValueType {
         return v
     }
     get out_ywyw() {
-        let v = new Vec4Data()
+        let v = outVec4Data.getData()
         v.outSet_N_N_N_N(this.out_y, this.out_w, this.out_y, this.out_w)
         return v
     }
@@ -4259,7 +4268,7 @@ export class Vec4Data extends ValueType {
         return v
     }
     get out_zwyw() {
-        let v = new Vec4Data()
+        let v = outVec4Data.getData()
         v.outSet_N_N_N_N(this.out_z, this.out_w, this.out_y, this.out_w)
         return v
     }
@@ -4269,7 +4278,7 @@ export class Vec4Data extends ValueType {
         return v
     }
     get out_wwyw() {
-        let v = new Vec4Data()
+        let v = outVec4Data.getData()
         v.outSet_N_N_N_N(this.out_w, this.out_w, this.out_y, this.out_w)
         return v
     }
@@ -4279,7 +4288,7 @@ export class Vec4Data extends ValueType {
         return v
     }
     get out_xxzw() {
-        let v = new Vec4Data()
+        let v = outVec4Data.getData()
         v.outSet_N_N_N_N(this.out_x, this.out_x, this.out_z, this.out_w)
         return v
     }
@@ -4289,7 +4298,7 @@ export class Vec4Data extends ValueType {
         return v
     }
     get out_yxzw() {
-        let v = new Vec4Data()
+        let v = outVec4Data.getData()
         v.outSet_N_N_N_N(this.out_y, this.out_x, this.out_z, this.out_w)
         return v
     }
@@ -4305,7 +4314,7 @@ export class Vec4Data extends ValueType {
         return v
     }
     get out_zxzw() {
-        let v = new Vec4Data()
+        let v = outVec4Data.getData()
         v.outSet_N_N_N_N(this.out_z, this.out_x, this.out_z, this.out_w)
         return v
     }
@@ -4315,7 +4324,7 @@ export class Vec4Data extends ValueType {
         return v
     }
     get out_wxzw() {
-        let v = new Vec4Data()
+        let v = outVec4Data.getData()
         v.outSet_N_N_N_N(this.out_w, this.out_x, this.out_z, this.out_w)
         return v
     }
@@ -4325,7 +4334,7 @@ export class Vec4Data extends ValueType {
         return v
     }
     get out_xyzw() {
-        let v = new Vec4Data()
+        let v = outVec4Data.getData()
         v.outSet_N_N_N_N(this.out_x, this.out_y, this.out_z, this.out_w)
         return v
     }
@@ -4341,7 +4350,7 @@ export class Vec4Data extends ValueType {
         return v
     }
     get out_yyzw() {
-        let v = new Vec4Data()
+        let v = outVec4Data.getData()
         v.outSet_N_N_N_N(this.out_y, this.out_y, this.out_z, this.out_w)
         return v
     }
@@ -4351,7 +4360,7 @@ export class Vec4Data extends ValueType {
         return v
     }
     get out_zyzw() {
-        let v = new Vec4Data()
+        let v = outVec4Data.getData()
         v.outSet_N_N_N_N(this.out_z, this.out_y, this.out_z, this.out_w)
         return v
     }
@@ -4361,7 +4370,7 @@ export class Vec4Data extends ValueType {
         return v
     }
     get out_wyzw() {
-        let v = new Vec4Data()
+        let v = outVec4Data.getData()
         v.outSet_N_N_N_N(this.out_w, this.out_y, this.out_z, this.out_w)
         return v
     }
@@ -4371,7 +4380,7 @@ export class Vec4Data extends ValueType {
         return v
     }
     get out_xzzw() {
-        let v = new Vec4Data()
+        let v = outVec4Data.getData()
         v.outSet_N_N_N_N(this.out_x, this.out_z, this.out_z, this.out_w)
         return v
     }
@@ -4381,7 +4390,7 @@ export class Vec4Data extends ValueType {
         return v
     }
     get out_yzzw() {
-        let v = new Vec4Data()
+        let v = outVec4Data.getData()
         v.outSet_N_N_N_N(this.out_y, this.out_z, this.out_z, this.out_w)
         return v
     }
@@ -4391,7 +4400,7 @@ export class Vec4Data extends ValueType {
         return v
     }
     get out_zzzw() {
-        let v = new Vec4Data()
+        let v = outVec4Data.getData()
         v.outSet_N_N_N_N(this.out_z, this.out_z, this.out_z, this.out_w)
         return v
     }
@@ -4401,7 +4410,7 @@ export class Vec4Data extends ValueType {
         return v
     }
     get out_wzzw() {
-        let v = new Vec4Data()
+        let v = outVec4Data.getData()
         v.outSet_N_N_N_N(this.out_w, this.out_z, this.out_z, this.out_w)
         return v
     }
@@ -4411,7 +4420,7 @@ export class Vec4Data extends ValueType {
         return v
     }
     get out_xwzw() {
-        let v = new Vec4Data()
+        let v = outVec4Data.getData()
         v.outSet_N_N_N_N(this.out_x, this.out_w, this.out_z, this.out_w)
         return v
     }
@@ -4421,7 +4430,7 @@ export class Vec4Data extends ValueType {
         return v
     }
     get out_ywzw() {
-        let v = new Vec4Data()
+        let v = outVec4Data.getData()
         v.outSet_N_N_N_N(this.out_y, this.out_w, this.out_z, this.out_w)
         return v
     }
@@ -4431,7 +4440,7 @@ export class Vec4Data extends ValueType {
         return v
     }
     get out_zwzw() {
-        let v = new Vec4Data()
+        let v = outVec4Data.getData()
         v.outSet_N_N_N_N(this.out_z, this.out_w, this.out_z, this.out_w)
         return v
     }
@@ -4441,7 +4450,7 @@ export class Vec4Data extends ValueType {
         return v
     }
     get out_wwzw() {
-        let v = new Vec4Data()
+        let v = outVec4Data.getData()
         v.outSet_N_N_N_N(this.out_w, this.out_w, this.out_z, this.out_w)
         return v
     }
@@ -4451,7 +4460,7 @@ export class Vec4Data extends ValueType {
         return v
     }
     get out_xxww() {
-        let v = new Vec4Data()
+        let v = outVec4Data.getData()
         v.outSet_N_N_N_N(this.out_x, this.out_x, this.out_w, this.out_w)
         return v
     }
@@ -4461,7 +4470,7 @@ export class Vec4Data extends ValueType {
         return v
     }
     get out_yxww() {
-        let v = new Vec4Data()
+        let v = outVec4Data.getData()
         v.outSet_N_N_N_N(this.out_y, this.out_x, this.out_w, this.out_w)
         return v
     }
@@ -4471,7 +4480,7 @@ export class Vec4Data extends ValueType {
         return v
     }
     get out_zxww() {
-        let v = new Vec4Data()
+        let v = outVec4Data.getData()
         v.outSet_N_N_N_N(this.out_z, this.out_x, this.out_w, this.out_w)
         return v
     }
@@ -4481,7 +4490,7 @@ export class Vec4Data extends ValueType {
         return v
     }
     get out_wxww() {
-        let v = new Vec4Data()
+        let v = outVec4Data.getData()
         v.outSet_N_N_N_N(this.out_w, this.out_x, this.out_w, this.out_w)
         return v
     }
@@ -4491,7 +4500,7 @@ export class Vec4Data extends ValueType {
         return v
     }
     get out_xyww() {
-        let v = new Vec4Data()
+        let v = outVec4Data.getData()
         v.outSet_N_N_N_N(this.out_x, this.out_y, this.out_w, this.out_w)
         return v
     }
@@ -4501,7 +4510,7 @@ export class Vec4Data extends ValueType {
         return v
     }
     get out_yyww() {
-        let v = new Vec4Data()
+        let v = outVec4Data.getData()
         v.outSet_N_N_N_N(this.out_y, this.out_y, this.out_w, this.out_w)
         return v
     }
@@ -4511,7 +4520,7 @@ export class Vec4Data extends ValueType {
         return v
     }
     get out_zyww() {
-        let v = new Vec4Data()
+        let v = outVec4Data.getData()
         v.outSet_N_N_N_N(this.out_z, this.out_y, this.out_w, this.out_w)
         return v
     }
@@ -4521,7 +4530,7 @@ export class Vec4Data extends ValueType {
         return v
     }
     get out_wyww() {
-        let v = new Vec4Data()
+        let v = outVec4Data.getData()
         v.outSet_N_N_N_N(this.out_w, this.out_y, this.out_w, this.out_w)
         return v
     }
@@ -4531,7 +4540,7 @@ export class Vec4Data extends ValueType {
         return v
     }
     get out_xzww() {
-        let v = new Vec4Data()
+        let v = outVec4Data.getData()
         v.outSet_N_N_N_N(this.out_x, this.out_z, this.out_w, this.out_w)
         return v
     }
@@ -4541,7 +4550,7 @@ export class Vec4Data extends ValueType {
         return v
     }
     get out_yzww() {
-        let v = new Vec4Data()
+        let v = outVec4Data.getData()
         v.outSet_N_N_N_N(this.out_y, this.out_z, this.out_w, this.out_w)
         return v
     }
@@ -4551,7 +4560,7 @@ export class Vec4Data extends ValueType {
         return v
     }
     get out_zzww() {
-        let v = new Vec4Data()
+        let v = outVec4Data.getData()
         v.outSet_N_N_N_N(this.out_z, this.out_z, this.out_w, this.out_w)
         return v
     }
@@ -4561,7 +4570,7 @@ export class Vec4Data extends ValueType {
         return v
     }
     get out_wzww() {
-        let v = new Vec4Data()
+        let v = outVec4Data.getData()
         v.outSet_N_N_N_N(this.out_w, this.out_z, this.out_w, this.out_w)
         return v
     }
@@ -4571,7 +4580,7 @@ export class Vec4Data extends ValueType {
         return v
     }
     get out_xwww() {
-        let v = new Vec4Data()
+        let v = outVec4Data.getData()
         v.outSet_N_N_N_N(this.out_x, this.out_w, this.out_w, this.out_w)
         return v
     }
@@ -4581,7 +4590,7 @@ export class Vec4Data extends ValueType {
         return v
     }
     get out_ywww() {
-        let v = new Vec4Data()
+        let v = outVec4Data.getData()
         v.outSet_N_N_N_N(this.out_y, this.out_w, this.out_w, this.out_w)
         return v
     }
@@ -4591,7 +4600,7 @@ export class Vec4Data extends ValueType {
         return v
     }
     get out_zwww() {
-        let v = new Vec4Data()
+        let v = outVec4Data.getData()
         v.outSet_N_N_N_N(this.out_z, this.out_w, this.out_w, this.out_w)
         return v
     }
@@ -4601,7 +4610,7 @@ export class Vec4Data extends ValueType {
         return v
     }
     get out_wwww() {
-        let v = new Vec4Data()
+        let v = outVec4Data.getData()
         v.outSet_N_N_N_N(this.out_w, this.out_w, this.out_w, this.out_w)
         return v
     }
@@ -4838,7 +4847,7 @@ export class Mat3Data extends ValueType {
     }
 
     get out_x() {
-        let v3 = new Vec3Data()
+        let v3 = outVec3Data.getData()
         v3.out_x = this.out_m00
         v3.out_y = this.out_m01
         v3.out_z = this.out_m02
@@ -4884,7 +4893,7 @@ export class Mat3Data extends ValueType {
     }
 
     get out_y() {
-        let v3 = new Vec3Data()
+        let v3 = outVec3Data.getData()
         v3.out_x = this.out_m03
         v3.out_y = this.out_m04
         v3.out_z = this.out_m05
@@ -4906,7 +4915,7 @@ export class Mat3Data extends ValueType {
     }
 
     get out_z() {
-        let v3 = new Vec3Data()
+        let v3 = outVec3Data.getData()
         v3.out_x = this.out_m06
         v3.out_y = this.out_m07
         v3.out_z = this.out_m08
@@ -5209,7 +5218,7 @@ export class Mat4Data extends ValueType {
     }
 
     get out_x() {
-        let v4 = new Vec4Data()
+        let v4 = outVec4Data.getData()
         v4.out_x = this.out_m00
         v4.out_y = this.out_m01
         v4.out_z = this.out_m02
@@ -5234,7 +5243,7 @@ export class Mat4Data extends ValueType {
     }
 
     get out_y() {
-        let v4 = new Vec4Data()
+        let v4 = outVec4Data.getData()
         v4.out_x = this.out_m04
         v4.out_y = this.out_m05
         v4.out_z = this.out_m06
@@ -5259,7 +5268,7 @@ export class Mat4Data extends ValueType {
     }
 
     get out_z() {
-        let v4 = new Vec4Data()
+        let v4 = outVec4Data.getData()
         v4.out_x = this.out_m08
         v4.out_y = this.out_m09
         v4.out_z = this.out_m10
@@ -5284,7 +5293,7 @@ export class Mat4Data extends ValueType {
     }
 
     get out_w() {
-        let v4 = new Vec4Data()
+        let v4 = outVec4Data.getData()
         v4.out_x = this.out_m12
         v4.out_y = this.out_m13
         v4.out_z = this.out_m14

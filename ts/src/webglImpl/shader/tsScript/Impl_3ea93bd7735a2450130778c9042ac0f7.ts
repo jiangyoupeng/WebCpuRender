@@ -79,9 +79,9 @@ let USE_ALPHA_TEST = new FloatData(0)
 let USE_TEXTURE = new FloatData(1)
 let IS_GRAY = new FloatData(1)
 class AttributeDataImpl implements AttributeData {
-    a_position: Vec3Data = null!
-    a_texCoord: Vec2Data = null!
-    a_color: Vec4Data = null!
+    a_position: Vec3Data = new Vec3Data()!
+    a_texCoord: Vec2Data = new Vec2Data()!
+    a_color: Vec4Data = new Vec4Data()!
     dataKeys: Map<string, any> = new Map([
         ["a_position", cpuRenderingContext.cachGameGl.FLOAT_VEC3],
         ["a_texCoord", cpuRenderingContext.cachGameGl.FLOAT_VEC2],

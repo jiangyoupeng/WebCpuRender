@@ -114,11 +114,11 @@ export class Impl_e5f0eda2c9e64e42ce1bb3312da8199a extends FragShaderHandle {
     uniformData: UniformDataImpl = new UniformDataImpl()
 
     ALPHA_TEST_V4(__color__: Vec4Data): void {
-        let color: Vec4Data = new Vec4Data()
+        let color: Vec4Data = vec4()
         glSet_V4_V4(color, __color__)
     }
     ALPHA_TEST_N(__alpha__: FloatData): void {
-        let alpha: FloatData = new FloatData()
+        let alpha: FloatData = float()
         glSet_N_N(alpha, __alpha__)
     }
     frag(): Vec4Data {

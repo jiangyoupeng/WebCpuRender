@@ -1,4 +1,16 @@
-import { BoolData, builtinCachData, FloatData, IntData, Mat3Data, Mat4Data, NumData, Vec2Data, Vec3Data, Vec4Data, ValueType } from "./BuiltinData"
+import {
+    BoolData,
+    builtinCachData,
+    FloatData,
+    IntData,
+    Mat3Data,
+    Mat4Data,
+    NumData,
+    Vec2Data,
+    Vec3Data,
+    Vec4Data,
+    ValueType,
+} from "./BuiltinData"
 
 let vec2Data = builtinCachData.vec2Data
 let vec3Data = builtinCachData.vec3Data
@@ -657,12 +669,12 @@ export function glIsMoreEqual_N_N(left: NumData, right: NumData): boolean {
 }
 
 export function glFrontAddSelf_N(n: NumData): NumData {
-    --n.v
+    ++n.v
     return n
 }
 
 export function glAfterAddSelf_N(n: NumData): NumData {
-    n.v--
+    n.v++
     return n
 }
 
@@ -677,14 +689,14 @@ export function glAfterSubSelf_N(n: NumData): NumData {
 }
 
 export function glFrontAddSelf_V2(n: Vec2Data): Vec2Data {
-    --n.x
-    --n.y
+    ++n.x
+    ++n.y
     return n
 }
 
 export function glAfterAddSelf_V2(n: Vec2Data): Vec2Data {
-    n.x--
-    n.y--
+    n.x++
+    n.y++
     return n
 }
 
@@ -701,16 +713,16 @@ export function glAfterSubSelf_V2(n: Vec2Data): Vec2Data {
 }
 
 export function glFrontAddSelf_V3(n: Vec3Data): Vec3Data {
-    --n.x
-    --n.y
-    --n.z
+    ++n.x
+    ++n.y
+    ++n.z
     return n
 }
 
 export function glAfterAddSelf_V3(n: Vec3Data): Vec3Data {
-    n.x--
-    n.y--
-    n.z--
+    n.x++
+    n.y++
+    n.z++
     return n
 }
 
@@ -729,18 +741,18 @@ export function glAfterSubSelf_V3(n: Vec3Data): Vec3Data {
 }
 
 export function glFrontAddSelf_V4(n: Vec4Data): Vec4Data {
-    --n.x
-    --n.y
-    --n.z
-    --n.w
+    ++n.x
+    ++n.y
+    ++n.z
+    ++n.w
     return n
 }
 
 export function glAfterAddSelf_V4(n: Vec4Data): Vec4Data {
-    n.x--
-    n.y--
-    n.z--
-    n.w--
+    n.x++
+    n.y++
+    n.z++
+    n.w++
     return n
 }
 
@@ -761,26 +773,26 @@ export function glAfterSubSelf_V4(n: Vec4Data): Vec4Data {
 }
 
 export function glFrontAddSelf_M3(n: Mat3Data): Mat3Data {
-    --n.m01
-    --n.m02
-    --n.m03
-    --n.m04
-    --n.m05
-    --n.m06
-    --n.m07
-    --n.m08
+    ++n.m01
+    ++n.m02
+    ++n.m03
+    ++n.m04
+    ++n.m05
+    ++n.m06
+    ++n.m07
+    ++n.m08
     return n
 }
 
 export function glAfterAddSelf_M3(n: Mat3Data): Mat3Data {
-    n.m01--
-    n.m02--
-    n.m03--
-    n.m04--
-    n.m05--
-    n.m06--
-    n.m07--
-    n.m08--
+    n.m01++
+    n.m02++
+    n.m03++
+    n.m04++
+    n.m05++
+    n.m06++
+    n.m07++
+    n.m08++
     return n
 }
 

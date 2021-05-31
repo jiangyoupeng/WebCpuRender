@@ -101,11 +101,11 @@ let CC_DRAW_WIRE_FRAME = new FloatData(0)
 let CC_USE_WORLD_SPACE = new FloatData(0)
 let CC_USE_HDR = new FloatData(0)
 class AttributeDataImpl implements AttributeData {
-    a_position: Vec3Data = null!
-    a_texCoord: Vec4Data = null!
-    a_texCoord1: Vec3Data = null!
-    a_texCoord2: Vec3Data = null!
-    a_color: Vec4Data = null!
+    a_position: Vec3Data = new Vec3Data()!
+    a_texCoord: Vec4Data = new Vec4Data()!
+    a_texCoord1: Vec3Data = new Vec3Data()!
+    a_texCoord2: Vec3Data = new Vec3Data()!
+    a_color: Vec4Data = new Vec4Data()!
     dataKeys: Map<string, any> = new Map([
         ["a_position", cpuRenderingContext.cachGameGl.FLOAT_VEC3],
         ["a_texCoord", cpuRenderingContext.cachGameGl.FLOAT_VEC4],

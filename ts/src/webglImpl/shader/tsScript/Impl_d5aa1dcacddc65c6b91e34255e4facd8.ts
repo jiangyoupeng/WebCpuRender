@@ -91,13 +91,13 @@ export class Impl_d5aa1dcacddc65c6b91e34255e4facd8 extends FragShaderHandle {
     uniformData: UniformDataImpl = new UniformDataImpl()
 
     SRGBToLinear_V3(__gamma__: Vec3Data): Vec3Data {
-        let gamma: Vec3Data = new Vec3Data()
+        let gamma: Vec3Data = vec3()
         glSet_V3_V3(gamma, __gamma__)
 
         return glMul_V3_V3(gamma, gamma)
     }
     CCFragOutput_V4(__color__: Vec4Data): Vec4Data {
-        let color: Vec4Data = new Vec4Data()
+        let color: Vec4Data = vec4()
         glSet_V4_V4(color, __color__)
 
         return color

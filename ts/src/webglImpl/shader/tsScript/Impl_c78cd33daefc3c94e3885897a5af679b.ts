@@ -294,15 +294,15 @@ let CC_USE_SKINNING = new FloatData(0)
 let CC_USE_BAKED_ANIMATION = new FloatData(0)
 let USE_INSTANCING = new FloatData(0)
 class StandardVertInput implements StructData {
-    position: Vec4Data = new Vec4Data()
-    normal: Vec3Data = new Vec3Data()
-    tangent: Vec4Data = new Vec4Data()
+    position: Vec4Data = vec4()
+    normal: Vec3Data = vec3()
+    tangent: Vec4Data = vec4()
 }
 class AttributeDataImpl implements AttributeData {
-    a_position: Vec3Data = null!
-    a_normal: Vec3Data = null!
-    a_texCoord: Vec2Data = null!
-    a_tangent: Vec4Data = null!
+    a_position: Vec3Data = new Vec3Data()!
+    a_normal: Vec3Data = new Vec3Data()!
+    a_texCoord: Vec2Data = new Vec2Data()!
+    a_tangent: Vec4Data = new Vec4Data()!
     dataKeys: Map<string, any> = new Map([
         ["a_position", cpuRenderingContext.cachGameGl.FLOAT_VEC3],
         ["a_normal", cpuRenderingContext.cachGameGl.FLOAT_VEC3],
@@ -338,7 +338,7 @@ export class Impl_c78cd33daefc3c94e3885897a5af679b extends VertShaderHandle {
     attributeData: AttributeDataImpl = new AttributeDataImpl()
 
     decode32_V4(__rgba__: Vec4Data): FloatData {
-        let rgba: Vec4Data = new Vec4Data()
+        let rgba: Vec4Data = vec4()
         glSet_V4_V4(rgba, __rgba__)
 
         glSet_V4_V4(rgba, glMul_V4_N(rgba, float_N(255.0)))

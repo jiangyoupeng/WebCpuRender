@@ -37,7 +37,7 @@ let CC_DEVICE_MAX_FRAGMENT_UNIFORM_VECTORS = new FloatData(1024)
 let CC_EFFECT_USED_VERTEX_UNIFORM_VECTORS = new FloatData(0)
 let CC_EFFECT_USED_FRAGMENT_UNIFORM_VECTORS = new FloatData(0)
 class AttributeDataImpl implements AttributeData {
-    a_position: Vec3Data = null!
+    a_position: Vec3Data = new Vec3Data()!
     dataKeys: Map<string, any> = new Map([["a_position", cpuRenderingContext.cachGameGl.FLOAT_VEC3]])
     dataSize: Map<string, number> = new Map([["a_position", 1]])
 }

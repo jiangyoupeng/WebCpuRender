@@ -325,11 +325,11 @@ let CC_RENDER_MODE = new FloatData(0)
 let CC_USE_WORLD_SPACE = new FloatData(0)
 let CC_USE_HDR = new FloatData(0)
 class AttributeDataImpl implements AttributeData {
-    a_position: Vec3Data = null!
-    a_texCoord: Vec3Data = null!
-    a_texCoord1: Vec3Data = null!
-    a_texCoord2: Vec3Data = null!
-    a_color: Vec4Data = null!
+    a_position: Vec3Data = new Vec3Data()!
+    a_texCoord: Vec3Data = new Vec3Data()!
+    a_texCoord1: Vec3Data = new Vec3Data()!
+    a_texCoord2: Vec3Data = new Vec3Data()!
+    a_color: Vec4Data = new Vec4Data()!
     dataKeys: Map<string, any> = new Map([
         ["a_position", cpuRenderingContext.cachGameGl.FLOAT_VEC3],
         ["a_texCoord", cpuRenderingContext.cachGameGl.FLOAT_VEC3],
@@ -397,11 +397,11 @@ export class Impl_252febc5e0aaf3a3f31956290538fca3 extends VertShaderHandle {
     attributeData: AttributeDataImpl = new AttributeDataImpl()
 
     quaternionFromAxis_V3_V3_V3(__xAxis__: Vec3Data, __yAxis__: Vec3Data, __zAxis__: Vec3Data): Vec4Data {
-        let xAxis: Vec3Data = new Vec3Data()
+        let xAxis: Vec3Data = vec3()
         glSet_V3_V3(xAxis, __xAxis__)
-        let yAxis: Vec3Data = new Vec3Data()
+        let yAxis: Vec3Data = vec3()
         glSet_V3_V3(yAxis, __yAxis__)
-        let zAxis: Vec3Data = new Vec3Data()
+        let zAxis: Vec3Data = vec3()
         glSet_V3_V3(zAxis, __zAxis__)
 
         let m: Mat3Data = mat3()
@@ -419,11 +419,11 @@ export class Impl_252febc5e0aaf3a3f31956290538fca3 extends VertShaderHandle {
         )
         let quat: Vec4Data = vec4()
         if (glIsMore_N_N(trace, float_N(0))) {
-            let xAxis: Vec3Data = new Vec3Data()
+            let xAxis: Vec3Data = vec3()
             glSet_V3_V3(xAxis, __xAxis__)
-            let yAxis: Vec3Data = new Vec3Data()
+            let yAxis: Vec3Data = vec3()
             glSet_V3_V3(yAxis, __yAxis__)
-            let zAxis: Vec3Data = new Vec3Data()
+            let zAxis: Vec3Data = vec3()
             glSet_V3_V3(zAxis, __zAxis__)
 
             let s: FloatData = float()
@@ -460,11 +460,11 @@ export class Impl_252febc5e0aaf3a3f31956290538fca3 extends VertShaderHandle {
                 (<any>m)[getValueKeyByIndex(int_N(2))][getValueKeyByIndex(int_N(2))]
             )
         ) {
-            let xAxis: Vec3Data = new Vec3Data()
+            let xAxis: Vec3Data = vec3()
             glSet_V3_V3(xAxis, __xAxis__)
-            let yAxis: Vec3Data = new Vec3Data()
+            let yAxis: Vec3Data = vec3()
             glSet_V3_V3(yAxis, __yAxis__)
-            let zAxis: Vec3Data = new Vec3Data()
+            let zAxis: Vec3Data = vec3()
             glSet_V3_V3(zAxis, __zAxis__)
 
             let s: FloatData = float()
@@ -511,11 +511,11 @@ export class Impl_252febc5e0aaf3a3f31956290538fca3 extends VertShaderHandle {
                 (<any>m)[getValueKeyByIndex(int_N(2))][getValueKeyByIndex(int_N(2))]
             )
         ) {
-            let xAxis: Vec3Data = new Vec3Data()
+            let xAxis: Vec3Data = vec3()
             glSet_V3_V3(xAxis, __xAxis__)
-            let yAxis: Vec3Data = new Vec3Data()
+            let yAxis: Vec3Data = vec3()
             glSet_V3_V3(yAxis, __yAxis__)
-            let zAxis: Vec3Data = new Vec3Data()
+            let zAxis: Vec3Data = vec3()
             glSet_V3_V3(zAxis, __zAxis__)
 
             let s: FloatData = float()
@@ -557,11 +557,11 @@ export class Impl_252febc5e0aaf3a3f31956290538fca3 extends VertShaderHandle {
                 s
             ).v
         } else {
-            let xAxis: Vec3Data = new Vec3Data()
+            let xAxis: Vec3Data = vec3()
             glSet_V3_V3(xAxis, __xAxis__)
-            let yAxis: Vec3Data = new Vec3Data()
+            let yAxis: Vec3Data = vec3()
             glSet_V3_V3(yAxis, __yAxis__)
-            let zAxis: Vec3Data = new Vec3Data()
+            let zAxis: Vec3Data = vec3()
             glSet_V3_V3(zAxis, __zAxis__)
 
             let s: FloatData = float()
@@ -616,11 +616,11 @@ export class Impl_252febc5e0aaf3a3f31956290538fca3 extends VertShaderHandle {
             )
         )
         if (glIsMore_N_N(len, float_N(0))) {
-            let xAxis: Vec3Data = new Vec3Data()
+            let xAxis: Vec3Data = vec3()
             glSet_V3_V3(xAxis, __xAxis__)
-            let yAxis: Vec3Data = new Vec3Data()
+            let yAxis: Vec3Data = vec3()
             glSet_V3_V3(yAxis, __yAxis__)
-            let zAxis: Vec3Data = new Vec3Data()
+            let zAxis: Vec3Data = vec3()
             glSet_V3_V3(zAxis, __zAxis__)
 
             glSet_N_N(len, glDiv_N_N(float_N(1), sqrt_N(len)))
@@ -632,7 +632,7 @@ export class Impl_252febc5e0aaf3a3f31956290538fca3 extends VertShaderHandle {
         return quat
     }
     quaternionFromEuler_V3(__angle__: Vec3Data): Vec4Data {
-        let angle: Vec3Data = new Vec3Data()
+        let angle: Vec3Data = vec3()
         glSet_V3_V3(angle, __angle__)
 
         let x: FloatData = float()
@@ -662,9 +662,9 @@ export class Impl_252febc5e0aaf3a3f31956290538fca3 extends VertShaderHandle {
         return quat
     }
     matrixFromRT_V4_V3(__q__: Vec4Data, __p__: Vec3Data): Mat4Data {
-        let q: Vec4Data = new Vec4Data()
+        let q: Vec4Data = vec4()
         glSet_V4_V4(q, __q__)
-        let p: Vec3Data = new Vec3Data()
+        let p: Vec3Data = vec3()
         glSet_V3_V3(p, __p__)
 
         let x2: FloatData = float()
@@ -711,11 +711,11 @@ export class Impl_252febc5e0aaf3a3f31956290538fca3 extends VertShaderHandle {
         )
     }
     matFromRTS_V4_V3_V3(__q__: Vec4Data, __t__: Vec3Data, __s__: Vec3Data): Mat4Data {
-        let q: Vec4Data = new Vec4Data()
+        let q: Vec4Data = vec4()
         glSet_V4_V4(q, __q__)
-        let t: Vec3Data = new Vec3Data()
+        let t: Vec3Data = vec3()
         glSet_V3_V3(t, __t__)
-        let s: Vec3Data = new Vec3Data()
+        let s: Vec3Data = vec3()
         glSet_V3_V3(s, __s__)
 
         let x: FloatData = float()
@@ -776,9 +776,9 @@ export class Impl_252febc5e0aaf3a3f31956290538fca3 extends VertShaderHandle {
         )
     }
     quatMultiply_V4_V4(__a__: Vec4Data, __b__: Vec4Data): Vec4Data {
-        let a: Vec4Data = new Vec4Data()
+        let a: Vec4Data = vec4()
         glSet_V4_V4(a, __a__)
-        let b: Vec4Data = new Vec4Data()
+        let b: Vec4Data = vec4()
         glSet_V4_V4(b, __b__)
 
         let quat: Vec4Data = vec4()
@@ -813,7 +813,7 @@ export class Impl_252febc5e0aaf3a3f31956290538fca3 extends VertShaderHandle {
         return quat
     }
     rotateVecFromQuat_V3_V4(v: Vec3Data, __q__: Vec4Data): void {
-        let q: Vec4Data = new Vec4Data()
+        let q: Vec4Data = vec4()
         glSet_V4_V4(q, __q__)
 
         let ix: FloatData = float()
@@ -877,15 +877,15 @@ export class Impl_252febc5e0aaf3a3f31956290538fca3 extends VertShaderHandle {
         __zAxis__: Vec3Data,
         __q__: Vec4Data
     ): Vec3Data {
-        let pos: Vec3Data = new Vec3Data()
+        let pos: Vec3Data = vec3()
         glSet_V3_V3(pos, __pos__)
-        let xAxis: Vec3Data = new Vec3Data()
+        let xAxis: Vec3Data = vec3()
         glSet_V3_V3(xAxis, __xAxis__)
-        let yAxis: Vec3Data = new Vec3Data()
+        let yAxis: Vec3Data = vec3()
         glSet_V3_V3(yAxis, __yAxis__)
-        let zAxis: Vec3Data = new Vec3Data()
+        let zAxis: Vec3Data = vec3()
         glSet_V3_V3(zAxis, __zAxis__)
-        let q: Vec4Data = new Vec4Data()
+        let q: Vec4Data = vec4()
         glSet_V4_V4(q, __q__)
 
         let viewQuat: Vec4Data = vec4()
@@ -896,7 +896,7 @@ export class Impl_252febc5e0aaf3a3f31956290538fca3 extends VertShaderHandle {
         return pos
     }
     rotateCorner_V2_N(corner: Vec2Data, __angle__: FloatData): void {
-        let angle: FloatData = new FloatData()
+        let angle: FloatData = float()
         glSet_N_N(angle, __angle__)
 
         let xOS: FloatData = float()
@@ -907,13 +907,13 @@ export class Impl_252febc5e0aaf3a3f31956290538fca3 extends VertShaderHandle {
         corner.y = yOS.v
     }
     computeVertPos_V4_V2_V4_V3_M4(pos: Vec4Data, __vertOffset__: Vec2Data, __q__: Vec4Data, __s__: Vec3Data, __viewInv__: Mat4Data): void {
-        let vertOffset: Vec2Data = new Vec2Data()
+        let vertOffset: Vec2Data = vec2()
         glSet_V2_V2(vertOffset, __vertOffset__)
-        let q: Vec4Data = new Vec4Data()
+        let q: Vec4Data = vec4()
         glSet_V4_V4(q, __q__)
-        let s: Vec3Data = new Vec3Data()
+        let s: Vec3Data = vec3()
         glSet_V3_V3(s, __s__)
-        let viewInv: Mat4Data = new Mat4Data()
+        let viewInv: Mat4Data = mat4()
         glSet_M4_M4(viewInv, __viewInv__)
 
         let viewSpaceVert: Vec3Data = vec3()
@@ -957,11 +957,11 @@ export class Impl_252febc5e0aaf3a3f31956290538fca3 extends VertShaderHandle {
         glAddSet_V3_V3(pos.xyz, this.rotateInLocalSpace_V3_V3_V3_V3_V4(viewSpaceVert, camX, camY, camZ, q))
     }
     computeUV_N_V2_V2(__frameIndex__: FloatData, __vertIndex__: Vec2Data, __frameTile__: Vec2Data): Vec2Data {
-        let frameIndex: FloatData = new FloatData()
+        let frameIndex: FloatData = float()
         glSet_N_N(frameIndex, __frameIndex__)
-        let vertIndex: Vec2Data = new Vec2Data()
+        let vertIndex: Vec2Data = vec2()
         glSet_V2_V2(vertIndex, __vertIndex__)
-        let frameTile: Vec2Data = new Vec2Data()
+        let frameTile: Vec2Data = vec2()
         glSet_V2_V2(frameTile, __frameTile__)
 
         let aniUV: Vec2Data = vec2()

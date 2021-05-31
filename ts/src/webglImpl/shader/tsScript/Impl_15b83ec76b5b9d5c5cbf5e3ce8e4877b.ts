@@ -744,15 +744,15 @@ let USE_EMISSIVE_MAP = new FloatData(0)
 let USE_ALPHA_TEST = new FloatData(0)
 let CC_PIPELINE_TYPE = new FloatData(0)
 class StandardSurface implements StructData {
-    albedo: Vec4Data = new Vec4Data()
-    position: Vec3Data = new Vec3Data()
-    normal: Vec3Data = new Vec3Data()
-    emissive: Vec3Data = new Vec3Data()
-    lightmap: Vec3Data = new Vec3Data()
-    lightmap_test: FloatData = new FloatData()
-    roughness: FloatData = new FloatData()
-    metallic: FloatData = new FloatData()
-    occlusion: FloatData = new FloatData()
+    albedo: Vec4Data = vec4()
+    position: Vec3Data = vec3()
+    normal: Vec3Data = vec3()
+    emissive: Vec3Data = vec3()
+    lightmap: Vec3Data = vec3()
+    lightmap_test: FloatData = float()
+    roughness: FloatData = float()
+    metallic: FloatData = float()
+    occlusion: FloatData = float()
 }
 class AttributeDataImpl implements AttributeData {
     dataKeys: Map<string, any> = new Map([])
@@ -854,13 +854,13 @@ export class Impl_15b83ec76b5b9d5c5cbf5e3ce8e4877b extends FragShaderHandle {
     uniformData: UniformDataImpl = new UniformDataImpl()
 
     SRGBToLinear_V3(__gamma__: Vec3Data): Vec3Data {
-        let gamma: Vec3Data = new Vec3Data()
+        let gamma: Vec3Data = vec3()
         glSet_V3_V3(gamma, __gamma__)
 
         return glMul_V3_V3(gamma, gamma)
     }
     CCGetLinearDepth_V3(__worldPos__: Vec3Data): FloatData {
-        let worldPos: Vec3Data = new Vec3Data()
+        let worldPos: Vec3Data = vec3()
         glSet_V3_V3(worldPos, __worldPos__)
 
         let viewStartPos: Vec4Data = vec4()
@@ -876,7 +876,7 @@ export class Impl_15b83ec76b5b9d5c5cbf5e3ce8e4877b extends FragShaderHandle {
         )
     }
     CCGetShadowFactorX1_V4(__shadowPos__: Vec4Data): FloatData {
-        let shadowPos: Vec4Data = new Vec4Data()
+        let shadowPos: Vec4Data = vec4()
         glSet_V4_V4(shadowPos, __shadowPos__)
 
         let clipPos: Vec3Data = vec3()
@@ -889,7 +889,7 @@ export class Impl_15b83ec76b5b9d5c5cbf5e3ce8e4877b extends FragShaderHandle {
             glIsLess_N_N(float_N(clipPos.z), glNegative_N(float_N(1.0))) ||
             glIsMore_N_N(float_N(clipPos.z), float_N(1.0))
         ) {
-            let shadowPos: Vec4Data = new Vec4Data()
+            let shadowPos: Vec4Data = vec4()
             glSet_V4_V4(shadowPos, __shadowPos__)
 
             return float_N(0.0)
@@ -905,7 +905,7 @@ export class Impl_15b83ec76b5b9d5c5cbf5e3ce8e4877b extends FragShaderHandle {
                 : clipPos.xy
         )
         if (glIsMore_N_N(float_N(this.uniformData.cc_shadowLPNNInfo.y), float_N(0.000001))) {
-            let shadowPos: Vec4Data = new Vec4Data()
+            let shadowPos: Vec4Data = vec4()
             glSet_V4_V4(shadowPos, __shadowPos__)
 
             glSet_N_N(
@@ -921,7 +921,7 @@ export class Impl_15b83ec76b5b9d5c5cbf5e3ce8e4877b extends FragShaderHandle {
                 )
             )
         } else {
-            let shadowPos: Vec4Data = new Vec4Data()
+            let shadowPos: Vec4Data = vec4()
             glSet_V4_V4(shadowPos, __shadowPos__)
 
             glSet_N_N(closestDepth, float_N(texture2D_N_V2(this.uniformData.cc_shadowMap, clipPos.xy).x))
@@ -930,7 +930,7 @@ export class Impl_15b83ec76b5b9d5c5cbf5e3ce8e4877b extends FragShaderHandle {
         return shadow
     }
     CCGetShadowFactorX5_V4(__shadowPos__: Vec4Data): FloatData {
-        let shadowPos: Vec4Data = new Vec4Data()
+        let shadowPos: Vec4Data = vec4()
         glSet_V4_V4(shadowPos, __shadowPos__)
 
         let clipPos: Vec3Data = vec3()
@@ -943,7 +943,7 @@ export class Impl_15b83ec76b5b9d5c5cbf5e3ce8e4877b extends FragShaderHandle {
             glIsLess_N_N(float_N(clipPos.z), glNegative_N(float_N(1.0))) ||
             glIsMore_N_N(float_N(clipPos.z), float_N(1.0))
         ) {
-            let shadowPos: Vec4Data = new Vec4Data()
+            let shadowPos: Vec4Data = vec4()
             glSet_V4_V4(shadowPos, __shadowPos__)
 
             return float_N(0.0)
@@ -961,7 +961,7 @@ export class Impl_15b83ec76b5b9d5c5cbf5e3ce8e4877b extends FragShaderHandle {
                 : clipPos.xy
         )
         if (glIsMore_N_N(float_N(this.uniformData.cc_shadowLPNNInfo.y), float_N(0.000001))) {
-            let shadowPos: Vec4Data = new Vec4Data()
+            let shadowPos: Vec4Data = vec4()
             glSet_V4_V4(shadowPos, __shadowPos__)
 
             let closestDepth: FloatData = float()
@@ -1043,7 +1043,7 @@ export class Impl_15b83ec76b5b9d5c5cbf5e3ce8e4877b extends FragShaderHandle {
             )
             glAddSet_N_N(shadow, step_N_N(closestDepth, glSub_N_N(float_N(clipPos.z), float_N(this.uniformData.cc_shadowWHPBInfo.w))))
         } else {
-            let shadowPos: Vec4Data = new Vec4Data()
+            let shadowPos: Vec4Data = vec4()
             glSet_V4_V4(shadowPos, __shadowPos__)
 
             let closestDepth: FloatData = float()
@@ -1096,7 +1096,7 @@ export class Impl_15b83ec76b5b9d5c5cbf5e3ce8e4877b extends FragShaderHandle {
         return glDiv_N_N(shadow, float_N(5.0))
     }
     CCGetShadowFactorX9_V4(__shadowPos__: Vec4Data): FloatData {
-        let shadowPos: Vec4Data = new Vec4Data()
+        let shadowPos: Vec4Data = vec4()
         glSet_V4_V4(shadowPos, __shadowPos__)
 
         let clipPos: Vec3Data = vec3()
@@ -1109,7 +1109,7 @@ export class Impl_15b83ec76b5b9d5c5cbf5e3ce8e4877b extends FragShaderHandle {
             glIsLess_N_N(float_N(clipPos.z), glNegative_N(float_N(1.0))) ||
             glIsMore_N_N(float_N(clipPos.z), float_N(1.0))
         ) {
-            let shadowPos: Vec4Data = new Vec4Data()
+            let shadowPos: Vec4Data = vec4()
             glSet_V4_V4(shadowPos, __shadowPos__)
 
             return float_N(0.0)
@@ -1129,15 +1129,15 @@ export class Impl_15b83ec76b5b9d5c5cbf5e3ce8e4877b extends FragShaderHandle {
                 : clipPos.xy
         )
         if (glIsMore_N_N(float_N(this.uniformData.cc_shadowLPNNInfo.y), float_N(0.000001))) {
-            let shadowPos: Vec4Data = new Vec4Data()
+            let shadowPos: Vec4Data = vec4()
             glSet_V4_V4(shadowPos, __shadowPos__)
 
             for (let i: IntData = glNegative_N(int_N(1)); glIsLessEqual_N_N(i, int_N(1)); glAfterAddSelf_N(i)) {
-                let shadowPos: Vec4Data = new Vec4Data()
+                let shadowPos: Vec4Data = vec4()
                 glSet_V4_V4(shadowPos, __shadowPos__)
 
                 for (let j: IntData = glNegative_N(int_N(1)); glIsLessEqual_N_N(j, int_N(1)); glAfterAddSelf_N(j)) {
-                    let shadowPos: Vec4Data = new Vec4Data()
+                    let shadowPos: Vec4Data = vec4()
                     glSet_V4_V4(shadowPos, __shadowPos__)
 
                     let closestDepth: FloatData = float()
@@ -1163,15 +1163,15 @@ export class Impl_15b83ec76b5b9d5c5cbf5e3ce8e4877b extends FragShaderHandle {
                 }
             }
         } else {
-            let shadowPos: Vec4Data = new Vec4Data()
+            let shadowPos: Vec4Data = vec4()
             glSet_V4_V4(shadowPos, __shadowPos__)
 
             for (let i: IntData = glNegative_N(int_N(1)); glIsLessEqual_N_N(i, int_N(1)); glAfterAddSelf_N(i)) {
-                let shadowPos: Vec4Data = new Vec4Data()
+                let shadowPos: Vec4Data = vec4()
                 glSet_V4_V4(shadowPos, __shadowPos__)
 
                 for (let j: IntData = glNegative_N(int_N(1)); glIsLessEqual_N_N(j, int_N(1)); glAfterAddSelf_N(j)) {
-                    let shadowPos: Vec4Data = new Vec4Data()
+                    let shadowPos: Vec4Data = vec4()
                     glSet_V4_V4(shadowPos, __shadowPos__)
 
                     let closestDepth: FloatData = float()
@@ -1194,7 +1194,7 @@ export class Impl_15b83ec76b5b9d5c5cbf5e3ce8e4877b extends FragShaderHandle {
         return glDiv_N_N(shadow, float_N(9.0))
     }
     CCGetShadowFactorX25_V4(__shadowPos__: Vec4Data): FloatData {
-        let shadowPos: Vec4Data = new Vec4Data()
+        let shadowPos: Vec4Data = vec4()
         glSet_V4_V4(shadowPos, __shadowPos__)
 
         let clipPos: Vec3Data = vec3()
@@ -1207,7 +1207,7 @@ export class Impl_15b83ec76b5b9d5c5cbf5e3ce8e4877b extends FragShaderHandle {
             glIsLess_N_N(float_N(clipPos.z), glNegative_N(float_N(1.0))) ||
             glIsMore_N_N(float_N(clipPos.z), float_N(1.0))
         ) {
-            let shadowPos: Vec4Data = new Vec4Data()
+            let shadowPos: Vec4Data = vec4()
             glSet_V4_V4(shadowPos, __shadowPos__)
 
             return float_N(0.0)
@@ -1225,15 +1225,15 @@ export class Impl_15b83ec76b5b9d5c5cbf5e3ce8e4877b extends FragShaderHandle {
                 : clipPos.xy
         )
         if (glIsMore_N_N(float_N(this.uniformData.cc_shadowLPNNInfo.y), float_N(0.000001))) {
-            let shadowPos: Vec4Data = new Vec4Data()
+            let shadowPos: Vec4Data = vec4()
             glSet_V4_V4(shadowPos, __shadowPos__)
 
             for (let i: IntData = glNegative_N(int_N(2)); glIsLessEqual_N_N(i, int_N(2)); glAfterAddSelf_N(i)) {
-                let shadowPos: Vec4Data = new Vec4Data()
+                let shadowPos: Vec4Data = vec4()
                 glSet_V4_V4(shadowPos, __shadowPos__)
 
                 for (let j: IntData = glNegative_N(int_N(2)); glIsLessEqual_N_N(j, int_N(2)); glAfterAddSelf_N(j)) {
-                    let shadowPos: Vec4Data = new Vec4Data()
+                    let shadowPos: Vec4Data = vec4()
                     glSet_V4_V4(shadowPos, __shadowPos__)
 
                     let closestDepth: FloatData = float()
@@ -1259,15 +1259,15 @@ export class Impl_15b83ec76b5b9d5c5cbf5e3ce8e4877b extends FragShaderHandle {
                 }
             }
         } else {
-            let shadowPos: Vec4Data = new Vec4Data()
+            let shadowPos: Vec4Data = vec4()
             glSet_V4_V4(shadowPos, __shadowPos__)
 
             for (let i: IntData = glNegative_N(int_N(2)); glIsLessEqual_N_N(i, int_N(2)); glAfterAddSelf_N(i)) {
-                let shadowPos: Vec4Data = new Vec4Data()
+                let shadowPos: Vec4Data = vec4()
                 glSet_V4_V4(shadowPos, __shadowPos__)
 
                 for (let j: IntData = glNegative_N(int_N(2)); glIsLessEqual_N_N(j, int_N(2)); glAfterAddSelf_N(j)) {
-                    let shadowPos: Vec4Data = new Vec4Data()
+                    let shadowPos: Vec4Data = vec4()
                     glSet_V4_V4(shadowPos, __shadowPos__)
 
                     let closestDepth: FloatData = float()
@@ -1290,9 +1290,9 @@ export class Impl_15b83ec76b5b9d5c5cbf5e3ce8e4877b extends FragShaderHandle {
         return glDiv_N_N(shadow, float_N(25.0))
     }
     CCGetDirLightShadowFactorX1_V4_V3(__shadowPos__: Vec4Data, __worldPos__: Vec3Data): FloatData {
-        let shadowPos: Vec4Data = new Vec4Data()
+        let shadowPos: Vec4Data = vec4()
         glSet_V4_V4(shadowPos, __shadowPos__)
-        let worldPos: Vec3Data = new Vec3Data()
+        let worldPos: Vec3Data = vec3()
         glSet_V3_V3(worldPos, __worldPos__)
 
         let clipPos: Vec3Data = vec3()
@@ -1305,9 +1305,9 @@ export class Impl_15b83ec76b5b9d5c5cbf5e3ce8e4877b extends FragShaderHandle {
             glIsLess_N_N(float_N(clipPos.z), glNegative_N(float_N(1.0))) ||
             glIsMore_N_N(float_N(clipPos.z), float_N(1.0))
         ) {
-            let shadowPos: Vec4Data = new Vec4Data()
+            let shadowPos: Vec4Data = vec4()
             glSet_V4_V4(shadowPos, __shadowPos__)
-            let worldPos: Vec3Data = new Vec3Data()
+            let worldPos: Vec3Data = vec3()
             glSet_V3_V3(worldPos, __worldPos__)
 
             return float_N(0.0)
@@ -1325,24 +1325,24 @@ export class Impl_15b83ec76b5b9d5c5cbf5e3ce8e4877b extends FragShaderHandle {
                 : clipPos.xy
         )
         if (glIsMore_N_N(float_N(this.uniformData.cc_shadowNFLSInfo.z), float_N(0.000001))) {
-            let shadowPos: Vec4Data = new Vec4Data()
+            let shadowPos: Vec4Data = vec4()
             glSet_V4_V4(shadowPos, __shadowPos__)
-            let worldPos: Vec3Data = new Vec3Data()
+            let worldPos: Vec3Data = vec3()
             glSet_V3_V3(worldPos, __worldPos__)
 
             glSet_N_N(depth, this.CCGetLinearDepth_V3(worldPos))
         } else {
-            let shadowPos: Vec4Data = new Vec4Data()
+            let shadowPos: Vec4Data = vec4()
             glSet_V4_V4(shadowPos, __shadowPos__)
-            let worldPos: Vec3Data = new Vec3Data()
+            let worldPos: Vec3Data = vec3()
             glSet_V3_V3(worldPos, __worldPos__)
 
             glSet_N_N(depth, float_N(clipPos.z))
         }
         if (glIsMore_N_N(float_N(this.uniformData.cc_shadowLPNNInfo.y), float_N(0.000001))) {
-            let shadowPos: Vec4Data = new Vec4Data()
+            let shadowPos: Vec4Data = vec4()
             glSet_V4_V4(shadowPos, __shadowPos__)
-            let worldPos: Vec3Data = new Vec3Data()
+            let worldPos: Vec3Data = vec3()
             glSet_V3_V3(worldPos, __worldPos__)
 
             glSet_N_N(
@@ -1358,9 +1358,9 @@ export class Impl_15b83ec76b5b9d5c5cbf5e3ce8e4877b extends FragShaderHandle {
                 )
             )
         } else {
-            let shadowPos: Vec4Data = new Vec4Data()
+            let shadowPos: Vec4Data = vec4()
             glSet_V4_V4(shadowPos, __shadowPos__)
-            let worldPos: Vec3Data = new Vec3Data()
+            let worldPos: Vec3Data = vec3()
             glSet_V3_V3(worldPos, __worldPos__)
 
             glSet_N_N(closestDepth, float_N(texture2D_N_V2(this.uniformData.cc_spotLightingMap, clipPos.xy).x))
@@ -1369,9 +1369,9 @@ export class Impl_15b83ec76b5b9d5c5cbf5e3ce8e4877b extends FragShaderHandle {
         return shadow
     }
     CCGetDirLightShadowFactorX5_V4_V3(__shadowPos__: Vec4Data, __worldPos__: Vec3Data): FloatData {
-        let shadowPos: Vec4Data = new Vec4Data()
+        let shadowPos: Vec4Data = vec4()
         glSet_V4_V4(shadowPos, __shadowPos__)
-        let worldPos: Vec3Data = new Vec3Data()
+        let worldPos: Vec3Data = vec3()
         glSet_V3_V3(worldPos, __worldPos__)
 
         let clipPos: Vec3Data = vec3()
@@ -1384,9 +1384,9 @@ export class Impl_15b83ec76b5b9d5c5cbf5e3ce8e4877b extends FragShaderHandle {
             glIsLess_N_N(float_N(clipPos.z), glNegative_N(float_N(1.0))) ||
             glIsMore_N_N(float_N(clipPos.z), float_N(1.0))
         ) {
-            let shadowPos: Vec4Data = new Vec4Data()
+            let shadowPos: Vec4Data = vec4()
             glSet_V4_V4(shadowPos, __shadowPos__)
-            let worldPos: Vec3Data = new Vec3Data()
+            let worldPos: Vec3Data = vec3()
             glSet_V3_V3(worldPos, __worldPos__)
 
             return float_N(0.0)
@@ -1400,16 +1400,16 @@ export class Impl_15b83ec76b5b9d5c5cbf5e3ce8e4877b extends FragShaderHandle {
         let depth: FloatData = float()
         glSet_N_N(depth, float_N(0.0))
         if (glIsMore_N_N(float_N(this.uniformData.cc_shadowNFLSInfo.z), float_N(0.000001))) {
-            let shadowPos: Vec4Data = new Vec4Data()
+            let shadowPos: Vec4Data = vec4()
             glSet_V4_V4(shadowPos, __shadowPos__)
-            let worldPos: Vec3Data = new Vec3Data()
+            let worldPos: Vec3Data = vec3()
             glSet_V3_V3(worldPos, __worldPos__)
 
             glSet_N_N(depth, this.CCGetLinearDepth_V3(worldPos))
         } else {
-            let shadowPos: Vec4Data = new Vec4Data()
+            let shadowPos: Vec4Data = vec4()
             glSet_V4_V4(shadowPos, __shadowPos__)
-            let worldPos: Vec3Data = new Vec3Data()
+            let worldPos: Vec3Data = vec3()
             glSet_V3_V3(worldPos, __worldPos__)
 
             glSet_N_N(depth, float_N(clipPos.z))
@@ -1421,9 +1421,9 @@ export class Impl_15b83ec76b5b9d5c5cbf5e3ce8e4877b extends FragShaderHandle {
                 : clipPos.xy
         )
         if (glIsMore_N_N(float_N(this.uniformData.cc_shadowLPNNInfo.y), float_N(0.000001))) {
-            let shadowPos: Vec4Data = new Vec4Data()
+            let shadowPos: Vec4Data = vec4()
             glSet_V4_V4(shadowPos, __shadowPos__)
-            let worldPos: Vec3Data = new Vec3Data()
+            let worldPos: Vec3Data = vec3()
             glSet_V3_V3(worldPos, __worldPos__)
 
             let closestDepth: FloatData = float()
@@ -1505,9 +1505,9 @@ export class Impl_15b83ec76b5b9d5c5cbf5e3ce8e4877b extends FragShaderHandle {
             )
             glAddSet_N_N(shadow, step_N_N(closestDepth, glSub_N_N(depth, float_N(this.uniformData.cc_shadowWHPBInfo.w))))
         } else {
-            let shadowPos: Vec4Data = new Vec4Data()
+            let shadowPos: Vec4Data = vec4()
             glSet_V4_V4(shadowPos, __shadowPos__)
-            let worldPos: Vec3Data = new Vec3Data()
+            let worldPos: Vec3Data = vec3()
             glSet_V3_V3(worldPos, __worldPos__)
 
             let closestDepth: FloatData = float()
@@ -1560,9 +1560,9 @@ export class Impl_15b83ec76b5b9d5c5cbf5e3ce8e4877b extends FragShaderHandle {
         return glDiv_N_N(shadow, float_N(5.0))
     }
     CCGetDirLightShadowFactorX9_V4_V3(__shadowPos__: Vec4Data, __worldPos__: Vec3Data): FloatData {
-        let shadowPos: Vec4Data = new Vec4Data()
+        let shadowPos: Vec4Data = vec4()
         glSet_V4_V4(shadowPos, __shadowPos__)
-        let worldPos: Vec3Data = new Vec3Data()
+        let worldPos: Vec3Data = vec3()
         glSet_V3_V3(worldPos, __worldPos__)
 
         let clipPos: Vec3Data = vec3()
@@ -1575,9 +1575,9 @@ export class Impl_15b83ec76b5b9d5c5cbf5e3ce8e4877b extends FragShaderHandle {
             glIsLess_N_N(float_N(clipPos.z), glNegative_N(float_N(1.0))) ||
             glIsMore_N_N(float_N(clipPos.z), float_N(1.0))
         ) {
-            let shadowPos: Vec4Data = new Vec4Data()
+            let shadowPos: Vec4Data = vec4()
             glSet_V4_V4(shadowPos, __shadowPos__)
-            let worldPos: Vec3Data = new Vec3Data()
+            let worldPos: Vec3Data = vec3()
             glSet_V3_V3(worldPos, __worldPos__)
 
             return float_N(0.0)
@@ -1591,16 +1591,16 @@ export class Impl_15b83ec76b5b9d5c5cbf5e3ce8e4877b extends FragShaderHandle {
         let depth: FloatData = float()
         glSet_N_N(depth, float_N(0.0))
         if (glIsMore_N_N(float_N(this.uniformData.cc_shadowNFLSInfo.z), float_N(0.000001))) {
-            let shadowPos: Vec4Data = new Vec4Data()
+            let shadowPos: Vec4Data = vec4()
             glSet_V4_V4(shadowPos, __shadowPos__)
-            let worldPos: Vec3Data = new Vec3Data()
+            let worldPos: Vec3Data = vec3()
             glSet_V3_V3(worldPos, __worldPos__)
 
             glSet_N_N(depth, this.CCGetLinearDepth_V3(worldPos))
         } else {
-            let shadowPos: Vec4Data = new Vec4Data()
+            let shadowPos: Vec4Data = vec4()
             glSet_V4_V4(shadowPos, __shadowPos__)
-            let worldPos: Vec3Data = new Vec3Data()
+            let worldPos: Vec3Data = vec3()
             glSet_V3_V3(worldPos, __worldPos__)
 
             glSet_N_N(depth, float_N(clipPos.z))
@@ -1612,21 +1612,21 @@ export class Impl_15b83ec76b5b9d5c5cbf5e3ce8e4877b extends FragShaderHandle {
                 : clipPos.xy
         )
         if (glIsMore_N_N(float_N(this.uniformData.cc_shadowLPNNInfo.y), float_N(0.000001))) {
-            let shadowPos: Vec4Data = new Vec4Data()
+            let shadowPos: Vec4Data = vec4()
             glSet_V4_V4(shadowPos, __shadowPos__)
-            let worldPos: Vec3Data = new Vec3Data()
+            let worldPos: Vec3Data = vec3()
             glSet_V3_V3(worldPos, __worldPos__)
 
             for (let i: IntData = glNegative_N(int_N(1)); glIsLessEqual_N_N(i, int_N(1)); glAfterAddSelf_N(i)) {
-                let shadowPos: Vec4Data = new Vec4Data()
+                let shadowPos: Vec4Data = vec4()
                 glSet_V4_V4(shadowPos, __shadowPos__)
-                let worldPos: Vec3Data = new Vec3Data()
+                let worldPos: Vec3Data = vec3()
                 glSet_V3_V3(worldPos, __worldPos__)
 
                 for (let j: IntData = glNegative_N(int_N(1)); glIsLessEqual_N_N(j, int_N(1)); glAfterAddSelf_N(j)) {
-                    let shadowPos: Vec4Data = new Vec4Data()
+                    let shadowPos: Vec4Data = vec4()
                     glSet_V4_V4(shadowPos, __shadowPos__)
-                    let worldPos: Vec3Data = new Vec3Data()
+                    let worldPos: Vec3Data = vec3()
                     glSet_V3_V3(worldPos, __worldPos__)
 
                     let closestDepth: FloatData = float()
@@ -1649,21 +1649,21 @@ export class Impl_15b83ec76b5b9d5c5cbf5e3ce8e4877b extends FragShaderHandle {
                 }
             }
         } else {
-            let shadowPos: Vec4Data = new Vec4Data()
+            let shadowPos: Vec4Data = vec4()
             glSet_V4_V4(shadowPos, __shadowPos__)
-            let worldPos: Vec3Data = new Vec3Data()
+            let worldPos: Vec3Data = vec3()
             glSet_V3_V3(worldPos, __worldPos__)
 
             for (let i: IntData = glNegative_N(int_N(1)); glIsLessEqual_N_N(i, int_N(1)); glAfterAddSelf_N(i)) {
-                let shadowPos: Vec4Data = new Vec4Data()
+                let shadowPos: Vec4Data = vec4()
                 glSet_V4_V4(shadowPos, __shadowPos__)
-                let worldPos: Vec3Data = new Vec3Data()
+                let worldPos: Vec3Data = vec3()
                 glSet_V3_V3(worldPos, __worldPos__)
 
                 for (let j: IntData = glNegative_N(int_N(1)); glIsLessEqual_N_N(j, int_N(1)); glAfterAddSelf_N(j)) {
-                    let shadowPos: Vec4Data = new Vec4Data()
+                    let shadowPos: Vec4Data = vec4()
                     glSet_V4_V4(shadowPos, __shadowPos__)
-                    let worldPos: Vec3Data = new Vec3Data()
+                    let worldPos: Vec3Data = vec3()
                     glSet_V3_V3(worldPos, __worldPos__)
 
                     let closestDepth: FloatData = float()
@@ -1683,9 +1683,9 @@ export class Impl_15b83ec76b5b9d5c5cbf5e3ce8e4877b extends FragShaderHandle {
         return glDiv_N_N(shadow, float_N(9.0))
     }
     CCGetDirLightShadowFactorX25_V4_V3(__shadowPos__: Vec4Data, __worldPos__: Vec3Data): FloatData {
-        let shadowPos: Vec4Data = new Vec4Data()
+        let shadowPos: Vec4Data = vec4()
         glSet_V4_V4(shadowPos, __shadowPos__)
-        let worldPos: Vec3Data = new Vec3Data()
+        let worldPos: Vec3Data = vec3()
         glSet_V3_V3(worldPos, __worldPos__)
 
         let clipPos: Vec3Data = vec3()
@@ -1698,9 +1698,9 @@ export class Impl_15b83ec76b5b9d5c5cbf5e3ce8e4877b extends FragShaderHandle {
             glIsLess_N_N(float_N(clipPos.z), glNegative_N(float_N(1.0))) ||
             glIsMore_N_N(float_N(clipPos.z), float_N(1.0))
         ) {
-            let shadowPos: Vec4Data = new Vec4Data()
+            let shadowPos: Vec4Data = vec4()
             glSet_V4_V4(shadowPos, __shadowPos__)
-            let worldPos: Vec3Data = new Vec3Data()
+            let worldPos: Vec3Data = vec3()
             glSet_V3_V3(worldPos, __worldPos__)
 
             return float_N(0.0)
@@ -1714,16 +1714,16 @@ export class Impl_15b83ec76b5b9d5c5cbf5e3ce8e4877b extends FragShaderHandle {
         let shadow: FloatData = float()
         glSet_N_N(shadow, float_N(0.0))
         if (glIsMore_N_N(float_N(this.uniformData.cc_shadowNFLSInfo.z), float_N(0.000001))) {
-            let shadowPos: Vec4Data = new Vec4Data()
+            let shadowPos: Vec4Data = vec4()
             glSet_V4_V4(shadowPos, __shadowPos__)
-            let worldPos: Vec3Data = new Vec3Data()
+            let worldPos: Vec3Data = vec3()
             glSet_V3_V3(worldPos, __worldPos__)
 
             glSet_N_N(depth, this.CCGetLinearDepth_V3(worldPos))
         } else {
-            let shadowPos: Vec4Data = new Vec4Data()
+            let shadowPos: Vec4Data = vec4()
             glSet_V4_V4(shadowPos, __shadowPos__)
-            let worldPos: Vec3Data = new Vec3Data()
+            let worldPos: Vec3Data = vec3()
             glSet_V3_V3(worldPos, __worldPos__)
 
             glSet_N_N(depth, float_N(clipPos.z))
@@ -1735,21 +1735,21 @@ export class Impl_15b83ec76b5b9d5c5cbf5e3ce8e4877b extends FragShaderHandle {
                 : clipPos.xy
         )
         if (glIsMore_N_N(float_N(this.uniformData.cc_shadowLPNNInfo.y), float_N(0.000001))) {
-            let shadowPos: Vec4Data = new Vec4Data()
+            let shadowPos: Vec4Data = vec4()
             glSet_V4_V4(shadowPos, __shadowPos__)
-            let worldPos: Vec3Data = new Vec3Data()
+            let worldPos: Vec3Data = vec3()
             glSet_V3_V3(worldPos, __worldPos__)
 
             for (let i: IntData = glNegative_N(int_N(2)); glIsLessEqual_N_N(i, int_N(2)); glAfterAddSelf_N(i)) {
-                let shadowPos: Vec4Data = new Vec4Data()
+                let shadowPos: Vec4Data = vec4()
                 glSet_V4_V4(shadowPos, __shadowPos__)
-                let worldPos: Vec3Data = new Vec3Data()
+                let worldPos: Vec3Data = vec3()
                 glSet_V3_V3(worldPos, __worldPos__)
 
                 for (let j: IntData = glNegative_N(int_N(2)); glIsLessEqual_N_N(j, int_N(2)); glAfterAddSelf_N(j)) {
-                    let shadowPos: Vec4Data = new Vec4Data()
+                    let shadowPos: Vec4Data = vec4()
                     glSet_V4_V4(shadowPos, __shadowPos__)
-                    let worldPos: Vec3Data = new Vec3Data()
+                    let worldPos: Vec3Data = vec3()
                     glSet_V3_V3(worldPos, __worldPos__)
 
                     let closestDepth: FloatData = float()
@@ -1775,21 +1775,21 @@ export class Impl_15b83ec76b5b9d5c5cbf5e3ce8e4877b extends FragShaderHandle {
                 }
             }
         } else {
-            let shadowPos: Vec4Data = new Vec4Data()
+            let shadowPos: Vec4Data = vec4()
             glSet_V4_V4(shadowPos, __shadowPos__)
-            let worldPos: Vec3Data = new Vec3Data()
+            let worldPos: Vec3Data = vec3()
             glSet_V3_V3(worldPos, __worldPos__)
 
             for (let i: IntData = glNegative_N(int_N(2)); glIsLessEqual_N_N(i, int_N(2)); glAfterAddSelf_N(i)) {
-                let shadowPos: Vec4Data = new Vec4Data()
+                let shadowPos: Vec4Data = vec4()
                 glSet_V4_V4(shadowPos, __shadowPos__)
-                let worldPos: Vec3Data = new Vec3Data()
+                let worldPos: Vec3Data = vec3()
                 glSet_V3_V3(worldPos, __worldPos__)
 
                 for (let j: IntData = glNegative_N(int_N(2)); glIsLessEqual_N_N(j, int_N(2)); glAfterAddSelf_N(j)) {
-                    let shadowPos: Vec4Data = new Vec4Data()
+                    let shadowPos: Vec4Data = vec4()
                     glSet_V4_V4(shadowPos, __shadowPos__)
-                    let worldPos: Vec3Data = new Vec3Data()
+                    let worldPos: Vec3Data = vec3()
                     glSet_V3_V3(worldPos, __worldPos__)
 
                     let closestDepth: FloatData = float()
@@ -1812,13 +1812,13 @@ export class Impl_15b83ec76b5b9d5c5cbf5e3ce8e4877b extends FragShaderHandle {
         return glDiv_N_N(shadow, float_N(25.0))
     }
     GGXMobile_N_N_V3_V3(__roughness__: FloatData, __NoH__: FloatData, __H__: Vec3Data, __N__: Vec3Data): FloatData {
-        let roughness: FloatData = new FloatData()
+        let roughness: FloatData = float()
         glSet_N_N(roughness, __roughness__)
-        let NoH: FloatData = new FloatData()
+        let NoH: FloatData = float()
         glSet_N_N(NoH, __NoH__)
-        let H: Vec3Data = new Vec3Data()
+        let H: Vec3Data = vec3()
         glSet_V3_V3(H, __H__)
-        let N: Vec3Data = new Vec3Data()
+        let N: Vec3Data = vec3()
         glSet_V3_V3(N, __N__)
 
         let NxH: Vec3Data = vec3()
@@ -1834,23 +1834,23 @@ export class Impl_15b83ec76b5b9d5c5cbf5e3ce8e4877b extends FragShaderHandle {
         return glMul_N_N(p, p)
     }
     CalcSpecular_N_N_V3_V3(__roughness__: FloatData, __NoH__: FloatData, __H__: Vec3Data, __N__: Vec3Data): FloatData {
-        let roughness: FloatData = new FloatData()
+        let roughness: FloatData = float()
         glSet_N_N(roughness, __roughness__)
-        let NoH: FloatData = new FloatData()
+        let NoH: FloatData = float()
         glSet_N_N(NoH, __NoH__)
-        let H: Vec3Data = new Vec3Data()
+        let H: Vec3Data = vec3()
         glSet_V3_V3(H, __H__)
-        let N: Vec3Data = new Vec3Data()
+        let N: Vec3Data = vec3()
         glSet_V3_V3(N, __N__)
 
         return glMul_N_N(glAdd_N_N(glMul_N_N(roughness, float_N(0.25)), float_N(0.25)), this.GGXMobile_N_N_V3_V3(roughness, NoH, H, N))
     }
     BRDFApprox_V3_N_N(__specular__: Vec3Data, __roughness__: FloatData, __NoV__: FloatData): Vec3Data {
-        let specular: Vec3Data = new Vec3Data()
+        let specular: Vec3Data = vec3()
         glSet_V3_V3(specular, __specular__)
-        let roughness: FloatData = new FloatData()
+        let roughness: FloatData = float()
         glSet_N_N(roughness, __roughness__)
-        let NoV: FloatData = new FloatData()
+        let NoV: FloatData = float()
         glSet_N_N(NoV, __NoV__)
 
         let c0: Vec4Data = vec4()
@@ -1881,7 +1881,7 @@ export class Impl_15b83ec76b5b9d5c5cbf5e3ce8e4877b extends FragShaderHandle {
     CCStandardShadingBase_StandardSurface_V4(__s__: StandardSurface, __shadowPos__: Vec4Data): Vec4Data {
         let s: StandardSurface = new StandardSurface()
         glSet_Struct_Struct(s, __s__)
-        let shadowPos: Vec4Data = new Vec4Data()
+        let shadowPos: Vec4Data = vec4()
         glSet_V4_V4(shadowPos, __shadowPos__)
 
         let diffuse: Vec3Data = vec3()
@@ -1930,7 +1930,7 @@ export class Impl_15b83ec76b5b9d5c5cbf5e3ce8e4877b extends FragShaderHandle {
         {
             let s: StandardSurface = new StandardSurface()
             glSet_Struct_Struct(s, __s__)
-            let shadowPos: Vec4Data = new Vec4Data()
+            let shadowPos: Vec4Data = vec4()
             glSet_V4_V4(shadowPos, __shadowPos__)
 
             let pcf: FloatData = float()
@@ -1965,7 +1965,7 @@ export class Impl_15b83ec76b5b9d5c5cbf5e3ce8e4877b extends FragShaderHandle {
             if (glIsMore_N_N(float_N(this.uniformData.cc_shadowNFLSInfo.w), float_N(0.000001))) {
                 let s: StandardSurface = new StandardSurface()
                 glSet_Struct_Struct(s, __s__)
-                let shadowPos: Vec4Data = new Vec4Data()
+                let shadowPos: Vec4Data = vec4()
                 glSet_V4_V4(shadowPos, __shadowPos__)
 
                 glSet_V3_V3(
@@ -1978,7 +1978,7 @@ export class Impl_15b83ec76b5b9d5c5cbf5e3ce8e4877b extends FragShaderHandle {
             } else {
                 let s: StandardSurface = new StandardSurface()
                 glSet_Struct_Struct(s, __s__)
-                let shadowPos: Vec4Data = new Vec4Data()
+                let shadowPos: Vec4Data = vec4()
                 glSet_V4_V4(shadowPos, __shadowPos__)
 
                 glSet_V3_V3(
@@ -1993,7 +1993,7 @@ export class Impl_15b83ec76b5b9d5c5cbf5e3ce8e4877b extends FragShaderHandle {
         return vec4_V3_N(finalColor, float_N(s.albedo.w))
     }
     ACESToneMap_V3(__color__: Vec3Data): Vec3Data {
-        let color: Vec3Data = new Vec3Data()
+        let color: Vec3Data = vec3()
         glSet_V3_V3(color, __color__)
 
         glSet_V3_V3(color, min_V3_V3(color, vec3_N(float_N(8.0))))
@@ -2013,7 +2013,7 @@ export class Impl_15b83ec76b5b9d5c5cbf5e3ce8e4877b extends FragShaderHandle {
         )
     }
     CCFragOutput_V4(__color__: Vec4Data): Vec4Data {
-        let color: Vec4Data = new Vec4Data()
+        let color: Vec4Data = vec4()
         glSet_V4_V4(color, __color__)
 
         glSet_V3_V3(color.xyz, sqrt_V3(this.ACESToneMap_V3(color.out_xyz)))

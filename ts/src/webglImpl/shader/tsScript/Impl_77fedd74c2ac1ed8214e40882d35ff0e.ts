@@ -131,19 +131,19 @@ export class Impl_77fedd74c2ac1ed8214e40882d35ff0e extends FragShaderHandle {
     uniformData: UniformDataImpl = new UniformDataImpl()
 
     unpackRGBE_V4(__rgbe__: Vec4Data): Vec3Data {
-        let rgbe: Vec4Data = new Vec4Data()
+        let rgbe: Vec4Data = vec4()
         glSet_V4_V4(rgbe, __rgbe__)
 
         return glMul_V3_N(rgbe.xyz, pow_N_N(float_N(2.0), glSub_N_N(glMul_N_N(float_N(rgbe.w), float_N(255.0)), float_N(128.0))))
     }
     SRGBToLinear_V3(__gamma__: Vec3Data): Vec3Data {
-        let gamma: Vec3Data = new Vec3Data()
+        let gamma: Vec3Data = vec3()
         glSet_V3_V3(gamma, __gamma__)
 
         return glMul_V3_V3(gamma, gamma)
     }
     ACESToneMap_V3(__color__: Vec3Data): Vec3Data {
-        let color: Vec3Data = new Vec3Data()
+        let color: Vec3Data = vec3()
         glSet_V3_V3(color, __color__)
 
         glSet_V3_V3(color, min_V3_V3(color, vec3_N(float_N(8.0))))
@@ -163,7 +163,7 @@ export class Impl_77fedd74c2ac1ed8214e40882d35ff0e extends FragShaderHandle {
         )
     }
     CCFragOutput_V4(__color__: Vec4Data): Vec4Data {
-        let color: Vec4Data = new Vec4Data()
+        let color: Vec4Data = vec4()
         glSet_V4_V4(color, __color__)
 
         glSet_V3_V3(color.xyz, sqrt_V3(this.ACESToneMap_V3(color.out_xyz)))

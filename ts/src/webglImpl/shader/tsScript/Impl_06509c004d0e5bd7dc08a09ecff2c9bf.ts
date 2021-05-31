@@ -519,15 +519,15 @@ let USE_EMISSIVE_MAP = new FloatData(0)
 let USE_ALPHA_TEST = new FloatData(0)
 let CC_PIPELINE_TYPE = new FloatData(0)
 class StandardVertInput implements StructData {
-    position: Vec4Data = new Vec4Data()
-    normal: Vec3Data = new Vec3Data()
-    tangent: Vec4Data = new Vec4Data()
+    position: Vec4Data = vec4()
+    normal: Vec3Data = vec3()
+    tangent: Vec4Data = vec4()
 }
 class AttributeDataImpl implements AttributeData {
-    a_position: Vec3Data = null!
-    a_normal: Vec3Data = null!
-    a_texCoord: Vec2Data = null!
-    a_tangent: Vec4Data = null!
+    a_position: Vec3Data = new Vec3Data()!
+    a_normal: Vec3Data = new Vec3Data()!
+    a_texCoord: Vec2Data = new Vec2Data()!
+    a_tangent: Vec4Data = new Vec4Data()!
     dataKeys: Map<string, any> = new Map([
         ["a_position", cpuRenderingContext.cachGameGl.FLOAT_VEC3],
         ["a_normal", cpuRenderingContext.cachGameGl.FLOAT_VEC3],
@@ -611,7 +611,7 @@ export class Impl_06509c004d0e5bd7dc08a09ecff2c9bf extends VertShaderHandle {
     attributeData: AttributeDataImpl = new AttributeDataImpl()
 
     decode32_V4(__rgba__: Vec4Data): FloatData {
-        let rgba: Vec4Data = new Vec4Data()
+        let rgba: Vec4Data = vec4()
         glSet_V4_V4(rgba, __rgba__)
 
         glSet_V4_V4(rgba, glMul_V4_N(rgba, float_N(255.0)))
@@ -657,7 +657,7 @@ export class Impl_06509c004d0e5bd7dc08a09ecff2c9bf extends VertShaderHandle {
         return glMul_N_N(glMul_N_N(Sign, exp2_N(glSub_N_N(Exponent, float_N(23.0)))), Mantissa)
     }
     LinearFog_V4(__pos__: Vec4Data): FloatData {
-        let pos: Vec4Data = new Vec4Data()
+        let pos: Vec4Data = vec4()
         glSet_V4_V4(pos, __pos__)
 
         let wPos: Vec4Data = vec4()
@@ -671,7 +671,7 @@ export class Impl_06509c004d0e5bd7dc08a09ecff2c9bf extends VertShaderHandle {
         return clamp_N_N_N(glDiv_N_N(glSub_N_N(fogEnd, cam_dis), glSub_N_N(fogEnd, fogStart)), float_N(0), float_N(1))
     }
     ExpFog_V4(__pos__: Vec4Data): FloatData {
-        let pos: Vec4Data = new Vec4Data()
+        let pos: Vec4Data = vec4()
         glSet_V4_V4(pos, __pos__)
 
         let wPos: Vec4Data = vec4()
@@ -687,7 +687,7 @@ export class Impl_06509c004d0e5bd7dc08a09ecff2c9bf extends VertShaderHandle {
         return f
     }
     ExpSquaredFog_V4(__pos__: Vec4Data): FloatData {
-        let pos: Vec4Data = new Vec4Data()
+        let pos: Vec4Data = vec4()
         glSet_V4_V4(pos, __pos__)
 
         let wPos: Vec4Data = vec4()
@@ -703,7 +703,7 @@ export class Impl_06509c004d0e5bd7dc08a09ecff2c9bf extends VertShaderHandle {
         return f
     }
     LayeredFog_V4(__pos__: Vec4Data): FloatData {
-        let pos: Vec4Data = new Vec4Data()
+        let pos: Vec4Data = vec4()
         glSet_V4_V4(pos, __pos__)
 
         let wPos: Vec4Data = vec4()
@@ -726,28 +726,28 @@ export class Impl_06509c004d0e5bd7dc08a09ecff2c9bf extends VertShaderHandle {
 
         let fDensityIntegral: FloatData = float()
         if (glIsMore_N_N(float_N(this.uniformData.cc_cameraPos.y), _FogTop)) {
-            let pos: Vec4Data = new Vec4Data()
+            let pos: Vec4Data = vec4()
             glSet_V4_V4(pos, __pos__)
 
             if (glIsLess_N_N(float_N(wPos.y), _FogTop)) {
-                let pos: Vec4Data = new Vec4Data()
+                let pos: Vec4Data = vec4()
                 glSet_V4_V4(pos, __pos__)
 
                 glSet_N_N(fDeltaY, glMul_N_N(glDiv_N_N(glSub_N_N(_FogTop, float_N(wPos.y)), _FogRange), float_N(2.0)))
                 glSet_N_N(fDensityIntegral, glMul_N_N(glMul_N_N(fDeltaY, fDeltaY), float_N(0.5)))
             } else {
-                let pos: Vec4Data = new Vec4Data()
+                let pos: Vec4Data = vec4()
                 glSet_V4_V4(pos, __pos__)
 
                 glSet_N_N(fDeltaY, float_N(0))
                 glSet_N_N(fDensityIntegral, float_N(0))
             }
         } else {
-            let pos: Vec4Data = new Vec4Data()
+            let pos: Vec4Data = vec4()
             glSet_V4_V4(pos, __pos__)
 
             if (glIsLess_N_N(float_N(wPos.y), _FogTop)) {
-                let pos: Vec4Data = new Vec4Data()
+                let pos: Vec4Data = vec4()
                 glSet_V4_V4(pos, __pos__)
 
                 let fDeltaA: FloatData = float()
@@ -768,7 +768,7 @@ export class Impl_06509c004d0e5bd7dc08a09ecff2c9bf extends VertShaderHandle {
                     )
                 )
             } else {
-                let pos: Vec4Data = new Vec4Data()
+                let pos: Vec4Data = vec4()
                 glSet_V4_V4(pos, __pos__)
 
                 glSet_N_N(
@@ -780,7 +780,7 @@ export class Impl_06509c004d0e5bd7dc08a09ecff2c9bf extends VertShaderHandle {
         }
         let fDensity: FloatData = float()
         if (glIsNotEqual_N_N(fDeltaY, float_N(0))) {
-            let pos: Vec4Data = new Vec4Data()
+            let pos: Vec4Data = vec4()
             glSet_V4_V4(pos, __pos__)
 
             glSet_N_N(
@@ -791,7 +791,7 @@ export class Impl_06509c004d0e5bd7dc08a09ecff2c9bf extends VertShaderHandle {
                 )
             )
         } else {
-            let pos: Vec4Data = new Vec4Data()
+            let pos: Vec4Data = vec4()
             glSet_V4_V4(pos, __pos__)
 
             glSet_N_N(fDensity, float_N(0))

@@ -1796,9 +1796,23 @@ export function mat4(): Mat4Data {
 
 export function mat4_M3(m00: Mat3Data): Mat4Data {
     let data = builtinCachData.mat4Data.getData()
-    let v = data
+    data.m00 = m00.m00
+    data.m01 = m00.m01
+    data.m02 = m00.m02
+    data.m03 = 0
+    data.m04 = m00.m03
+    data.m05 = m00.m04
+    data.m06 = m00.m05
+    data.m07 = 0
+    data.m08 = m00.m06
+    data.m09 = m00.m07
+    data.m10 = m00.m08
+    data.m11 = 0
+    data.m12 = 0
+    data.m13 = 0
+    data.m14 = 0
+    data.m15 = 0
 
-    console.error("error to set mat4 for mat3")
     return data
 }
 

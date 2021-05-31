@@ -93,15 +93,15 @@ let CC_USE_IBL = new FloatData(0)
 let CC_USE_HDR = new FloatData(0)
 let USE_RGBE_CUBEMAP = new FloatData(0)
 class StandardVertInput implements StructData {
-    position: Vec4Data = new Vec4Data()
-    normal: Vec3Data = new Vec3Data()
-    tangent: Vec4Data = new Vec4Data()
+    position: Vec4Data = vec4()
+    normal: Vec3Data = vec3()
+    tangent: Vec4Data = vec4()
 }
 class AttributeDataImpl implements AttributeData {
-    a_position: Vec3Data = null!
-    a_normal: Vec3Data = null!
-    a_texCoord: Vec2Data = null!
-    a_tangent: Vec4Data = null!
+    a_position: Vec3Data = new Vec3Data()!
+    a_normal: Vec3Data = new Vec3Data()!
+    a_texCoord: Vec2Data = new Vec2Data()!
+    a_tangent: Vec4Data = new Vec4Data()!
     dataKeys: Map<string, any> = new Map([
         ["a_position", cpuRenderingContext.cachGameGl.FLOAT_VEC3],
         ["a_normal", cpuRenderingContext.cachGameGl.FLOAT_VEC3],

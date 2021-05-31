@@ -673,15 +673,15 @@ let CC_PIPELINE_TYPE = new FloatData(0)
 let CC_USE_FOG = new FloatData(0)
 let LIGHTS_PER_PASS = new FloatData(1)
 class StandardSurface implements StructData {
-    albedo: Vec4Data = new Vec4Data()
-    position: Vec3Data = new Vec3Data()
-    normal: Vec3Data = new Vec3Data()
-    emissive: Vec3Data = new Vec3Data()
-    lightmap: Vec3Data = new Vec3Data()
-    lightmap_test: FloatData = new FloatData()
-    roughness: FloatData = new FloatData()
-    metallic: FloatData = new FloatData()
-    occlusion: FloatData = new FloatData()
+    albedo: Vec4Data = vec4()
+    position: Vec3Data = vec3()
+    normal: Vec3Data = vec3()
+    emissive: Vec3Data = vec3()
+    lightmap: Vec3Data = vec3()
+    lightmap_test: FloatData = float()
+    roughness: FloatData = float()
+    metallic: FloatData = float()
+    occlusion: FloatData = float()
 }
 class AttributeDataImpl implements AttributeData {
     dataKeys: Map<string, any> = new Map([])
@@ -778,19 +778,19 @@ export class Impl_a16f945e975039ee6e884533730d85e9 extends FragShaderHandle {
     uniformData: UniformDataImpl = new UniformDataImpl()
 
     SRGBToLinear_V3(__gamma__: Vec3Data): Vec3Data {
-        let gamma: Vec3Data = new Vec3Data()
+        let gamma: Vec3Data = vec3()
         glSet_V3_V3(gamma, __gamma__)
 
         return glMul_V3_V3(gamma, gamma)
     }
     GGXMobile_N_N_V3_V3(__roughness__: FloatData, __NoH__: FloatData, __H__: Vec3Data, __N__: Vec3Data): FloatData {
-        let roughness: FloatData = new FloatData()
+        let roughness: FloatData = float()
         glSet_N_N(roughness, __roughness__)
-        let NoH: FloatData = new FloatData()
+        let NoH: FloatData = float()
         glSet_N_N(NoH, __NoH__)
-        let H: Vec3Data = new Vec3Data()
+        let H: Vec3Data = vec3()
         glSet_V3_V3(H, __H__)
-        let N: Vec3Data = new Vec3Data()
+        let N: Vec3Data = vec3()
         glSet_V3_V3(N, __N__)
 
         let NxH: Vec3Data = vec3()
@@ -806,23 +806,23 @@ export class Impl_a16f945e975039ee6e884533730d85e9 extends FragShaderHandle {
         return glMul_N_N(p, p)
     }
     CalcSpecular_N_N_V3_V3(__roughness__: FloatData, __NoH__: FloatData, __H__: Vec3Data, __N__: Vec3Data): FloatData {
-        let roughness: FloatData = new FloatData()
+        let roughness: FloatData = float()
         glSet_N_N(roughness, __roughness__)
-        let NoH: FloatData = new FloatData()
+        let NoH: FloatData = float()
         glSet_N_N(NoH, __NoH__)
-        let H: Vec3Data = new Vec3Data()
+        let H: Vec3Data = vec3()
         glSet_V3_V3(H, __H__)
-        let N: Vec3Data = new Vec3Data()
+        let N: Vec3Data = vec3()
         glSet_V3_V3(N, __N__)
 
         return glMul_N_N(glAdd_N_N(glMul_N_N(roughness, float_N(0.25)), float_N(0.25)), this.GGXMobile_N_N_V3_V3(roughness, NoH, H, N))
     }
     BRDFApprox_V3_N_N(__specular__: Vec3Data, __roughness__: FloatData, __NoV__: FloatData): Vec3Data {
-        let specular: Vec3Data = new Vec3Data()
+        let specular: Vec3Data = vec3()
         glSet_V3_V3(specular, __specular__)
-        let roughness: FloatData = new FloatData()
+        let roughness: FloatData = float()
         glSet_N_N(roughness, __roughness__)
-        let NoV: FloatData = new FloatData()
+        let NoV: FloatData = float()
         glSet_N_N(NoV, __NoV__)
 
         let c0: Vec4Data = vec4()
@@ -853,7 +853,7 @@ export class Impl_a16f945e975039ee6e884533730d85e9 extends FragShaderHandle {
     CCStandardShadingBase_StandardSurface_V4(__s__: StandardSurface, __shadowPos__: Vec4Data): Vec4Data {
         let s: StandardSurface = new StandardSurface()
         glSet_Struct_Struct(s, __s__)
-        let shadowPos: Vec4Data = new Vec4Data()
+        let shadowPos: Vec4Data = vec4()
         glSet_V4_V4(shadowPos, __shadowPos__)
 
         let diffuse: Vec3Data = vec3()
@@ -902,9 +902,9 @@ export class Impl_a16f945e975039ee6e884533730d85e9 extends FragShaderHandle {
         return vec4_V3_N(finalColor, float_N(s.albedo.w))
     }
     SmoothDistAtt_N_N(__distSqr__: FloatData, __invSqrAttRadius__: FloatData): FloatData {
-        let distSqr: FloatData = new FloatData()
+        let distSqr: FloatData = float()
         glSet_N_N(distSqr, __distSqr__)
-        let invSqrAttRadius: FloatData = new FloatData()
+        let invSqrAttRadius: FloatData = float()
         glSet_N_N(invSqrAttRadius, __invSqrAttRadius__)
 
         let factor: FloatData = float()
@@ -914,9 +914,9 @@ export class Impl_a16f945e975039ee6e884533730d85e9 extends FragShaderHandle {
         return glMul_N_N(smoothFactor, smoothFactor)
     }
     GetDistAtt_N_N(__distSqr__: FloatData, __invSqrAttRadius__: FloatData): FloatData {
-        let distSqr: FloatData = new FloatData()
+        let distSqr: FloatData = float()
         glSet_N_N(distSqr, __distSqr__)
-        let invSqrAttRadius: FloatData = new FloatData()
+        let invSqrAttRadius: FloatData = float()
         glSet_N_N(invSqrAttRadius, __invSqrAttRadius__)
 
         let attenuation: FloatData = float()
@@ -925,13 +925,13 @@ export class Impl_a16f945e975039ee6e884533730d85e9 extends FragShaderHandle {
         return attenuation
     }
     GetAngleAtt_V3_V3_N_N(__L__: Vec3Data, __litDir__: Vec3Data, __litAngleScale__: FloatData, __litAngleOffset__: FloatData): FloatData {
-        let L: Vec3Data = new Vec3Data()
+        let L: Vec3Data = vec3()
         glSet_V3_V3(L, __L__)
-        let litDir: Vec3Data = new Vec3Data()
+        let litDir: Vec3Data = vec3()
         glSet_V3_V3(litDir, __litDir__)
-        let litAngleScale: FloatData = new FloatData()
+        let litAngleScale: FloatData = float()
         glSet_N_N(litAngleScale, __litAngleScale__)
-        let litAngleOffset: FloatData = new FloatData()
+        let litAngleOffset: FloatData = float()
         glSet_N_N(litAngleOffset, __litAngleOffset__)
 
         let cd: FloatData = float()
@@ -943,7 +943,7 @@ export class Impl_a16f945e975039ee6e884533730d85e9 extends FragShaderHandle {
     CCStandardShadingAdditive_StandardSurface_V4(__s__: StandardSurface, __shadowPos__: Vec4Data): Vec4Data {
         let s: StandardSurface = new StandardSurface()
         glSet_Struct_Struct(s, __s__)
-        let shadowPos: Vec4Data = new Vec4Data()
+        let shadowPos: Vec4Data = vec4()
         glSet_V4_V4(shadowPos, __shadowPos__)
 
         let diffuse: Vec3Data = vec3()
@@ -969,7 +969,7 @@ export class Impl_a16f945e975039ee6e884533730d85e9 extends FragShaderHandle {
         for (let i: IntData = int_N(0); glIsLess_N_N(i, LIGHTS_PER_PASS); glAfterAddSelf_N(i)) {
             let s: StandardSurface = new StandardSurface()
             glSet_Struct_Struct(s, __s__)
-            let shadowPos: Vec4Data = new Vec4Data()
+            let shadowPos: Vec4Data = vec4()
             glSet_V4_V4(shadowPos, __shadowPos__)
 
             if (glIsMoreEqual_N_N(i, numLights)) {
@@ -1007,7 +1007,7 @@ export class Impl_a16f945e975039ee6e884533730d85e9 extends FragShaderHandle {
             if (glIsMore_N_N(float_N(this.uniformData.cc_lightPos[i.v].w), float_N(0.0))) {
                 let s: StandardSurface = new StandardSurface()
                 glSet_Struct_Struct(s, __s__)
-                let shadowPos: Vec4Data = new Vec4Data()
+                let shadowPos: Vec4Data = vec4()
                 glSet_V4_V4(shadowPos, __shadowPos__)
 
                 let cosInner: FloatData = float()
@@ -1040,7 +1040,7 @@ export class Impl_a16f945e975039ee6e884533730d85e9 extends FragShaderHandle {
         return vec4_V3_N(finalColor, float_N(0.0))
     }
     ACESToneMap_V3(__color__: Vec3Data): Vec3Data {
-        let color: Vec3Data = new Vec3Data()
+        let color: Vec3Data = vec3()
         glSet_V3_V3(color, __color__)
 
         glSet_V3_V3(color, min_V3_V3(color, vec3_N(float_N(8.0))))
@@ -1060,14 +1060,14 @@ export class Impl_a16f945e975039ee6e884533730d85e9 extends FragShaderHandle {
         )
     }
     CCFragOutput_V4(__color__: Vec4Data): Vec4Data {
-        let color: Vec4Data = new Vec4Data()
+        let color: Vec4Data = vec4()
         glSet_V4_V4(color, __color__)
 
         glSet_V3_V3(color.xyz, sqrt_V3(this.ACESToneMap_V3(color.out_xyz)))
         return color
     }
     LinearFog_V4(__pos__: Vec4Data): FloatData {
-        let pos: Vec4Data = new Vec4Data()
+        let pos: Vec4Data = vec4()
         glSet_V4_V4(pos, __pos__)
 
         let wPos: Vec4Data = vec4()
@@ -1081,7 +1081,7 @@ export class Impl_a16f945e975039ee6e884533730d85e9 extends FragShaderHandle {
         return clamp_N_N_N(glDiv_N_N(glSub_N_N(fogEnd, cam_dis), glSub_N_N(fogEnd, fogStart)), float_N(0), float_N(1))
     }
     ExpFog_V4(__pos__: Vec4Data): FloatData {
-        let pos: Vec4Data = new Vec4Data()
+        let pos: Vec4Data = vec4()
         glSet_V4_V4(pos, __pos__)
 
         let wPos: Vec4Data = vec4()
@@ -1097,7 +1097,7 @@ export class Impl_a16f945e975039ee6e884533730d85e9 extends FragShaderHandle {
         return f
     }
     ExpSquaredFog_V4(__pos__: Vec4Data): FloatData {
-        let pos: Vec4Data = new Vec4Data()
+        let pos: Vec4Data = vec4()
         glSet_V4_V4(pos, __pos__)
 
         let wPos: Vec4Data = vec4()
@@ -1113,7 +1113,7 @@ export class Impl_a16f945e975039ee6e884533730d85e9 extends FragShaderHandle {
         return f
     }
     LayeredFog_V4(__pos__: Vec4Data): FloatData {
-        let pos: Vec4Data = new Vec4Data()
+        let pos: Vec4Data = vec4()
         glSet_V4_V4(pos, __pos__)
 
         let wPos: Vec4Data = vec4()
@@ -1136,28 +1136,28 @@ export class Impl_a16f945e975039ee6e884533730d85e9 extends FragShaderHandle {
 
         let fDensityIntegral: FloatData = float()
         if (glIsMore_N_N(float_N(this.uniformData.cc_cameraPos.y), _FogTop)) {
-            let pos: Vec4Data = new Vec4Data()
+            let pos: Vec4Data = vec4()
             glSet_V4_V4(pos, __pos__)
 
             if (glIsLess_N_N(float_N(wPos.y), _FogTop)) {
-                let pos: Vec4Data = new Vec4Data()
+                let pos: Vec4Data = vec4()
                 glSet_V4_V4(pos, __pos__)
 
                 glSet_N_N(fDeltaY, glMul_N_N(glDiv_N_N(glSub_N_N(_FogTop, float_N(wPos.y)), _FogRange), float_N(2.0)))
                 glSet_N_N(fDensityIntegral, glMul_N_N(glMul_N_N(fDeltaY, fDeltaY), float_N(0.5)))
             } else {
-                let pos: Vec4Data = new Vec4Data()
+                let pos: Vec4Data = vec4()
                 glSet_V4_V4(pos, __pos__)
 
                 glSet_N_N(fDeltaY, float_N(0))
                 glSet_N_N(fDensityIntegral, float_N(0))
             }
         } else {
-            let pos: Vec4Data = new Vec4Data()
+            let pos: Vec4Data = vec4()
             glSet_V4_V4(pos, __pos__)
 
             if (glIsLess_N_N(float_N(wPos.y), _FogTop)) {
-                let pos: Vec4Data = new Vec4Data()
+                let pos: Vec4Data = vec4()
                 glSet_V4_V4(pos, __pos__)
 
                 let fDeltaA: FloatData = float()
@@ -1178,7 +1178,7 @@ export class Impl_a16f945e975039ee6e884533730d85e9 extends FragShaderHandle {
                     )
                 )
             } else {
-                let pos: Vec4Data = new Vec4Data()
+                let pos: Vec4Data = vec4()
                 glSet_V4_V4(pos, __pos__)
 
                 glSet_N_N(
@@ -1190,7 +1190,7 @@ export class Impl_a16f945e975039ee6e884533730d85e9 extends FragShaderHandle {
         }
         let fDensity: FloatData = float()
         if (glIsNotEqual_N_N(fDeltaY, float_N(0))) {
-            let pos: Vec4Data = new Vec4Data()
+            let pos: Vec4Data = vec4()
             glSet_V4_V4(pos, __pos__)
 
             glSet_N_N(
@@ -1201,7 +1201,7 @@ export class Impl_a16f945e975039ee6e884533730d85e9 extends FragShaderHandle {
                 )
             )
         } else {
-            let pos: Vec4Data = new Vec4Data()
+            let pos: Vec4Data = vec4()
             glSet_V4_V4(pos, __pos__)
 
             glSet_N_N(fDensity, float_N(0))

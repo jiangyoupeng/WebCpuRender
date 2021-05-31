@@ -192,9 +192,9 @@ export class Impl_679f6a8c0068a1814b317ac313eebec2 extends FragShaderHandle {
         v_rgbSE: Vec2Data,
         v_rgbM: Vec2Data
     ): void {
-        let fragCoord: Vec2Data = new Vec2Data()
+        let fragCoord: Vec2Data = vec2()
         glSet_V2_V2(fragCoord, __fragCoord__)
-        let resolution: Vec2Data = new Vec2Data()
+        let resolution: Vec2Data = vec2()
         glSet_V2_V2(resolution, __resolution__)
 
         let inverseVP: Vec2Data = vec2()
@@ -220,19 +220,19 @@ export class Impl_679f6a8c0068a1814b317ac313eebec2 extends FragShaderHandle {
     ): Vec4Data {
         let tex: Sampler2D = new Sampler2D()
         glSet_N_N(tex, __tex__)
-        let fragCoord: Vec2Data = new Vec2Data()
+        let fragCoord: Vec2Data = vec2()
         glSet_V2_V2(fragCoord, __fragCoord__)
-        let resolution: Vec2Data = new Vec2Data()
+        let resolution: Vec2Data = vec2()
         glSet_V2_V2(resolution, __resolution__)
-        let v_rgbNW: Vec2Data = new Vec2Data()
+        let v_rgbNW: Vec2Data = vec2()
         glSet_V2_V2(v_rgbNW, __v_rgbNW__)
-        let v_rgbNE: Vec2Data = new Vec2Data()
+        let v_rgbNE: Vec2Data = vec2()
         glSet_V2_V2(v_rgbNE, __v_rgbNE__)
-        let v_rgbSW: Vec2Data = new Vec2Data()
+        let v_rgbSW: Vec2Data = vec2()
         glSet_V2_V2(v_rgbSW, __v_rgbSW__)
-        let v_rgbSE: Vec2Data = new Vec2Data()
+        let v_rgbSE: Vec2Data = vec2()
         glSet_V2_V2(v_rgbSE, __v_rgbSE__)
-        let v_rgbM: Vec2Data = new Vec2Data()
+        let v_rgbM: Vec2Data = vec2()
         glSet_V2_V2(v_rgbM, __v_rgbM__)
 
         let color: Vec4Data = vec4()

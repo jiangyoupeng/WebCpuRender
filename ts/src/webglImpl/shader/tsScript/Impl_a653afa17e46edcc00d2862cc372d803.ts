@@ -130,36 +130,36 @@ export class Impl_a653afa17e46edcc00d2862cc372d803 extends VertShaderHandle {
     attributeData: AttributeDataImpl = new AttributeDataImpl()
 
     getComponent_V4_N(__v__: Vec4Data, __i__: FloatData): FloatData {
-        let v: Vec4Data = new Vec4Data()
+        let v: Vec4Data = vec4()
         glSet_V4_V4(v, __v__)
-        let i: FloatData = new FloatData()
+        let i: FloatData = float()
         glSet_N_N(i, __i__)
 
         if (glIsLess_N_N(i, float_N(1.0))) {
-            let v: Vec4Data = new Vec4Data()
+            let v: Vec4Data = vec4()
             glSet_V4_V4(v, __v__)
-            let i: FloatData = new FloatData()
+            let i: FloatData = float()
             glSet_N_N(i, __i__)
 
             return float_N(v.x)
         } else if (glIsLess_N_N(i, float_N(2.0))) {
-            let v: Vec4Data = new Vec4Data()
+            let v: Vec4Data = vec4()
             glSet_V4_V4(v, __v__)
-            let i: FloatData = new FloatData()
+            let i: FloatData = float()
             glSet_N_N(i, __i__)
 
             return float_N(v.y)
         } else if (glIsLess_N_N(i, float_N(3.0))) {
-            let v: Vec4Data = new Vec4Data()
+            let v: Vec4Data = vec4()
             glSet_V4_V4(v, __v__)
-            let i: FloatData = new FloatData()
+            let i: FloatData = float()
             glSet_N_N(i, __i__)
 
             return float_N(v.z)
         } else {
-            let v: Vec4Data = new Vec4Data()
+            let v: Vec4Data = vec4()
             glSet_V4_V4(v, __v__)
-            let i: FloatData = new FloatData()
+            let i: FloatData = float()
             glSet_N_N(i, __i__)
 
             return float_N(v.w)

@@ -35,12 +35,16 @@ import {
     IVec4Data,
     IVec3Data,
     IVec2Data,
+    clearShaderCachData,
 } from "./shader/builtin/BuiltinData"
-import { custom_isDiscard, gl_FragColor, gl_Position } from "./shader/builtin/BuiltinVar"
+import { clamp_V4_N_N } from "./shader/builtin/BuiltinFunc"
+import { custom_isDiscard, gl_FragColor, gl_FragData, gl_Position } from "./shader/builtin/BuiltinVar"
 import { Rect } from "./shader/builtin/Rect"
 import { FragShaderHandle, VaryingData } from "./ShaderDefine"
 
 let cpuCachData = new BuiltinDataCach()
+let renderVertxPipeCachData = new BuiltinDataCach()
+let renderFragPipeCachData = new BuiltinDataCach()
 function renderError(message?: any, ...optionalParams: any[]) {
     debugger
     console.error(message, ...optionalParams)
@@ -71,7 +75,7 @@ class OneFrameCachGlData {
 
 let showGlDebugLog = false
 let debugCpuRender = true
-let createTsImplGlslFile = true
+let createTsImplGlslFile = false
 let createRenderFile = false
 
 let nowFrameCachData: OneFrameCachGlData = new OneFrameCachGlData()
@@ -393,7 +397,7 @@ function replaceWebglFunc(gl: any) {
                                 let interpreterData = GLSLInterpreter.interpreter(shaderSource)
                                 compilerTsFiles.set(interpreterData[0], interpreterData[1])
 
-                                if (testShaderSourceNum == 60) {
+                                if (testShaderSourceNum == 78) {
                                     var zip = new win.JSZip()
                                     let readonlyStr = ""
                                     let importStr = ""
@@ -1564,6 +1568,102 @@ export class CpuRenderingContext {
         this._colorAWriteEnable = alpha
     }
 
+    drawArrays(mode: GLenum, first: GLint, count: GLsizei): void {
+        if (!(this._useProgram && this._useProgram.linkStatus)) {
+            renderError("没有链接使用的程序")
+            return
+        }
+        if (!this._useVboBufferData) {
+            renderError("没有顶点数据")
+            return
+        }
+        if (this._cachWriteData) {
+            console.error("has cachWriteData not can draw")
+        }
+        debugger
+        cpuCachData.clear()
+        let cachVboAttributeDatas: Map<string, Vec2Data[] | Vec3Data[] | Vec4Data[] | IntData[] | FloatData[]> = new Map()
+        let attributeCount = Number.MAX_SAFE_INTEGER
+
+        this._attributeReadInfo.forEach((value: AttributeReadInfo, index: GLint) => {
+            if (this._attributeLocalEnable[index]) {
+                let name = this._useProgram.getNameByAttributeLocal(index)
+                if (name) {
+                    let bytesPerElement = value.byteType.BYTES_PER_ELEMENT
+                    let size = value.size
+                    let stride = value.stride ? value.stride : bytesPerElement * value.size
+                    let bufferData = this._vboBufferDataMap.get(value.readBufferIndex)
+                    let numCachData = value.isFloat ? cpuCachData.floatData : cpuCachData.intData
+                    if (bufferData) {
+                        let buffer = bufferData.buffer
+                        let dataTypeArray = new value.byteType(buffer.buffer, buffer.byteOffset, buffer.byteLength / bytesPerElement)
+
+                        let num = buffer.byteLength / stride
+
+                        let dataArr: Vec2Data[] | Vec3Data[] | Vec4Data[] | IntData[] | FloatData[]
+                        if (size === 1) {
+                            dataArr = new Array<NumData>(num)
+                        } else if (size === 2) {
+                            dataArr = new Array<Vec2Data>(num)
+                        } else if (size === 3) {
+                            dataArr = new Array<Vec3Data>(num)
+                        } else if (size === 4) {
+                            dataArr = new Array<Vec4Data>(num)
+                        }
+                        let dataIndex = 0
+                        if (size === 1) {
+                            for (let i = value.offset; i < buffer.length; i += stride) {
+                                let byteIndex = i / bytesPerElement
+                                let data: IntData | FloatData = numCachData.getData()
+                                data.v = dataTypeArray[byteIndex]
+                                dataArr![dataIndex++] = data!
+                            }
+                        } else if (size === 2) {
+                            for (let i = value.offset; i < buffer.length; i += stride) {
+                                let byteIndex = i / bytesPerElement
+                                let data: Vec2Data = cpuCachData.vec2Data.getData()
+
+                                data.set_Vn(dataTypeArray[byteIndex], dataTypeArray[byteIndex + 1])
+                                dataArr![dataIndex++] = data!
+                            }
+                        } else if (size === 3) {
+                            for (let i = value.offset; i < buffer.length; i += stride) {
+                                let byteIndex = i / bytesPerElement
+                                let data: Vec3Data = cpuCachData.vec3Data.getData()
+                                data.set_Vn(dataTypeArray[byteIndex], dataTypeArray[byteIndex + 1], dataTypeArray[byteIndex + 2])
+                                dataArr![dataIndex++] = data!
+                            }
+                        } else if (size === 4) {
+                            for (let i = value.offset; i < buffer.length; i += stride) {
+                                let byteIndex = i / bytesPerElement
+                                let data: Vec4Data = cpuCachData.vec4Data.getData()
+                                data.set_Vn(
+                                    dataTypeArray[byteIndex],
+                                    dataTypeArray[byteIndex + 1],
+                                    dataTypeArray[byteIndex + 2],
+                                    dataTypeArray[byteIndex + 3]
+                                )
+                                dataArr![dataIndex++] = data!
+                            }
+                        } else {
+                            debugger
+                            console.error("drawElements 暂时无法识别的数量")
+                        }
+                        attributeCount = Math.min(dataArr!.length, attributeCount)
+                        cachVboAttributeDatas.set(name, dataArr!)
+                    } else {
+                        renderError("this._gameGl.INVALID_OPERATION  " + this._gameGl.INVALID_VALUE + " in drawArrays ")
+                    }
+                }
+            }
+        })
+
+        let beginIndex = first
+        let endIndex = Math.min(count, attributeCount)
+        this._cachWriteData = new CachWriteData(mode, beginIndex, endIndex, cachVboAttributeDatas)
+        this._customDraw(mode, beginIndex, endIndex, cachVboAttributeDatas)
+    }
+
     /**offset是字节为单位的 */
     drawElements(mode: GLenum, count: GLsizei, type: GLenum, offset: GLintptr): void {
         if (!(this._useProgram && this._useProgram.linkStatus)) {
@@ -1755,8 +1855,8 @@ export class CpuRenderingContext {
                 }
                 let index = beginIndex
                 do {
-                    // 将缓存切换到顶点
-                    builtinCachData.clear()
+                    renderVertxPipeCachData.clear()
+                    clearShaderCachData()
                     for (let t = 0; t < 3; t++) {
                         let nowTriIndex = index + t
 
@@ -1777,7 +1877,7 @@ export class CpuRenderingContext {
                             gl_Position.set_Vn(0, 0, 0, 0)
                             linkVertexShader.main()
                             // w除法
-                            let glPos = new Vec4Data()
+                            let glPos = renderVertxPipeCachData.vec4Data.getData()
                             glPos.set_V4(gl_Position)
                             let wFactor = 1 / glPos.w
                             glPos.x *= wFactor
@@ -1802,11 +1902,11 @@ export class CpuRenderingContext {
                         if (this._nowCullFaceType === this._gameGl.FRONT_AND_BACK) {
                             isCull = true
                         } else {
-                            let v01 = cpuCachData.vec3Data.getData()
-                            let v12 = cpuCachData.vec3Data.getData()
+                            let v01 = renderVertxPipeCachData.vec3Data.getData()
+                            let v12 = renderVertxPipeCachData.vec3Data.getData()
                             Vec3Data.subtract(v01, triangleVec[1], triangleVec[0])
                             Vec3Data.subtract(v12, triangleVec[2], triangleVec[1])
-                            let crossData = cpuCachData.vec3Data.getData()
+                            let crossData = renderVertxPipeCachData.vec3Data.getData()
 
                             Vec3Data.cross(crossData, v01, v12)
                             // webgl是左手 z指向屏幕内 顺时针的话z是指向外面的 为负
@@ -1877,106 +1977,12 @@ export class CpuRenderingContext {
         }
     }
 
-    drawArrays(mode: GLenum, first: GLint, count: GLsizei): void {
-        if (!(this._useProgram && this._useProgram.linkStatus)) {
-            renderError("没有链接使用的程序")
-            return
-        }
-        if (!this._useVboBufferData) {
-            renderError("没有顶点数据")
-            return
-        }
-        if (this._cachWriteData) {
-            console.error("has cachWriteData not can draw")
-        }
-        debugger
-        cpuCachData.clear()
-        let cachVboAttributeDatas: Map<string, Vec2Data[] | Vec3Data[] | Vec4Data[] | IntData[] | FloatData[]> = new Map()
-        let attributeCount = Number.MAX_SAFE_INTEGER
-
-        this._attributeReadInfo.forEach((value: AttributeReadInfo, index: GLint) => {
-            if (this._attributeLocalEnable[index]) {
-                let name = this._useProgram.getNameByAttributeLocal(index)
-                if (name) {
-                    let bytesPerElement = value.byteType.BYTES_PER_ELEMENT
-                    let size = value.size
-                    let stride = value.stride ? value.stride : bytesPerElement * value.size
-                    let bufferData = this._vboBufferDataMap.get(value.readBufferIndex)
-                    let numCachData = value.isFloat ? cpuCachData.floatData : cpuCachData.intData
-                    if (bufferData) {
-                        let buffer = bufferData.buffer
-                        let dataTypeArray = new value.byteType(buffer.buffer, buffer.byteOffset, buffer.byteLength / bytesPerElement)
-
-                        let num = buffer.byteLength / stride
-
-                        let dataArr: Vec2Data[] | Vec3Data[] | Vec4Data[] | IntData[] | FloatData[]
-                        if (size === 1) {
-                            dataArr = new Array<NumData>(num)
-                        } else if (size === 2) {
-                            dataArr = new Array<Vec2Data>(num)
-                        } else if (size === 3) {
-                            dataArr = new Array<Vec3Data>(num)
-                        } else if (size === 4) {
-                            dataArr = new Array<Vec4Data>(num)
-                        }
-                        let dataIndex = 0
-                        if (size === 1) {
-                            for (let i = value.offset; i < buffer.length; i += stride) {
-                                let byteIndex = i / bytesPerElement
-                                let data: IntData | FloatData = numCachData.getData()
-                                data.v = dataTypeArray[byteIndex]
-                                dataArr![dataIndex++] = data!
-                            }
-                        } else if (size === 2) {
-                            for (let i = value.offset; i < buffer.length; i += stride) {
-                                let byteIndex = i / bytesPerElement
-                                let data: Vec2Data = cpuCachData.vec2Data.getData()
-
-                                data.set_Vn(dataTypeArray[byteIndex], dataTypeArray[byteIndex + 1])
-                                dataArr![dataIndex++] = data!
-                            }
-                        } else if (size === 3) {
-                            for (let i = value.offset; i < buffer.length; i += stride) {
-                                let byteIndex = i / bytesPerElement
-                                let data: Vec3Data = cpuCachData.vec3Data.getData()
-                                data.set_Vn(dataTypeArray[byteIndex], dataTypeArray[byteIndex + 1], dataTypeArray[byteIndex + 2])
-                                dataArr![dataIndex++] = data!
-                            }
-                        } else if (size === 4) {
-                            for (let i = value.offset; i < buffer.length; i += stride) {
-                                let byteIndex = i / bytesPerElement
-                                let data: Vec4Data = cpuCachData.vec4Data.getData()
-                                data.set_Vn(
-                                    dataTypeArray[byteIndex],
-                                    dataTypeArray[byteIndex + 1],
-                                    dataTypeArray[byteIndex + 2],
-                                    dataTypeArray[byteIndex + 3]
-                                )
-                                dataArr![dataIndex++] = data!
-                            }
-                        } else {
-                            debugger
-                            console.error("drawElements 暂时无法识别的数量")
-                        }
-                        attributeCount = Math.min(dataArr!.length, attributeCount)
-                        cachVboAttributeDatas.set(name, dataArr!)
-                    } else {
-                        renderError("this._gameGl.INVALID_OPERATION  " + this._gameGl.INVALID_VALUE + " in drawArrays ")
-                    }
-                }
-            }
-        })
-
-        let beginIndex = first
-        let endIndex = Math.min(count, attributeCount)
-        this._cachWriteData = new CachWriteData(mode, beginIndex, endIndex, cachVboAttributeDatas)
-        this._customDraw(mode, beginIndex, endIndex, cachVboAttributeDatas)
-    }
-
     /**采样 */
     customSampler2D(texIndex: number, uv: Vec2Data): Vec4Data {
         // texIndex应该是对应的纹理单元
         let textureUnit = this._textureUnit.get(texIndex)
+        let color = builtinCachData.vec4Data.getData()
+        color.set_Vn(0, 0, 0, 0)
         if (textureUnit) {
             let textureData = textureUnit.get(this._gameGl.TEXTURE_2D)
             if (textureData) {
@@ -2028,7 +2034,6 @@ export class CpuRenderingContext {
                 let vImg: number
                 let searchX = Math.floor(factSampleX + 0.5)
                 let searchY = Math.floor(factSampleY + 0.5)
-                let color = new Vec4Data()
                 for (let x = 0; x < 2; x++) {
                     uImg = clamp(searchX - x, 0, texWidth - 1)
                     for (let y = 0; y < 2; y++) {
@@ -2048,7 +2053,8 @@ export class CpuRenderingContext {
                 // return new Vec3Data(buffer[index] / 255, buffer[index + 1] / 255, buffer[index + 2] / 255, buffer[index + 3] / 255)
             }
         }
-        return new Vec4Data(1, 1, 1, 1)
+        color.set_Vn(1, 1, 1, 1)
+        return color
     }
 
     _customRasterizeTriangle(triangleVec: Vec4Data[], interpolateData: VaryingData[]) {
@@ -2094,7 +2100,6 @@ export class CpuRenderingContext {
         let preData = GeometricOperations.preComputeBarycentric2DFactor(x0, x1, x2, y0, y1, y2)
         let varyingData = fragShader.varyingData
         let debugPos: Vec2Data | null = null
-
         for (let x = minX; x <= maxX; x++) {
             let triangleBeginY = -1
             let triangleEndY = -1
@@ -2123,7 +2128,10 @@ export class CpuRenderingContext {
                     triangleEndY = triangleBeginY
                 }
                 for (let y = triangleBeginY; y <= triangleEndY; y++) {
-                    if (this._openScissorTest && !this._scissorRect.contains(new Vec2Data(x, y))) {
+                    renderFragPipeCachData.clear()
+                    let v2 = renderFragPipeCachData.vec2Data.getData()
+                    v2.set_Vn(x, y)
+                    if (this._openScissorTest && !this._scissorRect.contains(v2)) {
                         continue
                     }
 
@@ -2167,23 +2175,35 @@ export class CpuRenderingContext {
                             debugger
                         }
                         index *= 4
-                        builtinCachData.clear()
+                        clearShaderCachData()
                         this._customInterpolated(varyingData, interpolateData, alpha, beta, gamma)
                         custom_isDiscard.v = false
-                        gl_FragColor.set_Vn(0, 0, 0, 0)
+                        gl_FragColor.set_Vn(NaN, NaN, NaN, NaN)
                         fragShader.main()
                         if (!custom_isDiscard.v) {
-                            let color = gl_FragColor
+                            let color: Vec4Data
+                            if (!isNaN(gl_FragColor.x)) {
+                                color = gl_FragColor
+                            } else {
+                                // 关于gl_FragData 的理解还不足 不太清楚是写入那些通道里
+                                color = gl_FragData[0]
+                            }
+
+                            color.x = clamp(color.x, 0, 1)
+                            color.y = clamp(color.y, 0, 1)
+                            color.z = clamp(color.z, 0, 1)
+                            color.w = clamp(color.w, 0, 1)
                             if (this._openBlend) {
-                                let destColor = new Vec4Data(
+                                let destColor = renderFragPipeCachData.vec4Data.getData()
+                                destColor.set_Vn(
                                     this._frameBuffer[index],
                                     this._frameBuffer[index + 1],
                                     this._frameBuffer[index + 2],
                                     this._frameBuffer[index + 3]
                                 )
                                 Vec4Data.multiplyScalar(destColor, destColor, 1 / 255)
-                                let srcComputerColor: Vec4Data = new Vec4Data()
-                                let destComputerColor: Vec4Data = new Vec4Data()
+                                let srcComputerColor: Vec4Data = renderFragPipeCachData.vec4Data.getData()
+                                let destComputerColor: Vec4Data = renderFragPipeCachData.vec4Data.getData()
                                 if (this._rgbSrcBlendFunc === this._gameGl.ZERO) {
                                     srcComputerColor.x = 0
                                     srcComputerColor.y = 0
@@ -2443,12 +2463,18 @@ export class CpuRenderingContext {
                 let vec1: FloatData = (<any>interpolateData1)[dataName]
                 let vec2: FloatData = (<any>interpolateData2)[dataName]
                 let interpolated: FloatData = (<any>outvaryingData)[dataName]
+                if (!interpolated) {
+                    continue
+                }
                 interpolated.v = vec0.v * alpha + vec1.v * beta + vec2.v * gamma
             } else if (typeName === this._gameGl.FLOAT_VEC2) {
                 let vec0: Vec2Data = (<any>interpolateData0)[dataName]
                 let vec1: Vec2Data = (<any>interpolateData1)[dataName]
                 let vec2: Vec2Data = (<any>interpolateData2)[dataName]
                 let interpolated: Vec2Data = (<any>outvaryingData)[dataName]
+                if (!interpolated) {
+                    continue
+                }
                 interpolated.x = vec0.x * alpha + vec1.x * beta + vec2.x * gamma
                 interpolated.y = vec0.y * alpha + vec1.y * beta + vec2.y * gamma
             } else if (typeName === this._gameGl.FLOAT_VEC3) {
@@ -2456,6 +2482,9 @@ export class CpuRenderingContext {
                 let vec1: Vec3Data = (<any>interpolateData1)[dataName]
                 let vec2: Vec3Data = (<any>interpolateData2)[dataName]
                 let interpolated: Vec3Data = (<any>outvaryingData)[dataName]
+                if (!interpolated) {
+                    continue
+                }
                 interpolated.x = vec0.x * alpha + vec1.x * beta + vec2.x * gamma
                 interpolated.y = vec0.y * alpha + vec1.y * beta + vec2.y * gamma
                 interpolated.z = vec0.z * alpha + vec1.z * beta + vec2.z * gamma
@@ -2464,6 +2493,9 @@ export class CpuRenderingContext {
                 let vec1: Vec4Data = (<any>interpolateData1)[dataName]
                 let vec2: Vec4Data = (<any>interpolateData2)[dataName]
                 let interpolated: Vec4Data = (<any>outvaryingData)[dataName]
+                if (!interpolated) {
+                    continue
+                }
                 interpolated.x = vec0.x * alpha + vec1.x * beta + vec2.x * gamma
                 interpolated.y = vec0.y * alpha + vec1.y * beta + vec2.y * gamma
                 interpolated.z = vec0.z * alpha + vec1.z * beta + vec2.z * gamma
@@ -2706,7 +2738,7 @@ export class CpuRenderingContext {
             if (textureData) {
                 // 好像不是立方体纹理的话不会报错(没有验证过)
                 // 如果是npot 非2的幂次方的话还要mipmap的话会报错
-                if (target === this._gameGl.TEXTURE_2D && level > 0 && width % 2 !== 0 && height % 2 !== 0) {
+                if (level > 0 && width % 2 !== 0 && height % 2 !== 0 && width !== 1 && height !== 1) {
                     renderError("this._gameGl.INVALID_VALUE " + this._gameGl.INVALID_VALUE + " in texImage2D")
                 } else {
                     /** 用于指定纹理在GPU端的格式，只能是GL_ALPHA, GL_LUMINANCE, GL_LUMINANCE_ALPHA, GL_RGB, GL_RGBA*/
@@ -2858,7 +2890,7 @@ export class CpuRenderingContext {
 
             if (textureData) {
                 // 如果是npot 非2的幂次方的话还要mipmap的话会报错
-                if (level > 0 && width % 2 !== 0 && height % 2 !== 0) {
+                if (level > 0 && width % 2 !== 0 && height % 2 !== 0 && width !== 1 && height !== 1) {
                     renderError("this._gameGl.INVALID_VALUE " + this._gameGl.INVALID_VALUE + " in texSubImage2D")
                 } else {
                     /** 用于指定纹理在GPU端的格式，只能是GL_ALPHA, GL_LUMINANCE, GL_LUMINANCE_ALPHA, GL_RGB, GL_RGBA*/
@@ -3011,7 +3043,7 @@ export class CpuRenderingContext {
 
             if (textureData) {
                 // 如果是npot 非2的幂次方的话还要mipmap的话会报错
-                if (level > 0 && width % 2 !== 0 && height % 2 !== 0) {
+                if (level > 0 && width % 2 !== 0 && height % 2 !== 0 && width !== 1 && height !== 1) {
                     renderError("this._gameGl.INVALID_VALUE " + this._gameGl.INVALID_VALUE + " in copyTexImage2D")
                 } else {
                     /** 用于指定纹理在GPU端的格式，只能是GL_ALPHA, GL_LUMINANCE, GL_LUMINANCE_ALPHA, GL_RGB, GL_RGBA*/
@@ -3105,7 +3137,7 @@ export class CpuRenderingContext {
 
             if (textureData) {
                 // 如果是npot 非2的幂次方的话还要mipmap的话会报错
-                if (level > 0 && width % 2 !== 0 && height % 2 !== 0) {
+                if (level > 0 && width % 2 !== 0 && height % 2 !== 0 && width !== 1 && height !== 1) {
                     renderError("this._gameGl.INVALID_VALUE " + this._gameGl.INVALID_VALUE + " in copyTexSubImage2D")
                 } else {
                     let texelsData: TexelsData
@@ -3266,7 +3298,6 @@ export class CpuRenderingContext {
                         } else if (param == this._gameGl.LINEAR) {
                             textureData.parameter.set(this._gameGl.TEXTURE_MIN_FILTER, param)
                         } else {
-                            debugger
                             console.error("mipmap类型的采样暂未实现")
                         }
                     } else if (pname == this._gameGl.TEXTURE_MAG_FILTER) {

@@ -184,7 +184,7 @@ export class Impl_095158c55f34349ca99318a71f56f143 extends FragShaderHandle {
     uniformData: UniformDataImpl = new UniformDataImpl()
 
     packDepthToRGBA_N(__depth__: FloatData): Vec4Data {
-        let depth: FloatData = new FloatData()
+        let depth: FloatData = float()
         glSet_N_N(depth, __depth__)
 
         let ret: Vec4Data = vec4()

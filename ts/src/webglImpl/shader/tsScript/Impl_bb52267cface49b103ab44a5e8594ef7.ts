@@ -123,17 +123,17 @@ export class Impl_bb52267cface49b103ab44a5e8594ef7 extends FragShaderHandle {
     CCSampleWithAlphaSeparated_N_V2(__tex__: Sampler2D, __uv__: Vec2Data): Vec4Data {
         let tex: Sampler2D = new Sampler2D()
         glSet_N_N(tex, __tex__)
-        let uv: Vec2Data = new Vec2Data()
+        let uv: Vec2Data = vec2()
         glSet_V2_V2(uv, __uv__)
 
         return texture2D_N_V2(tex, uv)
     }
     ALPHA_TEST_V4(__color__: Vec4Data): void {
-        let color: Vec4Data = new Vec4Data()
+        let color: Vec4Data = vec4()
         glSet_V4_V4(color, __color__)
     }
     ALPHA_TEST_N(__alpha__: FloatData): void {
-        let alpha: FloatData = new FloatData()
+        let alpha: FloatData = float()
         glSet_N_N(alpha, __alpha__)
     }
     frag(): Vec4Data {

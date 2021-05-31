@@ -90,6 +90,17 @@ var convertToTsType = {
     bool: "BoolData",
 }
 
+var convertToBuiltinCall = {
+    IntData: "int",
+    FloatData: "float",
+    Vec2Data: "vec2",
+    Vec3Data: "vec3",
+    Vec4Data: "vec4",
+    Mat3Data: "mat3",
+    Mat4Data: "mat4",
+    BoolData: "bool",
+}
+
 let tsbuiltinOperationFunsWithReturn = {
     glAdd_N_N: "NumData",
     glAdd_N_V2: "Vec2Data",
@@ -1340,7 +1351,14 @@ function deparse_stmtlist(node: any) {
         if (funcArgsInReplace.length > 0) {
             for (let index = 0; index < funcArgsInReplace.length; index++) {
                 const element = funcArgsInReplace[index]
-                outputPush(`let ${element.name}: ${element.type} = new ${element.type}()\n`)
+
+                let builtinFuncCall = (<any>convertToBuiltinCall)[element.type]
+                if (builtinFuncCall) {
+                    outputPush(`let ${element.name}: ${element.type} = ${builtinFuncCall}()\n`)
+                } else {
+                    // struct类型的new
+                    outputPush(`let ${element.name}: ${element.type} = new ${element.type}()\n`)
+                }
 
                 let setType = (<any>builtinAbbreviation)[element.type] || "Struct"
                 let setFunc = `glSet_${setType}_${setType}`
@@ -1910,7 +1928,7 @@ export function deparseToTs(
             let typeNumStr = customGetTypeNumStr(convertType)
             attributerDataKeysStr += `        ["${key}", cpuRenderingContext.cachGameGl.${typeNumStr}],\n`
             attributerDataSizeStr += `        ["${key}", 1],\n`
-            attributeStr += `    ${key}: ${convertType} = null!\n`
+            attributeStr += `    ${key}: ${convertType} = new ${convertType}()\n`
         } else {
             console.error("不识别的shader 数据结构: " + value)
         }
@@ -2002,19 +2020,27 @@ export function deparseToTs(
             let factObjName = arrData.factObjName
 
             let convertType: string = (<any>convertToTsType)[objType]
+            let builtinFuncCall = (<any>convertToBuiltinCall)[convertType]
+            let createStr = ""
+            if (builtinFuncCall) {
+                createStr = `${builtinFuncCall}()`
+            } else {
+                createStr = ` new ${convertType}()`
+            }
             if (arrData.arrNum > 0) {
                 tmpStructValue.set(factObjName, `${convertType}[]`)
                 structStr += `    ${factObjName}: ${convertType}[] = [`
+
                 for (let index = 0; index < arrData.arrNum; index++) {
                     if (index !== arrData.arrNum - 1) {
-                        structStr += `new ${convertType}(),`
+                        structStr += `${createStr},`
                     } else {
-                        structStr += `new ${convertType}()]\n`
+                        structStr += `${createStr}]\n`
                     }
                 }
             } else {
                 tmpStructValue.set(factObjName, `${convertType}`)
-                structStr += `    ${factObjName}: ${convertType} = new ${convertType}()\n`
+                structStr += `    ${factObjName}: ${convertType} = ${createStr}\n`
             }
         })
         structStr += `}\n`
