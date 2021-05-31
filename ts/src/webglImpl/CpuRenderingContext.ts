@@ -69,8 +69,9 @@ class OneFrameCachGlData {
     cachGlDatas: CachGlData[] = []
 }
 
-let debugCpuRender = true
-let createTsImplGlslFile = true
+let showGlDebugLog = true
+let debugCpuRender = false
+let createTsImplGlslFile = false
 let createRenderFile = false
 
 let nowFrameCachData: OneFrameCachGlData = new OneFrameCachGlData()
@@ -175,33 +176,31 @@ function replaceWebglFunc(gl: any) {
                 } else if (funcKey == "getSupportedExtensions") {
                     return []
                 }
+                // 测试走自己的内部实现gl接口
+                if (funcKey == "bindBuffer") {
+                    console.log(count + " bindBuffer => ")
+                    console.log(info)
+                    count++
+                }
 
-                if (debugCpuRender) {
-                    // 测试走自己的内部实现gl接口
-                    // if (funcKey == "bindBuffer") {
-                    //     console.log(count + " bindBuffer => ")
-                    //     console.log(info)
-                    //     count++
-                    // }
+                if (showGlDebugLog) {
+                    if (funcKey == "bufferData") {
+                        console.log(count + " bufferData =>")
+                        console.log(info)
+                        count++
+                    }
 
-                    // if (funcKey == "bufferData") {
-                    //     console.log(count + " bufferData =>")
-                    //     console.log(info)
-                    //     count++
-                    // }
+                    if (funcKey == "bufferSubData") {
+                        console.log(count + " bufferSubData =>")
+                        console.log(info)
+                        count++
+                    }
 
-                    // if (funcKey == "bufferSubData") {
-                    //     console.log(count + " bufferSubData =>")
-                    //     console.log(info)
-                    //     count++
-                    // }
-
-                    // if (funcKey == "drawElements") {
-                    //     debugger
-                    //     console.log(count + " drawElements =>")
-                    //     console.log(info)
-                    //     count++
-                    // }
+                    if (funcKey == "drawElements") {
+                        console.log(count + " drawElements =>")
+                        console.log(info)
+                        count++
+                    }
                     // if (funcKey == "activeTexture") {
                     //     console.log(count + " activeTexture =>")
                     //     console.log(info)
@@ -222,6 +221,9 @@ function replaceWebglFunc(gl: any) {
                     //     console.log(info)
                     //     count++
                     // }
+                }
+
+                if (debugCpuRender) {
                     if (funcKey == "getParameter") {
                         return func.apply(gl, info)
                     }
@@ -1561,6 +1563,7 @@ export class CpuRenderingContext {
         this._colorAWriteEnable = alpha
     }
 
+    /**offset是字节为单位的 */
     drawElements(mode: GLenum, count: GLsizei, type: GLenum, offset: GLintptr): void {
         if (!(this._useProgram && this._useProgram.linkStatus)) {
             renderError("没有链接程序")
@@ -1584,6 +1587,7 @@ export class CpuRenderingContext {
         let attributeCount = Number.MAX_SAFE_INTEGER
 
         let eboBufferData: Uint16Array | Uint8Array
+        let offsetCount = offset
         if (type === this._gameGl.UNSIGNED_BYTE) {
             eboBufferData = this._useEboBufferData.buffer
         } else if (type === this._gameGl.UNSIGNED_SHORT) {
@@ -1592,6 +1596,8 @@ export class CpuRenderingContext {
                 this._useEboBufferData.buffer.byteOffset,
                 this._useEboBufferData.buffer.byteLength / Uint16Array.BYTES_PER_ELEMENT
             )
+            // offset是字节为
+            offsetCount = offsetCount / 2
         }
         this._attributeReadInfo.forEach((value: AttributeReadInfo, index: GLint) => {
             // 只会对enable的属性进行处理
@@ -1633,7 +1639,7 @@ export class CpuRenderingContext {
 
                         let dataIndex = 0
                         if (size === 1) {
-                            for (let i = offset; i < eboBufferData.length; i++) {
+                            for (let i = offsetCount; i < eboBufferData.length; i++) {
                                 let element = eboBufferData[i]
                                 let elementIndex = value.offset + element * stride
                                 let byteIndex = elementIndex / bytesPerElement
@@ -1642,7 +1648,7 @@ export class CpuRenderingContext {
                                 dataArr![dataIndex++] = data!
                             }
                         } else if (size === 2) {
-                            for (let i = offset; i < eboBufferData.length; i++) {
+                            for (let i = offsetCount; i < eboBufferData.length; i++) {
                                 let element = eboBufferData[i]
                                 let elementIndex = value.offset + element * stride
                                 let byteIndex = elementIndex / bytesPerElement
@@ -1651,7 +1657,7 @@ export class CpuRenderingContext {
                                 dataArr![dataIndex++] = data!
                             }
                         } else if (size === 3) {
-                            for (let i = offset; i < eboBufferData.length; i++) {
+                            for (let i = offsetCount; i < eboBufferData.length; i++) {
                                 let element = eboBufferData[i]
                                 let elementIndex = value.offset + element * stride
                                 let byteIndex = elementIndex / bytesPerElement
@@ -1660,7 +1666,7 @@ export class CpuRenderingContext {
                                 dataArr![dataIndex++] = data!
                             }
                         } else if (size === 4) {
-                            for (let i = offset; i < eboBufferData.length; i++) {
+                            for (let i = offsetCount; i < eboBufferData.length; i++) {
                                 let element = eboBufferData[i]
                                 let elementIndex = value.offset + element * stride
                                 let byteIndex = elementIndex / bytesPerElement
