@@ -632,9 +632,9 @@ export function glSet_Struct_Struct(left: any, right: any): any {
     for (const key in right) {
         if (Object.prototype.hasOwnProperty.call(right, key)) {
             const element = right[key]
-            if (element.constructor === ValueType) {
+            if (element instanceof ValueType) {
                 ;(<ValueType>left[key]).set(right[key])
-            } else if (element.constructor === Object) {
+            } else if (element instanceof Object) {
                 glSet_Struct_Struct(left[key], right[key])
             } else {
                 left[key] = right[key]

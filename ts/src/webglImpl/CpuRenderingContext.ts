@@ -2171,9 +2171,14 @@ export class CpuRenderingContext {
                         }
                     }
                     if (canWrite) {
-                        if (debugPos && debugPos.x == x && debugPos.y == y) {
+                        // if (debugPos && debugPos.x == x && debugPos.y == y) {
+                        //     debugger
+                        // }
+
+                        if (x === 386 && y === 478) {
                             debugger
                         }
+
                         index *= 4
                         clearShaderCachData()
                         this._customInterpolated(varyingData, interpolateData, alpha, beta, gamma)
@@ -2431,6 +2436,15 @@ export class CpuRenderingContext {
                                 }
                             }
 
+                            // if (
+                            //     color.x > 0.5 && color.x < 0.7 &&
+                            //     color.y > 0.5 && color.y < 0.7 &&
+                            //     color.z > 0.5 && color.z < 0.7 &&
+                            //     this._frameBuffer[index + 1] == 150 &&
+                            //     this._frameBuffer[index + 2] == 170
+                            // ) {
+                            //     debugger
+                            // }
                             if (this._colorRWriteEnable) {
                                 this._frameBuffer[index] = color.x * 255
                             }
@@ -2442,6 +2456,13 @@ export class CpuRenderingContext {
                             }
                             if (this._colorAWriteEnable) {
                                 this._frameBuffer[index + 3] = color.w * 255
+                            }
+                            if (
+                                this._frameBuffer[index] === 125 &&
+                                this._frameBuffer[index + 1] == 150 &&
+                                this._frameBuffer[index + 2] == 170
+                            ) {
+                                debugger
                             }
                         }
                     }

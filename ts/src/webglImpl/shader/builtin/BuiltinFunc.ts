@@ -539,34 +539,25 @@ export function clamp_V4_V4_V4(x: Vec4Data, min: Vec4Data, max: Vec4Data): Vec4D
 
 export function mix_N_N_N(x: NumData, y: NumData, a: NumData): NumData {
     let data = x.ctor()
-    data.v = x.v * (1 - (<NumData>a).v) + (<NumData>y).v * (<NumData>a).v
+    data.v = x.v * (1 - a.v) + y.v * a.v
     return data
 }
 
 export function mix_V2_V2_N(x: Vec2Data, y: Vec2Data, a: NumData): Vec2Data {
     let data = vec2Data.getData()
-    data.set_Vn(x.x * (1 - (<NumData>a).v) + y.x * (<NumData>a).v, x.y * (1 - (<NumData>a).v) + y.y * (<NumData>a).v)
+    data.set_Vn(x.x * (1 - a.v) + y.x * a.v, x.y * (1 - a.v) + y.y * a.v)
     return data
 }
 
 export function mix_V3_V3_N(x: Vec3Data, y: Vec3Data, a: NumData): Vec3Data {
     let data = vec3Data.getData()
-    data.set_Vn(
-        x.x * (1 - (<NumData>a).v) + y.x * (<NumData>a).v,
-        x.y * (1 - (<NumData>a).v) + y.y * (<NumData>a).v,
-        x.z * (1 - (<NumData>a).v) + y.z * (<NumData>a).v
-    )
+    data.set_Vn(x.x * (1 - a.v) + y.x * a.v, x.y * (1 - a.v) + y.y * a.v, x.z * (1 - a.v) + y.z * a.v)
     return data
 }
 
 export function mix_V4_V4_N(x: Vec4Data, y: Vec4Data, a: NumData): Vec4Data {
     let data = vec4Data.getData()
-    data.set_Vn(
-        x.x * (1 - (<NumData>a).v) + y.x * (<NumData>a).v,
-        x.y * (1 - (<NumData>a).v) + y.y * (<NumData>a).v,
-        x.z * (1 - (<NumData>a).v) + y.z * (<NumData>a).v,
-        x.w * (1 - (<NumData>a).v) + y.w * (<NumData>a).v
-    )
+    data.set_Vn(x.x * (1 - a.v) + y.x * a.v, x.y * (1 - a.v) + y.y * a.v, x.z * (1 - a.v) + y.z * a.v, x.w * (1 - a.v) + y.w * a.v)
     return data
 }
 
@@ -884,7 +875,7 @@ export function mod_V4_V4(x: Vec4Data, y: Vec4Data): Vec4Data {
 
 export function pow_N_N(x: NumData, y: NumData): NumData {
     let data = x.ctor()
-    data.v = powTmp(x.v, (<NumData>y).v)
+    data.v = powTmp(x.v, y.v)
     return data
 }
 
@@ -1104,7 +1095,7 @@ export function cross_V3_V3(x: Vec3Data, y: Vec3Data): Vec3Data {
 
 export function distance_N_N(p0: NumData, p1: NumData): FloatData {
     let data = floatData.getData()
-    data.v = absTmp(p0.v - (<NumData>p1).v)
+    data.v = absTmp(p0.v - p1.v)
     return data
 }
 
@@ -1128,7 +1119,7 @@ export function distance_V4_V4(p0: Vec4Data, p1: Vec4Data): FloatData {
 
 export function dot_N_N(p0: NumData, p1: NumData): FloatData {
     let data = floatData.getData()
-    data.v = p0.v * (<NumData>p1).v
+    data.v = p0.v * p1.v
     return data
 }
 
@@ -1151,7 +1142,7 @@ export function dot_V4_V4(p0: Vec4Data, p1: Vec4Data): FloatData {
 }
 
 export function equal_N_N(p0: NumData, p1: NumData): boolean {
-    return p0.v == (<NumData>p1).v
+    return p0.v == p1.v
 }
 
 export function equal_V2_V2(p0: Vec2Data, p1: Vec2Data): boolean {
@@ -1169,7 +1160,7 @@ export function equal_V4_V4(p0: Vec4Data, p1: Vec4Data): boolean {
 export function faceforward_N_N_N(N: NumData, I: NumData, Nref: NumData): NumData {
     let data = N.ctor()
     data.set(N)
-    if (!((<NumData>Nref).v * (<NumData>I).v < 0)) {
+    if (!(Nref.v * I.v < 0)) {
         data.v = -data.v
     }
     return data
@@ -1277,7 +1268,7 @@ export function normalize_V4(v4: Vec4Data): Vec4Data {
 
 export function notEqual_N_N(p0: NumData, p1: NumData): boolean {
     let data = floatData.getData()
-    return p0.v != (<NumData>p1).v
+    return p0.v != p1.v
 }
 
 export function notEqual_V2_V2(p0: Vec2Data, p1: Vec2Data): boolean {
@@ -1295,7 +1286,7 @@ export function notEqual_V4_V4(p0: Vec4Data, p1: Vec4Data): boolean {
 // I - 2.0 * dot(N, I) * N.
 export function reflect_N_N(I: NumData, N: NumData): NumData {
     let data = I.ctor()
-    data.v = I.v - 2.0 * (<NumData>N).v * I.v * (<NumData>N).v
+    data.v = I.v - 2.0 * N.v * I.v * N.v
     return data
 }
 
@@ -1332,13 +1323,13 @@ export function reflect_V4_V4(I: Vec4Data, N: Vec4Data): Vec4Data {
 export function refract_N_N_N(I: NumData, N: NumData, eta: NumData): NumData {
     let data = I.ctor()
     let v = eta.v
-    let NIDot = (<NumData>N).v * I.v
+    let NIDot = N.v * I.v
     let k = 1.0 - v * v * (1.0 - NIDot * NIDot)
     if (k < 0.0) {
         data.v = 0
     } else {
         let vd = v * I.v
-        data.v = vd - (<NumData>N).v * v * NIDot + sqrtTmp(k)
+        data.v = vd - N.v * v * NIDot + sqrtTmp(k)
     }
     return data
 }
