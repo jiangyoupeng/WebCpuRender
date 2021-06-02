@@ -75,8 +75,8 @@ class OneFrameCachGlData {
     cachGlDatas: CachGlData[] = []
 }
 let showGlDebugLog = false
-let debugCpuRender = true
-let createTsImplGlslFile = false
+let debugCpuRender = false
+let createTsImplGlslFile = true
 let replaceShaderSource = true
 let createRenderFile = false
 
@@ -551,7 +551,7 @@ function replaceWebglFunc(gl: any) {
                                 //   finalColor += (ambDiff.rgb * diffuse);
                                 //   finalColor = finalColor * s.occlusion;
                                 //   finalColor += s.emissive;
-                                  return vec4(finalColor, s.albedo.a);
+                                  return vec4(N, s.albedo.w);
                                 }
                                 vec3 ACESToneMap (vec3 color) {
                                   color = min(color, vec3(8.0));
@@ -592,6 +592,7 @@ function replaceWebglFunc(gl: any) {
                                     vec4 color = CCStandardShadingBase(s, v_shadowPos);
                                     // color = vec4(mix(CC_FORWARD_ADD > 0 ? vec3(0.0) : cc_fogColor.rgb, color.rgb, v_fog_factor), color.a);
                                     gl_FragData[0] = CCFragOutput(color);
+                                    // gl_FragData[0] = color;
                                   }`
                                 info[1] = shaderSource
                             }

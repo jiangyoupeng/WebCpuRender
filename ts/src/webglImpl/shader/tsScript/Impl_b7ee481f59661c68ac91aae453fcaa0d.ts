@@ -1119,7 +1119,8 @@ export class Impl_b7ee481f59661c68ac91aae453fcaa0d extends FragShaderHandle {
         // glAddSet_V3_V3(finalColor, glMul_V3_V3(ambDiff.xyz, diffuse))
         // glSet_V3_V3(finalColor, glMul_V3_N(finalColor, s.occlusion))
         // glAddSet_V3_V3(finalColor, s.emissive)
-        return vec4_V3_N(finalColor, float_N(s.albedo.w))
+        // return vec4_V3_N(finalColor, float_N(s.albedo.w))
+        return vec4_V3_N(N, float_N(s.albedo.w))
     }
     ACESToneMap_V3(__color__: Vec3Data): Vec3Data {
         let color: Vec3Data = vec3()
