@@ -4766,6 +4766,45 @@ export class Mat3Data extends ValueType {
         return out
     }
 
+    public static multiplyScalar(out: Mat3Data, a: Mat3Data, b: number) {
+        out.m00 = a.m00 * b
+        out.m01 = a.m01 * b
+        out.m02 = a.m02 * b
+        out.m03 = a.m03 * b
+        out.m04 = a.m04 * b
+        out.m05 = a.m05 * b
+        out.m06 = a.m06 * b
+        out.m07 = a.m07 * b
+        out.m08 = a.m08 * b
+        return out
+    }
+
+    public static add(out: Mat3Data, a: Mat3Data, b: Mat3Data) {
+        out.m00 = a.m00 + b.m00
+        out.m01 = a.m01 + b.m01
+        out.m02 = a.m02 + b.m02
+        out.m03 = a.m03 + b.m03
+        out.m04 = a.m04 + b.m04
+        out.m05 = a.m05 + b.m05
+        out.m06 = a.m06 + b.m06
+        out.m07 = a.m07 + b.m07
+        out.m08 = a.m08 + b.m08
+        return out
+    }
+
+    public static subtract(out: Mat3Data, a: Mat3Data, b: Mat3Data) {
+        out.m00 = a.m00 - b.m00
+        out.m01 = a.m01 - b.m01
+        out.m02 = a.m02 - b.m02
+        out.m03 = a.m03 - b.m03
+        out.m04 = a.m04 - b.m04
+        out.m05 = a.m05 - b.m05
+        out.m06 = a.m06 - b.m06
+        out.m07 = a.m07 - b.m07
+        out.m08 = a.m08 - b.m08
+        return out
+    }
+
     get m00() {
         return this.out_m00.v
     }
@@ -5039,6 +5078,65 @@ export class Mat4Data extends ValueType {
         out.m13 = b0 * a01 + b1 * a11 + b2 * a21 + b3 * a31
         out.m14 = b0 * a02 + b1 * a12 + b2 * a22 + b3 * a32
         out.m15 = b0 * a03 + b1 * a13 + b2 * a23 + b3 * a33
+        return out
+    }
+
+    public static multiplyScalar(out: Mat4Data, a: Mat4Data, b: number) {
+        out.m00 = a.m00 * b
+        out.m01 = a.m01 * b
+        out.m02 = a.m02 * b
+        out.m03 = a.m03 * b
+        out.m04 = a.m04 * b
+        out.m05 = a.m05 * b
+        out.m06 = a.m06 * b
+        out.m07 = a.m07 * b
+        out.m08 = a.m08 * b
+        out.m09 = a.m09 * b
+        out.m10 = a.m10 * b
+        out.m11 = a.m11 * b
+        out.m12 = a.m12 * b
+        out.m13 = a.m13 * b
+        out.m14 = a.m14 * b
+        out.m15 = a.m15 * b
+        return out
+    }
+    public static add(out: Mat4Data, a: Mat4Data, b: Mat4Data) {
+        out.m00 = a.m00 + b.m00
+        out.m01 = a.m01 + b.m01
+        out.m02 = a.m02 + b.m02
+        out.m03 = a.m03 + b.m03
+        out.m04 = a.m04 + b.m04
+        out.m05 = a.m05 + b.m05
+        out.m06 = a.m06 + b.m06
+        out.m07 = a.m07 + b.m07
+        out.m08 = a.m08 + b.m08
+        out.m09 = a.m09 + b.m09
+        out.m10 = a.m10 + b.m10
+        out.m11 = a.m11 + b.m11
+        out.m12 = a.m12 + b.m12
+        out.m13 = a.m13 + b.m13
+        out.m14 = a.m14 + b.m14
+        out.m15 = a.m15 + b.m15
+        return out
+    }
+
+    public static subtract(out: Mat4Data, a: Mat4Data, b: Mat4Data) {
+        out.m00 = a.m00 - b.m00
+        out.m01 = a.m01 - b.m01
+        out.m02 = a.m02 - b.m02
+        out.m03 = a.m03 - b.m03
+        out.m04 = a.m04 - b.m04
+        out.m05 = a.m05 - b.m05
+        out.m06 = a.m06 - b.m06
+        out.m07 = a.m07 - b.m07
+        out.m08 = a.m08 - b.m08
+        out.m09 = a.m09 - b.m09
+        out.m10 = a.m10 - b.m10
+        out.m11 = a.m11 - b.m11
+        out.m12 = a.m12 - b.m12
+        out.m13 = a.m13 - b.m13
+        out.m14 = a.m14 - b.m14
+        out.m15 = a.m15 - b.m15
         return out
     }
 

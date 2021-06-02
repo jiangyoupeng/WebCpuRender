@@ -95,9 +95,9 @@ function writeGlRenderData() {
 }
 
 let testShaderSourceNum = 0
-// let testShaderBegin: number = 70
-let testShaderBegin: number = 0
-let testShaderEnd: number = 100
+let testShaderBegin: number = 62
+// let testShaderBegin: number = 0
+let testShaderEnd: number = 1000
 
 class AttributeReadInfo {
     size: GLint = 0
@@ -247,7 +247,6 @@ function replaceWebglFunc(gl: any) {
                         if (funcKey == "shaderSource") {
                             testShaderSourceNum++
                             if (testShaderSourceNum >= testShaderBegin && testShaderSourceNum <= testShaderEnd) {
-                                // debugger
                                 // console.log("shaderSource:" + info)
                                 let shaderSource: string = info[1]
 

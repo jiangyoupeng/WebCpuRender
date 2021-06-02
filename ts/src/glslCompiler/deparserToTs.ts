@@ -156,7 +156,11 @@ let tsbuiltinOperationFunsWithReturn = {
     glMul_V4_N: "Vec4Data",
     glMul_V4_V4: "Vec4Data",
     glMul_M3_M3: "Mat3Data",
+    glMul_M3_N: "Mat3Data",
+    glMul_N_M3: "Mat3Data",
     glMul_M4_M4: "Mat4Data",
+    glMul_M4_N: "Mat4Data",
+    glMul_N_M4: "Mat4Data",
     glMulSet_N_N: "void",
     glMulSet_V2_N: "void",
     glMulSet_V2_V2: "void",
@@ -606,6 +610,9 @@ const types = {
 
 let output: string[] = []
 let ws: WsManager = null!
+
+// 等待推入的声明对象
+let waitPushDecVal: Map<string, string> = new Map()
 let nowTypeCach: string = ""
 let nowFuncTypeCach: string = ""
 let nowBlockLevel: number = 0
@@ -725,9 +732,9 @@ function deparse_binary(node: any) {
     }
 
     let leftIndex = output.length
-    // if (leftIndex == 2464) {
-    //     debugger
-    // }
+    if (leftIndex == 877) {
+        debugger
+    }
     let leftType: string = deparse(node.children[0])
     if (!leftType) {
         debugger
@@ -926,6 +933,20 @@ function deparse_decl(node: any) {
                 outputPush(ws.required(" "))
             }
         }
+    }
+
+    // 避免有天才声明了同一个类型在同一个语句中
+    // 所以声明语句放在最后添加
+    if (waitPushDecVal.size) {
+        waitPushDecVal.forEach((value: string, key: string) => {
+            let setData = nowFucObj.get(nowBlockLevel)
+            if (!setData) {
+                setData = new Map()
+                nowFucObj.set(nowBlockLevel, setData)
+            }
+            setData.set(key, value)
+        })
+        waitPushDecVal.clear()
     }
     return cachValType || nowFuncTypeCach
 }
@@ -1192,12 +1213,13 @@ function deparse_ident(node: any) {
         let letType = (<any>convertToTsType)[nowTypeCach] || nowTypeCach
         outputPush(": " + letType)
 
-        let setData = nowFucObj.get(nowBlockLevel)
-        if (!setData) {
-            setData = new Map()
-            nowFucObj.set(nowBlockLevel, setData)
-        }
-        setData.set(node.data, letType)
+        // let setData = nowFucObj.get(nowBlockLevel)
+        // if (!setData) {
+        //     setData = new Map()
+        //     nowFucObj.set(nowBlockLevel, setData)
+        // }
+        // setData.set(node.data, letType)
+        waitPushDecVal.set(node.data, letType)
 
         let grandParentNode = node.parent.parent
 
@@ -1610,9 +1632,9 @@ function deparse_call(node: any) {
     }
 
     let funIndex = output.length
-    // if (funIndex === 83) {
-    //     debugger
-    // }
+    if (funIndex === 710) {
+        debugger
+    }
     deparse(firstChildData)
     outputPush("(")
     let callParamsType: string[] = []
@@ -2038,6 +2060,7 @@ export function deparseToTs(
     output.length = 0
     ws = new WsManager(whitespace_enabled, indent_text)
     nowFuncTypeCach = ""
+    waitPushDecVal = new Map()
     nowTypeCach = ""
     declArrNum = []
     isLeftSet = false
