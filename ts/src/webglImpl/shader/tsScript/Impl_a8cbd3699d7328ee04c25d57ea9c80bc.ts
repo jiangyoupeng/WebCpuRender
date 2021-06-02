@@ -137,6 +137,7 @@ import {
     glMulSet_V3_V3,
     glIsMore_N_N,
     getValueKeyByIndex,
+    getOutValueKeyByIndex,
 } from "../builtin/BuiltinOperator"
 import { gl_FragData, gl_FragColor, gl_Position, gl_FragCoord, gl_FragDepth, gl_FrontFacing, custom_isDiscard } from "../builtin/BuiltinVar"
 import { cpuRenderingContext } from "../../CpuRenderingContext"
@@ -228,7 +229,7 @@ export class Impl_a8cbd3699d7328ee04c25d57ea9c80bc extends FragShaderHandle {
     frag(): Vec4Data {
         let o: Vec4Data = vec4()
         glSet_V4_V4(o, this.uniformData.mainColor)
-        glMulSet_V3_V3(o.xyz, this.uniformData.colorScaleAndCutoff.xyz)
+        glMulSet_V3_V3(o.out_xyz, this.uniformData.colorScaleAndCutoff.xyz)
         glSet_V4_V4(
             o,
             vec4_V3_N(

@@ -72,7 +72,16 @@ return CCFragOutput(col);
 void main() { gl_FragColor = add(); }
 */
 import { texture2D_N_V2, float, float_N, bool, bool_N, int_N, int, vec4, vec3, vec2, mat3, mat4 } from "../builtin/BuiltinFunc"
-import { glSet_V2_V2, glSet_V4_V4, glSet_V3_V3, glMul_V3_V3, glMul_N_V4, glMul_V4_V4, getValueKeyByIndex } from "../builtin/BuiltinOperator"
+import {
+    glSet_V2_V2,
+    glSet_V4_V4,
+    glSet_V3_V3,
+    glMul_V3_V3,
+    glMul_N_V4,
+    glMul_V4_V4,
+    getValueKeyByIndex,
+    getOutValueKeyByIndex,
+} from "../builtin/BuiltinOperator"
 import { gl_FragData, gl_FragColor, gl_Position, gl_FragCoord, gl_FragDepth, gl_FrontFacing, custom_isDiscard } from "../builtin/BuiltinVar"
 import { cpuRenderingContext } from "../../CpuRenderingContext"
 import { AttributeData, FragShaderHandle, UniformData, VaryingData, VertShaderHandle, StructData } from "../../ShaderDefine"

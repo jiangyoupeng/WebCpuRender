@@ -1091,6 +1091,7 @@ import {
     glMul_N_V4,
     glAdd_V4_V4,
     glMul_V2_N,
+    glMulSet_N_N,
     glSet_Struct_Struct,
     glSub_V3_V3,
     glNegative_V3,
@@ -1101,6 +1102,7 @@ import {
     glAddSet_V3_V3,
     glDiv_V3_V3,
     getValueKeyByIndex,
+    getOutValueKeyByIndex,
 } from "../builtin/BuiltinOperator"
 import { gl_FragData, gl_FragColor, gl_Position, gl_FragCoord, gl_FragDepth, gl_FrontFacing, custom_isDiscard } from "../builtin/BuiltinVar"
 import { cpuRenderingContext } from "../../CpuRenderingContext"
@@ -1305,7 +1307,7 @@ export class Impl_15b83ec76b5b9d5c5cbf5e3ce8e4877b extends FragShaderHandle {
         let closestDepth: FloatData = float()
         glSet_N_N(closestDepth, float_N(0.0))
         glSet_V2_V2(
-            clipPos.xy,
+            clipPos.out_xy,
             glIsEqual_N_N(float_N(this.uniformData.cc_cameraPos.w), float_N(1.0))
                 ? vec2_N_N(float_N(clipPos.xy.x), glSub_N_N(float_N(1.0), float_N(clipPos.xy.y)))
                 : clipPos.xy
@@ -1361,7 +1363,7 @@ export class Impl_15b83ec76b5b9d5c5cbf5e3ce8e4877b extends FragShaderHandle {
         let shadow: FloatData = float()
         glSet_N_N(shadow, float_N(0.0))
         glSet_V2_V2(
-            clipPos.xy,
+            clipPos.out_xy,
             glIsEqual_N_N(float_N(this.uniformData.cc_cameraPos.w), float_N(1.0))
                 ? vec2_N_N(float_N(clipPos.xy.x), glSub_N_N(float_N(1.0), float_N(clipPos.xy.y)))
                 : clipPos.xy
@@ -1529,7 +1531,7 @@ export class Impl_15b83ec76b5b9d5c5cbf5e3ce8e4877b extends FragShaderHandle {
         let closestDepth: FloatData = float()
         glSet_N_N(closestDepth, float_N(0.0))
         glSet_V2_V2(
-            clipPos.xy,
+            clipPos.out_xy,
             glIsEqual_N_N(float_N(this.uniformData.cc_cameraPos.w), float_N(1.0))
                 ? vec2_N_N(float_N(clipPos.xy.x), glSub_N_N(float_N(1.0), float_N(clipPos.xy.y)))
                 : clipPos.xy
@@ -1625,7 +1627,7 @@ export class Impl_15b83ec76b5b9d5c5cbf5e3ce8e4877b extends FragShaderHandle {
         let shadow: FloatData = float()
         glSet_N_N(shadow, float_N(0.0))
         glSet_V2_V2(
-            clipPos.xy,
+            clipPos.out_xy,
             glIsEqual_N_N(float_N(this.uniformData.cc_cameraPos.w), float_N(1.0))
                 ? vec2_N_N(float_N(clipPos.xy.x), glSub_N_N(float_N(1.0), float_N(clipPos.xy.y)))
                 : clipPos.xy
@@ -1725,7 +1727,7 @@ export class Impl_15b83ec76b5b9d5c5cbf5e3ce8e4877b extends FragShaderHandle {
         let depth: FloatData = float()
         glSet_N_N(depth, float_N(0.0))
         glSet_V2_V2(
-            clipPos.xy,
+            clipPos.out_xy,
             glIsEqual_N_N(float_N(this.uniformData.cc_cameraPos.w), float_N(1.0))
                 ? vec2_N_N(float_N(clipPos.xy.x), glSub_N_N(float_N(1.0), float_N(clipPos.xy.y)))
                 : clipPos.xy
@@ -1821,7 +1823,7 @@ export class Impl_15b83ec76b5b9d5c5cbf5e3ce8e4877b extends FragShaderHandle {
             glSet_N_N(depth, float_N(clipPos.z))
         }
         glSet_V2_V2(
-            clipPos.xy,
+            clipPos.out_xy,
             glIsEqual_N_N(float_N(this.uniformData.cc_cameraPos.w), float_N(1.0))
                 ? vec2_N_N(float_N(clipPos.xy.x), glSub_N_N(float_N(1.0), float_N(clipPos.xy.y)))
                 : clipPos.xy
@@ -2012,7 +2014,7 @@ export class Impl_15b83ec76b5b9d5c5cbf5e3ce8e4877b extends FragShaderHandle {
             glSet_N_N(depth, float_N(clipPos.z))
         }
         glSet_V2_V2(
-            clipPos.xy,
+            clipPos.out_xy,
             glIsEqual_N_N(float_N(this.uniformData.cc_cameraPos.w), float_N(1.0))
                 ? vec2_N_N(float_N(clipPos.xy.x), glSub_N_N(float_N(1.0), float_N(clipPos.xy.y)))
                 : clipPos.xy
@@ -2135,7 +2137,7 @@ export class Impl_15b83ec76b5b9d5c5cbf5e3ce8e4877b extends FragShaderHandle {
             glSet_N_N(depth, float_N(clipPos.z))
         }
         glSet_V2_V2(
-            clipPos.xy,
+            clipPos.out_xy,
             glIsEqual_N_N(float_N(this.uniformData.cc_cameraPos.w), float_N(1.0))
                 ? vec2_N_N(float_N(clipPos.xy.x), glSub_N_N(float_N(1.0), float_N(clipPos.xy.y)))
                 : clipPos.xy
@@ -2281,7 +2283,7 @@ export class Impl_15b83ec76b5b9d5c5cbf5e3ce8e4877b extends FragShaderHandle {
         )
         let AB: Vec2Data = vec2()
         glSet_V2_V2(AB, glAdd_V2_V2(glMul_V2_N(vec2_N_N(glNegative_N(float_N(1.04)), float_N(1.04)), a004), r.zw))
-        AB.y *= clamp_N_N_N(glMul_N_N(float_N(50.0), float_N(specular.y)), float_N(0.0), float_N(1.0)).v
+        glMulSet_N_N(AB.out_y, clamp_N_N_N(glMul_N_N(float_N(50.0), float_N(specular.y)), float_N(0.0), float_N(1.0)))
         return glAdd_V3_N(glMul_V3_N(specular, float_N(AB.x)), float_N(AB.y))
     }
     CCStandardShadingBase_StandardSurface_V4(__s__: StandardSurface, __shadowPos__: Vec4Data): Vec4Data {
@@ -2375,7 +2377,7 @@ export class Impl_15b83ec76b5b9d5c5cbf5e3ce8e4877b extends FragShaderHandle {
                 glSet_V4_V4(shadowPos, __shadowPos__)
 
                 glSet_V3_V3(
-                    finalColor.xyz,
+                    finalColor.out_xyz,
                     glAdd_V3_V3(
                         glMul_V3_N(shadowColor.xyz, shadowAttenuation),
                         glMul_V3_N(finalColor.xyz, glSub_N_N(float_N(1.0), shadowAttenuation))
@@ -2388,7 +2390,7 @@ export class Impl_15b83ec76b5b9d5c5cbf5e3ce8e4877b extends FragShaderHandle {
                 glSet_V4_V4(shadowPos, __shadowPos__)
 
                 glSet_V3_V3(
-                    finalColor.xyz,
+                    finalColor.out_xyz,
                     glAdd_V3_V3(
                         glMul_V3_N(glMul_V3_N(shadowColor.xyz, shadowAttenuation), NL),
                         glMul_V3_N(finalColor.xyz, glSub_N_N(float_N(1.0), glMul_N_N(shadowAttenuation, NL)))
@@ -2422,14 +2424,14 @@ export class Impl_15b83ec76b5b9d5c5cbf5e3ce8e4877b extends FragShaderHandle {
         let color: Vec4Data = vec4()
         glSet_V4_V4(color, __color__)
 
-        glSet_V3_V3(color.xyz, sqrt_V3(this.ACESToneMap_V3(color.out_xyz)))
+        glSet_V3_V3(color.out_xyz, sqrt_V3(this.ACESToneMap_V3(color.out_xyz)))
         return color
     }
     surf_StandardSurface(s: StandardSurface): void {
         let baseColor: Vec4Data = vec4()
         glSet_V4_V4(baseColor, this.uniformData.albedo)
         glSet_V4_V4(s.albedo, baseColor)
-        glMulSet_V3_V3(s.albedo.xyz, this.uniformData.albedoScaleAndCutoff.xyz)
+        glMulSet_V3_V3(s.albedo.out_xyz, this.uniformData.albedoScaleAndCutoff.xyz)
         glSet_V3_V3(s.normal, this.varyingData.v_normal)
         glSet_V3_V3(s.position, this.varyingData.v_position)
         let pbr: Vec4Data = vec4()
@@ -2455,6 +2457,6 @@ export class Impl_15b83ec76b5b9d5c5cbf5e3ce8e4877b extends FragShaderHandle {
                 float_N(color.w)
             )
         )
-        glSet_V4_V4(gl_FragData[int_N(0).v], this.CCFragOutput_V4(color))
+        glSet_V4_V4((<any>gl_FragData)[int_N(0).v], this.CCFragOutput_V4(color))
     }
 }

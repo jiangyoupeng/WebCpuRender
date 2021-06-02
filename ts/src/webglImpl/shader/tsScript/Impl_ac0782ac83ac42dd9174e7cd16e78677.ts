@@ -158,6 +158,7 @@ import {
     glSub_N_N,
     glAdd_N_N,
     getValueKeyByIndex,
+    getOutValueKeyByIndex,
 } from "../builtin/BuiltinOperator"
 import { gl_FragData, gl_FragColor, gl_Position, gl_FragCoord, gl_FragDepth, gl_FrontFacing, custom_isDiscard } from "../builtin/BuiltinVar"
 import { cpuRenderingContext } from "../../CpuRenderingContext"

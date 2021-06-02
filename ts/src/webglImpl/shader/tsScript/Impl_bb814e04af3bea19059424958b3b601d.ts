@@ -84,7 +84,7 @@ return pos;
 void main() { gl_Position = vert(); }
 */
 import { vec4_V3_N, float, float_N, bool, bool_N, int_N, int, vec4, vec3, vec2, mat3, mat4 } from "../builtin/BuiltinFunc"
-import { glSet_V4_V4, glSet_V2_V2, glMul_M4_V4, getValueKeyByIndex } from "../builtin/BuiltinOperator"
+import { glSet_V4_V4, glSet_V2_V2, glMul_M4_V4, getValueKeyByIndex, getOutValueKeyByIndex } from "../builtin/BuiltinOperator"
 import { gl_FragData, gl_FragColor, gl_Position, gl_FragCoord, gl_FragDepth, gl_FrontFacing, custom_isDiscard } from "../builtin/BuiltinVar"
 import { cpuRenderingContext } from "../../CpuRenderingContext"
 import { AttributeData, FragShaderHandle, UniformData, VaryingData, VertShaderHandle, StructData } from "../../ShaderDefine"

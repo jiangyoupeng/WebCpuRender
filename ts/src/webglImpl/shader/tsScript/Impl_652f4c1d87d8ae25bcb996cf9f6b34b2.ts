@@ -107,7 +107,15 @@ import {
     mat3,
     mat4,
 } from "../builtin/BuiltinFunc"
-import { glSet_V4_V4, glSet_V2_V2, glSet_N_N, glIsLess_N_N, glMulSet_V4_V4, getValueKeyByIndex } from "../builtin/BuiltinOperator"
+import {
+    glSet_V4_V4,
+    glSet_V2_V2,
+    glSet_N_N,
+    glIsLess_N_N,
+    glMulSet_V4_V4,
+    getValueKeyByIndex,
+    getOutValueKeyByIndex,
+} from "../builtin/BuiltinOperator"
 import { gl_FragData, gl_FragColor, gl_Position, gl_FragCoord, gl_FragDepth, gl_FrontFacing, custom_isDiscard } from "../builtin/BuiltinVar"
 import { cpuRenderingContext } from "../../CpuRenderingContext"
 import { AttributeData, FragShaderHandle, UniformData, VaryingData, VertShaderHandle, StructData } from "../../ShaderDefine"

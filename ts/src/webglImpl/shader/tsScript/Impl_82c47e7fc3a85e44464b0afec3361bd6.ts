@@ -106,7 +106,16 @@ import {
     mat3,
     mat4,
 } from "../builtin/BuiltinFunc"
-import { glSet_V4_V4, glSet_V2_V2, glSet_N_N, glMulSet_V4_V4, glMul_N_N, glAdd_N_N, getValueKeyByIndex } from "../builtin/BuiltinOperator"
+import {
+    glSet_V4_V4,
+    glSet_V2_V2,
+    glSet_N_N,
+    glMulSet_V4_V4,
+    glMul_N_N,
+    glAdd_N_N,
+    getValueKeyByIndex,
+    getOutValueKeyByIndex,
+} from "../builtin/BuiltinOperator"
 import { gl_FragData, gl_FragColor, gl_Position, gl_FragCoord, gl_FragDepth, gl_FrontFacing, custom_isDiscard } from "../builtin/BuiltinVar"
 import { cpuRenderingContext } from "../../CpuRenderingContext"
 import { AttributeData, FragShaderHandle, UniformData, VaryingData, VertShaderHandle, StructData } from "../../ShaderDefine"
@@ -191,7 +200,7 @@ export class Impl_82c47e7fc3a85e44464b0afec3361bd6 extends FragShaderHandle {
                 glMul_N_N(float_N(0.0722), float_N(o.z))
             )
         )
-        o.x = o.y = o.z = gray.v
+        glSet_N_N(o.out_x, glSet_N_N(o.out_y, glSet_N_N(o.out_z, gray)))
         glMulSet_V4_V4(o, this.varyingData.color)
         this.ALPHA_TEST_V4(o)
         return o

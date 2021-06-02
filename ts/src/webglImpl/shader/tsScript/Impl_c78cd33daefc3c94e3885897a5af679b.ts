@@ -310,6 +310,7 @@ import {
     glIsEqual_N_N,
     glNegative_N,
     getValueKeyByIndex,
+    getOutValueKeyByIndex,
 } from "../builtin/BuiltinOperator"
 import { gl_FragData, gl_FragColor, gl_Position, gl_FragCoord, gl_FragDepth, gl_FrontFacing, custom_isDiscard } from "../builtin/BuiltinVar"
 import { cpuRenderingContext } from "../../CpuRenderingContext"
@@ -391,7 +392,7 @@ export class Impl_c78cd33daefc3c94e3885897a5af679b extends VertShaderHandle {
             Sign,
             glSub_N_N(
                 float_N(1.0),
-                glMul_N_N(step_N_N(float_N(128.0), glAdd_N_N((<any>rgba)[getValueKeyByIndex(int_N(3))], float_N(0.5))), float_N(2.0))
+                glMul_N_N(step_N_N(float_N(128.0), glAdd_N_N((<any>rgba)[getOutValueKeyByIndex(int_N(3))], float_N(0.5))), float_N(2.0))
             )
         )
         let Exponent: FloatData = float()
@@ -401,9 +402,9 @@ export class Impl_c78cd33daefc3c94e3885897a5af679b extends VertShaderHandle {
                 glAdd_N_N(
                     glMul_N_N(
                         float_N(2.0),
-                        mod_N_N(float_N(int_N(glAdd_N_N((<any>rgba)[getValueKeyByIndex(int_N(3))], float_N(0.5)))), float_N(128.0))
+                        mod_N_N(float_N(int_N(glAdd_N_N((<any>rgba)[getOutValueKeyByIndex(int_N(3))], float_N(0.5)))), float_N(128.0))
                     ),
-                    step_N_N(float_N(128.0), glAdd_N_N((<any>rgba)[getValueKeyByIndex(int_N(2))], float_N(0.5)))
+                    step_N_N(float_N(128.0), glAdd_N_N((<any>rgba)[getOutValueKeyByIndex(int_N(2))], float_N(0.5)))
                 ),
                 float_N(127.0)
             )
@@ -415,12 +416,12 @@ export class Impl_c78cd33daefc3c94e3885897a5af679b extends VertShaderHandle {
                 glAdd_N_N(
                     glAdd_N_N(
                         glMul_N_N(
-                            mod_N_N(float_N(int_N(glAdd_N_N((<any>rgba)[getValueKeyByIndex(int_N(2))], float_N(0.5)))), float_N(128.0)),
+                            mod_N_N(float_N(int_N(glAdd_N_N((<any>rgba)[getOutValueKeyByIndex(int_N(2))], float_N(0.5)))), float_N(128.0)),
                             float_N(65536.0)
                         ),
-                        glMul_N_N((<any>rgba)[getValueKeyByIndex(int_N(1))], float_N(256.0))
+                        glMul_N_N((<any>rgba)[getOutValueKeyByIndex(int_N(1))], float_N(256.0))
                     ),
-                    (<any>rgba)[getValueKeyByIndex(int_N(0))]
+                    (<any>rgba)[getOutValueKeyByIndex(int_N(0))]
                 ),
                 float_N(8388608.0)
             )
@@ -433,13 +434,13 @@ export class Impl_c78cd33daefc3c94e3885897a5af679b extends VertShaderHandle {
         glSet_V3_V3(In.normal, this.attributeData.a_normal)
         glSet_V4_V4(In.tangent, this.attributeData.a_tangent)
         glSet_V2_V2(
-            In.position.xy,
+            In.position.out_xy,
             glIsEqual_N_N(float_N(this.uniformData.cc_cameraPos.w), float_N(0.0))
                 ? vec2_N_N(float_N(In.position.xy.x), glNegative_N(float_N(In.position.xy.y)))
                 : In.position.xy
         )
         glSet_V4_V4(gl_Position, In.position)
-        gl_Position.y = float_N(gl_Position.y).v
+        glSet_N_N(gl_Position.out_y, float_N(gl_Position.y))
         glSet_V2_V2(this.varyingData.v_uv, this.attributeData.a_texCoord)
     }
 }

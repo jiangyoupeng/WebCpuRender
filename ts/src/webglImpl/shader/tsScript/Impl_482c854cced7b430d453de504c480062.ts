@@ -56,6 +56,7 @@ import {
     glMulSet_V3_N,
     glMulSet_V4_N,
     getValueKeyByIndex,
+    getOutValueKeyByIndex,
 } from "../builtin/BuiltinOperator"
 import { gl_FragData, gl_FragColor, gl_Position, gl_FragCoord, gl_FragDepth, gl_FrontFacing, custom_isDiscard } from "../builtin/BuiltinVar"
 import { cpuRenderingContext } from "../../CpuRenderingContext"
@@ -115,7 +116,7 @@ export class Impl_482c854cced7b430d453de504c480062 extends FragShaderHandle {
             alpha,
             glSub_N_N(float_N(1), smoothstep_N_N_N(glNegative_N(aa), float_N(0), glSub_N_N(abs_N(this.varyingData.v_dist), float_N(1.0))))
         )
-        glMulSet_V3_N(o.xyz, float_N(o.w))
+        glMulSet_V3_N(o.out_xyz, float_N(o.w))
         glMulSet_V4_N(o, alpha)
         return o
     }

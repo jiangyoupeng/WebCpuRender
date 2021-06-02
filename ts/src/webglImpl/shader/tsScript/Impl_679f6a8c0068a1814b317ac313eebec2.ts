@@ -208,6 +208,7 @@ import {
     glIsLess_N_N,
     glIsMore_N_N,
     getValueKeyByIndex,
+    getOutValueKeyByIndex,
 } from "../builtin/BuiltinOperator"
 import { gl_FragData, gl_FragColor, gl_Position, gl_FragCoord, gl_FragDepth, gl_FrontFacing, custom_isDiscard } from "../builtin/BuiltinVar"
 import { cpuRenderingContext } from "../../CpuRenderingContext"
@@ -350,8 +351,8 @@ export class Impl_679f6a8c0068a1814b317ac313eebec2 extends FragShaderHandle {
         let lumaMax: FloatData = float()
         glSet_N_N(lumaMax, max_N_N(lumaM, max_N_N(max_N_N(lumaNW, lumaNE), max_N_N(lumaSW, lumaSE))))
         let dir: Vec2Data = vec2()
-        dir.x = glNegative_N(glSub_N_N(glAdd_N_N(lumaNW, lumaNE), glAdd_N_N(lumaSW, lumaSE))).v
-        dir.y = glSub_N_N(glAdd_N_N(lumaNW, lumaSW), glAdd_N_N(lumaNE, lumaSE)).v
+        glSet_N_N(dir.out_x, glNegative_N(glSub_N_N(glAdd_N_N(lumaNW, lumaNE), glAdd_N_N(lumaSW, lumaSE))))
+        glSet_N_N(dir.out_y, glSub_N_N(glAdd_N_N(lumaNW, lumaSW), glAdd_N_N(lumaNE, lumaSE)))
         let dirReduce: FloatData = float()
         glSet_N_N(
             dirReduce,

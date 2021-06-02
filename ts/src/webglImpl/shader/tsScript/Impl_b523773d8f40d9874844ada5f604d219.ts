@@ -822,6 +822,7 @@ import {
     glAdd_V4_V4,
     glMul_V2_N,
     glAdd_V2_V2,
+    glMulSet_N_N,
     glMul_V3_N,
     glAdd_V3_N,
     glSet_Struct_Struct,
@@ -836,6 +837,7 @@ import {
     glDiv_V3_V3,
     glIsMore_N_N,
     getValueKeyByIndex,
+    getOutValueKeyByIndex,
 } from "../builtin/BuiltinOperator"
 import { gl_FragData, gl_FragColor, gl_Position, gl_FragCoord, gl_FragDepth, gl_FrontFacing, custom_isDiscard } from "../builtin/BuiltinVar"
 import { cpuRenderingContext } from "../../CpuRenderingContext"
@@ -1058,7 +1060,7 @@ export class Impl_b523773d8f40d9874844ada5f604d219 extends FragShaderHandle {
         )
         let AB: Vec2Data = vec2()
         glSet_V2_V2(AB, glAdd_V2_V2(glMul_V2_N(vec2_N_N(glNegative_N(float_N(1.04)), float_N(1.04)), a004), r.zw))
-        AB.y *= clamp_N_N_N(glMul_N_N(float_N(50.0), float_N(specular.y)), float_N(0.0), float_N(1.0)).v
+        glMulSet_N_N(AB.out_y, clamp_N_N_N(glMul_N_N(float_N(50.0), float_N(specular.y)), float_N(0.0), float_N(1.0)))
         return glAdd_V3_N(glMul_V3_N(specular, float_N(AB.x)), float_N(AB.y))
     }
     CCStandardShadingBase_StandardSurface_V4(__s__: StandardSurface, __shadowPos__: Vec4Data): Vec4Data {
@@ -1136,14 +1138,14 @@ export class Impl_b523773d8f40d9874844ada5f604d219 extends FragShaderHandle {
         let color: Vec4Data = vec4()
         glSet_V4_V4(color, __color__)
 
-        glSet_V3_V3(color.xyz, sqrt_V3(this.ACESToneMap_V3(color.out_xyz)))
+        glSet_V3_V3(color.out_xyz, sqrt_V3(this.ACESToneMap_V3(color.out_xyz)))
         return color
     }
     surf_StandardSurface(s: StandardSurface): void {
         let baseColor: Vec4Data = vec4()
         glSet_V4_V4(baseColor, this.uniformData.albedo)
         glSet_V4_V4(s.albedo, baseColor)
-        glMulSet_V3_V3(s.albedo.xyz, this.uniformData.albedoScaleAndCutoff.xyz)
+        glMulSet_V3_V3(s.albedo.out_xyz, this.uniformData.albedoScaleAndCutoff.xyz)
         glSet_V3_V3(s.normal, this.varyingData.v_normal)
         glSet_V3_V3(s.position, this.varyingData.v_position)
         let pbr: Vec4Data = vec4()
@@ -1169,6 +1171,6 @@ export class Impl_b523773d8f40d9874844ada5f604d219 extends FragShaderHandle {
                 float_N(color.w)
             )
         )
-        glSet_V4_V4(gl_FragData[int_N(0).v], this.CCFragOutput_V4(color))
+        glSet_V4_V4((<any>gl_FragData)[int_N(0).v], this.CCFragOutput_V4(color))
     }
 }

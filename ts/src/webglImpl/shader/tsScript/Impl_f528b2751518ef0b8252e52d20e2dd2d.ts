@@ -80,7 +80,14 @@ import {
     mat3,
     mat4,
 } from "../builtin/BuiltinFunc"
-import { glSet_V2_V2, glSet_V4_V4, glIsEqual_N_N, glNegative_N, getValueKeyByIndex } from "../builtin/BuiltinOperator"
+import {
+    glSet_V2_V2,
+    glSet_V4_V4,
+    glIsEqual_N_N,
+    glNegative_N,
+    getValueKeyByIndex,
+    getOutValueKeyByIndex,
+} from "../builtin/BuiltinOperator"
 import { gl_FragData, gl_FragColor, gl_Position, gl_FragCoord, gl_FragDepth, gl_FrontFacing, custom_isDiscard } from "../builtin/BuiltinVar"
 import { cpuRenderingContext } from "../../CpuRenderingContext"
 import { AttributeData, FragShaderHandle, UniformData, VaryingData, VertShaderHandle, StructData } from "../../ShaderDefine"
@@ -154,7 +161,7 @@ export class Impl_f528b2751518ef0b8252e52d20e2dd2d extends VertShaderHandle {
         let position: Vec4Data = vec4()
         glSet_V4_V4(position, vec4_V3_N(this.attributeData.a_position, float_N(1.0)))
         glSet_V2_V2(
-            position.xy,
+            position.out_xy,
             glIsEqual_N_N(float_N(this.uniformData.cc_cameraPos.w), float_N(0.0))
                 ? vec2_N_N(float_N(position.xy.x), glNegative_N(float_N(position.xy.y)))
                 : position.xy

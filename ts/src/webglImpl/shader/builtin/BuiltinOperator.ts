@@ -1,3 +1,4 @@
+import { indexOf } from "lodash"
 import {
     BoolData,
     builtinCachData,
@@ -582,6 +583,20 @@ export function glNegative_V4(v: Vec4Data): Vec4Data {
     return data
 }
 
+export function glSet_A_A(left: ValueType[], right: ValueType[]): ValueType[] {
+    for (let index = 0; index < right.length; index++) {
+        left[index].set(right[index])
+    }
+    return left
+}
+
+export function glSet_AA_AA(left: ValueType[][], right: ValueType[][]): ValueType[][] {
+    for (let index = 0; index < right.length; index++) {
+        glSet_A_A(left[index], right[index])
+    }
+    return left
+}
+
 export function glSet_N_N(left: NumData, right: NumData): NumData {
     left.v = right.v
     return left
@@ -897,6 +912,10 @@ export function glAfterSubSelf_M4(n: Mat4Data): Mat4Data {
 }
 
 let numWithXYZW = ["x", "y", "z", "w"]
+let numWithOutXYZW = ["out_x", "out_y", "out_z", "out_w"]
 export function getValueKeyByIndex(n: NumData): string {
     return numWithXYZW[n.v]
+}
+export function getOutValueKeyByIndex(n: NumData): string {
+    return numWithOutXYZW[n.v]
 }

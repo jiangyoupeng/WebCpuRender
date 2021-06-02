@@ -77,17 +77,26 @@ var builtinValue = {
 
 var convertToTsType = {
     int: "IntData",
+    "int[]": "IntData[]",
     float: "FloatData",
+    "float[]": "FloatData[]",
     double: "FloatData",
+    "double[]": "FloatData[]",
     vec2: "Vec2Data",
+    "vec2[]": "Vec2Data[]",
     vec3: "Vec3Data",
+    "vec3[]": "Vec3Data[]",
     vec4: "Vec4Data",
+    "vec4[]": "Vec4Data[]",
     mat3: "Mat3Data",
+    "mat3[]": "Mat3Data[]",
     mat4: "Mat4Data",
+    "mat4[]": "Mat4Data[]",
     sampler2D: "Sampler2D",
     samplerCube: "SamplerCube",
     void: "void",
     bool: "BoolData",
+    "bool[]": "BoolData[]",
 }
 
 var convertToBuiltinCall = {
@@ -606,6 +615,10 @@ let inForDefine = false
 let useBuiltinFuncs: Set<string> = new Set()
 let useBuiltinOperators: Set<string> = new Set()
 
+// 当前声明的数组数量
+let declArrNum: number[] = []
+// 是否处于左赋值语句中
+let isLeftSet = false
 let inFunc: boolean = false
 let isFuncBlock: boolean = false
 let uniformData: Map<string, string> = new Map()
@@ -740,17 +753,50 @@ function deparse_binary(node: any) {
             leftType == "Vec3Data" ||
             leftType == "Vec2Data" ||
             leftType == "Mat3Data" ||
-            leftType == "Mat4Data"
+            leftType == "Mat4Data" ||
+            leftType == "Vec4Data[]" ||
+            leftType == "Vec3Data[]" ||
+            leftType == "Vec2Data[]" ||
+            leftType == "Mat3Data[]" ||
+            leftType == "Mat4Data[]"
         ) {
-            // 如果坐变的对象也是通过中括号得来的话 说明是矩阵
+            // 如果左边的对象也是通过中括号得来的话 说明是矩阵
             if (node.children[0].data !== "[") {
                 outputInsert(leftEnd - 1, "(<any>")
                 outputInsert(leftEnd + 1, ")")
-                outputInsert(leftEnd + 3, "getValueKeyByIndex(")
-                outputPush(")")
+                if (
+                    leftType == "Vec4Data" ||
+                    leftType == "Vec3Data" ||
+                    leftType == "Vec2Data" ||
+                    leftType == "Mat3Data" ||
+                    leftType == "Mat4Data"
+                ) {
+                    if (isLeftSet) {
+                        outputInsert(leftEnd + 3, "getValueKeyByIndex(")
+                    } else {
+                        outputInsert(leftEnd + 3, "getOutValueKeyByIndex(")
+                    }
+                    outputPush(")")
+                } else {
+                    outputReplace(leftEnd + 3, output[leftEnd + 3] + ".v")
+                }
             } else {
-                outputInsert(leftEnd + 1, "getValueKeyByIndex(")
-                outputPush(")")
+                if (
+                    leftType == "Vec4Data" ||
+                    leftType == "Vec3Data" ||
+                    leftType == "Vec2Data" ||
+                    leftType == "Mat3Data" ||
+                    leftType == "Mat4Data"
+                ) {
+                    if (isLeftSet) {
+                        outputInsert(leftEnd + 1, "getValueKeyByIndex(")
+                    } else {
+                        outputInsert(leftEnd + 1, "getOutValueKeyByIndex(")
+                    }
+                    outputPush(")")
+                } else {
+                    outputReplace(leftEnd + 3, output[leftEnd + 3] + ".v")
+                }
             }
         } else if (rightType == "NumData" || rightType == "IntData" || rightType == "FloatData") {
             outputPush(".v")
@@ -910,6 +956,23 @@ function deparse_decllist(node: any) {
         setFunc = "glSet_Struct_Struct"
     }
 
+    if (nowTypeCach !== "") {
+        // 判断是否数组类型
+        let arrTypeStr = ""
+        declArrNum = []
+        // 数据定义应该只可能是常量数值 所以不用考虑其它情况
+        for (var i = 1, len = node.children.length; i < len; ++i) {
+            if (node.children[i].type === "quantifier") {
+                arrTypeStr += "[]"
+                declArrNum.push(parseInt(node.children[i].children[0].children[0].data))
+            }
+        }
+        if (declArrNum.length > 0) {
+            nowTypeCach = nowTypeCach + arrTypeStr
+            tmpCachType = nowTypeCach
+        }
+    }
+
     let isSet = false
     let setFuncIndex: number = 0
     for (var i = 0, len = node.children.length; i < len; ++i) {
@@ -928,7 +991,18 @@ function deparse_decllist(node: any) {
                         outputPush(", ")
                         isSet = true
                         useBuiltinOperators.add(setFunc)
+
+                        // console.log("*********************begin decllist***************")
+                        // // 分析左边的类型
+                        // let str = ""
+                        // for (let index = decllistBegin; index < setFuncIndex; index++) {
+                        //     str += output[index]
+                        // }
+                        // console.log("decllistStr: " + str)
+                        // console.log("*********************end decllist***************")
                     }
+                } else {
+                    continue
                 }
             } else {
                 nowTypeCach = tmpCachType
@@ -943,37 +1017,7 @@ function deparse_decllist(node: any) {
             }
             outputPush(")")
         }
-        // if (!isFuncArgs && tmpCachType !== "") {
-        //     let nextNode = node.children[i + 1]
-        //     // 查看是否有下一个
-        //     if (nextNode && nextNode.type !== "ident" && nextNode.type !== "quantifier") {
-        //         continue
-        //     }
-        //     if (node.children[i].type == "expr") {
-        //         continue
-        //     }
-        //     outputPush(ws.optional(" "))
-        //     outputPush("=")
-        //     outputPush(ws.optional(" "))
-
-        //     let sd = getStructType(tmpCachType)
-        //     // 判断是否struct 类型
-        //     if (sd) {
-        //         outputPush(ws.optional("new " + tmpCachType + "()"))
-        //     } else {
-        //         outputPush(ws.optional(tmpCachType + "()"))
-        //     }
-        // }
     }
-
-    // console.log("*********************begin decllist***************")
-    // // 分析左边的类型
-    // let str = ""
-    // for (let index = decllistBegin; index < output.length; index++) {
-    //     str += output[index]
-    // }
-    // console.log("decllistStr: " + str)
-    // console.log("*********************end decllist***************")
 }
 
 function deparse_discard(node: any) {
@@ -1163,11 +1207,38 @@ function deparse_ident(node: any) {
             outputPush(ws.optional(" "))
 
             let sd = getStructType(nowTypeCach)
+
+            let createStr = ""
             // 判断是否struct 类型
+
+            let splitData = splitArrData(nowTypeCach)
+
             if (sd) {
-                outputPush(ws.optional("new " + nowTypeCach + "()"))
+                createStr = "new " + splitData.factObjName + "()"
+                // outputPush(ws.optional("new " + nowTypeCach + "()"))
             } else {
-                outputPush(ws.optional(nowTypeCach + "()"))
+                createStr = splitData.factObjName + "()"
+                // outputPush(ws.optional(nowTypeCach + "()"))
+            }
+
+            if (declArrNum.length > 0) {
+                let copyArrStr = createStr
+                for (let index = declArrNum.length - 1; index >= 0; index--) {
+                    let arrNum = declArrNum[index]
+                    let arr = `[`
+                    for (let t = 0; t < arrNum; t++) {
+                        if (t !== arrNum - 1) {
+                            arr += copyArrStr + ","
+                        } else {
+                            arr += copyArrStr
+                        }
+                    }
+                    arr += `]`
+                    copyArrStr = arr
+                }
+                outputPush(ws.optional(copyArrStr))
+            } else {
+                outputPush(ws.optional(createStr))
             }
             outputPush("\n")
         }
@@ -1438,7 +1509,9 @@ function deparse_assign(node: any) {
     }
 
     let leftBeginIndex = output.length
+    isLeftSet = true
     let leftAssignType = deparse(node.children[0])
+    isLeftSet = false
     let leftEndIndex = output.length
     outputPush(ws.optional(" "))
     let operatorIndex = output.length
@@ -1465,6 +1538,7 @@ function deparse_assign(node: any) {
 
     if (glOpetatior) {
         glOpetatior = glOpetatior + "_" + convertToAbbreviation("" + leftAssignType) + "_" + convertToAbbreviation("" + rightAssignType)
+
         outputInsert(leftBeginIndex, glOpetatior + "(")
         // // 因为左边插入了
         outputInsert(rightEndIndex + 1, ")")
@@ -1662,6 +1736,9 @@ function deparse_operator(node: any) {
 
     let rightIndex = output.length
     let rightOperatorType = deparse(node.children[1])
+    if (rightIndex === 209) {
+        debugger
+    }
 
     // 替换rgba 和stpq这种格式的代码
     if (node.data === "." && (<any>glslBuiltinType)[leftOperatorType]) {
@@ -1679,18 +1756,51 @@ function deparse_operator(node: any) {
 
     let isTop = false
     let callTree: string[] = []
+    let callTreeIndex: number[] = []
     let isCallTree = true
+    let isArrayCall = false
+    let lastIsArrayCall = false
     for (let t = output.length - 1; t >= 0; t--) {
         const code = output[t]
         if (isCallTree) {
             isCallTree = false
-            callTree.push(code)
+            if (code === "]") {
+                isArrayCall = true
+            } else {
+                callTree.push(code)
+                callTreeIndex.push(t)
+            }
+        } else if (isArrayCall) {
+            if (code === "[") {
+                isArrayCall = false
+                lastIsArrayCall = true
+            } else {
+                let numStr = code.match(/[0-9]+/g)
+                if (numStr) {
+                    let str = numStr[0]
+                    let num = parseInt(str)
+                    if (!isNaN(num)) {
+                        callTree.push(str)
+                        callTreeIndex.push(t)
+                    }
+                }
+            }
         } else {
             if (code == ".") {
                 isCallTree = true
+            } else if (code == "]") {
+                isArrayCall = true
             } else {
-                isTop = t == beginIndex - 1
-                break
+                if (lastIsArrayCall) {
+                    if (code !== ")") {
+                        callTree.push(code)
+                        callTreeIndex.push(t)
+                        lastIsArrayCall = false
+                    }
+                } else {
+                    isTop = t == beginIndex - 1
+                    break
+                }
             }
         }
     }
@@ -1698,10 +1808,14 @@ function deparse_operator(node: any) {
     let nowObjType: string | null | undefined
     for (let index = callTree.length - 1; index >= 0; index--) {
         const element = callTree[index]
-        if (index == callTree.length - 1) {
-            nowObjType = getObjType(element)
-        } else {
-            nowObjType = getSonObjType(element, nowObjType!)
+
+        // 说明是数值所以是数组索引 nowObjType 不用变
+        if (isNaN(parseInt(element))) {
+            if (index == callTree.length - 1) {
+                nowObjType = getObjType(element)
+            } else {
+                nowObjType = getSonObjType(element, nowObjType!)
+            }
         }
     }
 
@@ -1744,6 +1858,31 @@ function deparse_operator(node: any) {
         }
     }
 
+    if (isLeftSet && callTree.length > 1) {
+        // 查找父节点类型
+        let parentType: string | undefined = undefined
+        for (let index = callTree.length - 1; index >= 1; index--) {
+            const element = callTree[index]
+            if (index == callTree.length - 1) {
+                parentType = getObjType(element)
+            } else {
+                parentType = getSonObjType(element, nowObjType!)
+            }
+        }
+
+        if (!parentType) {
+            parentType = leftOperatorType
+        }
+
+        // 如果是内建對象的話
+        if ((<any>glslBuiltinType)[parentType!]) {
+            outputReplace(output.length - 1, "out_" + output[output.length - 1])
+            if (nowObjType == "number") {
+                nowObjType = "NumData"
+            }
+        }
+    }
+
     if (nowObjType == "number") {
         if (isTop) {
             if (
@@ -1763,6 +1902,7 @@ function deparse_operator(node: any) {
             }
         }
     }
+
     return nowObjType
 }
 
@@ -1899,6 +2039,8 @@ export function deparseToTs(
     ws = new WsManager(whitespace_enabled, indent_text)
     nowFuncTypeCach = ""
     nowTypeCach = ""
+    declArrNum = []
+    isLeftSet = false
     inFunc = false
     isFuncArgs = false
     inForDefine = false
@@ -2089,6 +2231,7 @@ export function deparseToTs(
     importStr += `} from "../builtin/BuiltinFunc"\n`
     importStr += "import {\n"
     useBuiltinOperators.add("getValueKeyByIndex")
+    useBuiltinOperators.add("getOutValueKeyByIndex")
     useBuiltinOperators.forEach((funNames: string) => {
         importStr += `    ${funNames},\n`
     })

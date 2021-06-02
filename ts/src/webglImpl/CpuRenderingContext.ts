@@ -75,7 +75,7 @@ class OneFrameCachGlData {
     cachGlDatas: CachGlData[] = []
 }
 let showGlDebugLog = false
-let debugCpuRender = false
+let debugCpuRender = true
 let createTsImplGlslFile = true
 let replaceShaderSource = true
 let createRenderFile = false
@@ -268,6 +268,8 @@ function replaceWebglFunc(gl: any) {
                                 // highp vec4 position;
                                 // vec3 normal;
                                 // vec4 tangent;
+                                // vec4 testasdf[4][4];
+                                // vec4 mat45[4][4];
                                 // };
                                 // attribute vec3 a_position;
                                 // attribute vec3 a_normal;
@@ -290,7 +292,17 @@ function replaceWebglFunc(gl: any) {
                                 // }
 
                                 // void main () {
+                                // vec4 forFragTest[4];
+                                // forFragTest[0].xyz = vec3(2);
+                                // forFragTest[0] = vec4(1);
+                                // mat4 testMat4asd;
+                                // testMat4asd[0][0] = 1.;
+                                // StandardVertInput sasd;
+                                // mat4 eqwsd[4];
+                                // eqwsd[0][0][0] = 1.;
+
                                 // vec4 color;
+                                // color.xyz = vec3();
                                 // test1Func((color.x + color.y + color.z + color).z , color.y, color.z, color.w);
                                 // float lumaB;
                                 // color.x = color.y = color.z = lumaB;

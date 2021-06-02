@@ -114,6 +114,7 @@ import {
     glMul_V2_V2,
     glAdd_V2_V2,
     getValueKeyByIndex,
+    getOutValueKeyByIndex,
 } from "../builtin/BuiltinOperator"
 import { gl_FragData, gl_FragColor, gl_Position, gl_FragCoord, gl_FragDepth, gl_FrontFacing, custom_isDiscard } from "../builtin/BuiltinVar"
 import { cpuRenderingContext } from "../../CpuRenderingContext"
@@ -213,7 +214,7 @@ export class Impl_b1ade01f0e1a563134bbab8d61b1c2d9 extends VertShaderHandle {
         )
         let camUp: Vec3Data = vec3()
         glSet_V3_V3(camUp, normalize_V3(cross_V3_V3(glSub_V3_V3(pos.xyz, this.uniformData.cc_cameraPos.xyz), velocity.xyz)))
-        glAddSet_V3_V3(pos.xyz, glMul_V3_N(camUp, vertOffset))
+        glAddSet_V3_V3(pos.out_xyz, glMul_V3_N(camUp, vertOffset))
         glSet_V4_V4(pos, glMul_M4_V4(this.uniformData.cc_matViewProj, pos))
         glSet_V2_V2(
             this.varyingData.uv,

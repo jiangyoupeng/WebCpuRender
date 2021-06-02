@@ -1163,6 +1163,7 @@ import {
     glMul_N_V4,
     glAdd_V4_V4,
     glMul_V2_N,
+    glMulSet_N_N,
     glSet_Struct_Struct,
     glSub_V3_V3,
     glNegative_V3,
@@ -1172,10 +1173,10 @@ import {
     glMulSet_V3_V3,
     glAddSet_V3_V3,
     glDiv_V3_V3,
-    glMulSet_N_N,
     glIsMoreEqual_N_N,
     glMulSet_V3_N,
     getValueKeyByIndex,
+    getOutValueKeyByIndex,
 } from "../builtin/BuiltinOperator"
 import { gl_FragData, gl_FragColor, gl_Position, gl_FragCoord, gl_FragDepth, gl_FrontFacing, custom_isDiscard } from "../builtin/BuiltinVar"
 import { cpuRenderingContext } from "../../CpuRenderingContext"
@@ -1393,7 +1394,7 @@ export class Impl_51be3ce9f0b7d7d460ec0b033a932277 extends FragShaderHandle {
         let closestDepth: FloatData = float()
         glSet_N_N(closestDepth, float_N(0.0))
         glSet_V2_V2(
-            clipPos.xy,
+            clipPos.out_xy,
             glIsEqual_N_N(float_N(this.uniformData.cc_cameraPos.w), float_N(1.0))
                 ? vec2_N_N(float_N(clipPos.xy.x), glSub_N_N(float_N(1.0), float_N(clipPos.xy.y)))
                 : clipPos.xy
@@ -1449,7 +1450,7 @@ export class Impl_51be3ce9f0b7d7d460ec0b033a932277 extends FragShaderHandle {
         let shadow: FloatData = float()
         glSet_N_N(shadow, float_N(0.0))
         glSet_V2_V2(
-            clipPos.xy,
+            clipPos.out_xy,
             glIsEqual_N_N(float_N(this.uniformData.cc_cameraPos.w), float_N(1.0))
                 ? vec2_N_N(float_N(clipPos.xy.x), glSub_N_N(float_N(1.0), float_N(clipPos.xy.y)))
                 : clipPos.xy
@@ -1617,7 +1618,7 @@ export class Impl_51be3ce9f0b7d7d460ec0b033a932277 extends FragShaderHandle {
         let closestDepth: FloatData = float()
         glSet_N_N(closestDepth, float_N(0.0))
         glSet_V2_V2(
-            clipPos.xy,
+            clipPos.out_xy,
             glIsEqual_N_N(float_N(this.uniformData.cc_cameraPos.w), float_N(1.0))
                 ? vec2_N_N(float_N(clipPos.xy.x), glSub_N_N(float_N(1.0), float_N(clipPos.xy.y)))
                 : clipPos.xy
@@ -1713,7 +1714,7 @@ export class Impl_51be3ce9f0b7d7d460ec0b033a932277 extends FragShaderHandle {
         let shadow: FloatData = float()
         glSet_N_N(shadow, float_N(0.0))
         glSet_V2_V2(
-            clipPos.xy,
+            clipPos.out_xy,
             glIsEqual_N_N(float_N(this.uniformData.cc_cameraPos.w), float_N(1.0))
                 ? vec2_N_N(float_N(clipPos.xy.x), glSub_N_N(float_N(1.0), float_N(clipPos.xy.y)))
                 : clipPos.xy
@@ -1813,7 +1814,7 @@ export class Impl_51be3ce9f0b7d7d460ec0b033a932277 extends FragShaderHandle {
         let depth: FloatData = float()
         glSet_N_N(depth, float_N(0.0))
         glSet_V2_V2(
-            clipPos.xy,
+            clipPos.out_xy,
             glIsEqual_N_N(float_N(this.uniformData.cc_cameraPos.w), float_N(1.0))
                 ? vec2_N_N(float_N(clipPos.xy.x), glSub_N_N(float_N(1.0), float_N(clipPos.xy.y)))
                 : clipPos.xy
@@ -1909,7 +1910,7 @@ export class Impl_51be3ce9f0b7d7d460ec0b033a932277 extends FragShaderHandle {
             glSet_N_N(depth, float_N(clipPos.z))
         }
         glSet_V2_V2(
-            clipPos.xy,
+            clipPos.out_xy,
             glIsEqual_N_N(float_N(this.uniformData.cc_cameraPos.w), float_N(1.0))
                 ? vec2_N_N(float_N(clipPos.xy.x), glSub_N_N(float_N(1.0), float_N(clipPos.xy.y)))
                 : clipPos.xy
@@ -2100,7 +2101,7 @@ export class Impl_51be3ce9f0b7d7d460ec0b033a932277 extends FragShaderHandle {
             glSet_N_N(depth, float_N(clipPos.z))
         }
         glSet_V2_V2(
-            clipPos.xy,
+            clipPos.out_xy,
             glIsEqual_N_N(float_N(this.uniformData.cc_cameraPos.w), float_N(1.0))
                 ? vec2_N_N(float_N(clipPos.xy.x), glSub_N_N(float_N(1.0), float_N(clipPos.xy.y)))
                 : clipPos.xy
@@ -2223,7 +2224,7 @@ export class Impl_51be3ce9f0b7d7d460ec0b033a932277 extends FragShaderHandle {
             glSet_N_N(depth, float_N(clipPos.z))
         }
         glSet_V2_V2(
-            clipPos.xy,
+            clipPos.out_xy,
             glIsEqual_N_N(float_N(this.uniformData.cc_cameraPos.w), float_N(1.0))
                 ? vec2_N_N(float_N(clipPos.xy.x), glSub_N_N(float_N(1.0), float_N(clipPos.xy.y)))
                 : clipPos.xy
@@ -2369,7 +2370,7 @@ export class Impl_51be3ce9f0b7d7d460ec0b033a932277 extends FragShaderHandle {
         )
         let AB: Vec2Data = vec2()
         glSet_V2_V2(AB, glAdd_V2_V2(glMul_V2_N(vec2_N_N(glNegative_N(float_N(1.04)), float_N(1.04)), a004), r.zw))
-        AB.y *= clamp_N_N_N(glMul_N_N(float_N(50.0), float_N(specular.y)), float_N(0.0), float_N(1.0)).v
+        glMulSet_N_N(AB.out_y, clamp_N_N_N(glMul_N_N(float_N(50.0), float_N(specular.y)), float_N(0.0), float_N(1.0)))
         return glAdd_V3_N(glMul_V3_N(specular, float_N(AB.x)), float_N(AB.y))
     }
     CCStandardShadingBase_StandardSurface_V4(__s__: StandardSurface, __shadowPos__: Vec4Data): Vec4Data {
@@ -2463,7 +2464,7 @@ export class Impl_51be3ce9f0b7d7d460ec0b033a932277 extends FragShaderHandle {
                 glSet_V4_V4(shadowPos, __shadowPos__)
 
                 glSet_V3_V3(
-                    finalColor.xyz,
+                    finalColor.out_xyz,
                     glAdd_V3_V3(
                         glMul_V3_N(shadowColor.xyz, shadowAttenuation),
                         glMul_V3_N(finalColor.xyz, glSub_N_N(float_N(1.0), shadowAttenuation))
@@ -2476,7 +2477,7 @@ export class Impl_51be3ce9f0b7d7d460ec0b033a932277 extends FragShaderHandle {
                 glSet_V4_V4(shadowPos, __shadowPos__)
 
                 glSet_V3_V3(
-                    finalColor.xyz,
+                    finalColor.out_xyz,
                     glAdd_V3_V3(
                         glMul_V3_N(glMul_V3_N(shadowColor.xyz, shadowAttenuation), NL),
                         glMul_V3_N(finalColor.xyz, glSub_N_N(float_N(1.0), glMul_N_N(shadowAttenuation, NL)))
@@ -2510,14 +2511,14 @@ export class Impl_51be3ce9f0b7d7d460ec0b033a932277 extends FragShaderHandle {
         let color: Vec4Data = vec4()
         glSet_V4_V4(color, __color__)
 
-        glSet_V3_V3(color.xyz, sqrt_V3(this.ACESToneMap_V3(color.out_xyz)))
+        glSet_V3_V3(color.out_xyz, sqrt_V3(this.ACESToneMap_V3(color.out_xyz)))
         return color
     }
     surf_StandardSurface(s: StandardSurface): void {
         let baseColor: Vec4Data = vec4()
         glSet_V4_V4(baseColor, this.uniformData.albedo)
         glSet_V4_V4(s.albedo, baseColor)
-        glMulSet_V3_V3(s.albedo.xyz, this.uniformData.albedoScaleAndCutoff.xyz)
+        glMulSet_V3_V3(s.albedo.out_xyz, this.uniformData.albedoScaleAndCutoff.xyz)
         glSet_V3_V3(s.normal, this.varyingData.v_normal)
         glSet_V3_V3(s.position, this.varyingData.v_position)
         let pbr: Vec4Data = vec4()
@@ -2590,7 +2591,7 @@ export class Impl_51be3ce9f0b7d7d460ec0b033a932277 extends FragShaderHandle {
         let numLights: IntData = int()
         glSet_N_N(
             numLights,
-            glIsEqual_N_N(CC_PIPELINE_TYPE, int_N(0)) ? LIGHTS_PER_PASS : int_N(float_N(this.uniformData.cc_lightDir[int_N(0).v].w))
+            glIsEqual_N_N(CC_PIPELINE_TYPE, int_N(0)) ? LIGHTS_PER_PASS : int_N(float_N((<any>this.uniformData.cc_lightDir)[int_N(0).v].w))
         )
         for (let i: IntData = int_N(0); glIsLess_N_N(i, LIGHTS_PER_PASS); glAfterAddSelf_N(i)) {
             let s: StandardSurface = new StandardSurface()
@@ -2603,7 +2604,7 @@ export class Impl_51be3ce9f0b7d7d460ec0b033a932277 extends FragShaderHandle {
             }
 
             let SLU: Vec3Data = vec3()
-            glSet_V3_V3(SLU, glSub_V3_V3(this.uniformData.cc_lightPos[i.v].xyz, s.position))
+            glSet_V3_V3(SLU, glSub_V3_V3((<any>this.uniformData.cc_lightPos)[i.v].xyz, s.position))
             let SL: Vec3Data = vec3()
             glSet_V3_V3(SL, normalize_V3(SLU))
             let SH: Vec3Data = vec3()
@@ -2615,7 +2616,7 @@ export class Impl_51be3ce9f0b7d7d460ec0b033a932277 extends FragShaderHandle {
             let distSqr: FloatData = float()
             glSet_N_N(distSqr, dot_V3_V3(SLU, SLU))
             let litRadius: FloatData = float()
-            glSet_N_N(litRadius, float_N(this.uniformData.cc_lightSizeRangeAngle[i.v].x))
+            glSet_N_N(litRadius, float_N((<any>this.uniformData.cc_lightSizeRangeAngle)[i.v].x))
             let litRadiusSqr: FloatData = float()
             glSet_N_N(litRadiusSqr, glMul_N_N(litRadius, litRadius))
             let illum: FloatData = float()
@@ -2623,35 +2624,40 @@ export class Impl_51be3ce9f0b7d7d460ec0b033a932277 extends FragShaderHandle {
             let attRadiusSqrInv: FloatData = float()
             glSet_N_N(
                 attRadiusSqrInv,
-                glDiv_N_N(float_N(1.0), max_N_N(float_N(this.uniformData.cc_lightSizeRangeAngle[i.v].y), float_N(0.01)))
+                glDiv_N_N(float_N(1.0), max_N_N(float_N((<any>this.uniformData.cc_lightSizeRangeAngle)[i.v].y), float_N(0.01)))
             )
             glMulSet_N_N(attRadiusSqrInv, attRadiusSqrInv)
             let att: FloatData = float()
             glSet_N_N(att, this.GetDistAtt_N_N(distSqr, attRadiusSqrInv))
             let lspec: Vec3Data = vec3()
             glSet_V3_V3(lspec, glMul_V3_N(specular, this.CalcSpecular_N_N_V3_V3(s.roughness, SNH, SH, N)))
-            if (glIsMore_N_N(float_N(this.uniformData.cc_lightPos[i.v].w), float_N(0.0))) {
+            if (glIsMore_N_N(float_N((<any>this.uniformData.cc_lightPos)[i.v].w), float_N(0.0))) {
                 let s: StandardSurface = new StandardSurface()
                 glSet_Struct_Struct(s, __s__)
                 let shadowPos: Vec4Data = vec4()
                 glSet_V4_V4(shadowPos, __shadowPos__)
 
                 let cosInner: FloatData = float()
-                glSet_N_N(cosInner, max_N_N(dot_V3_V3(glNegative_V3(this.uniformData.cc_lightDir[i.v].xyz), SL), float_N(0.01)))
+                glSet_N_N(cosInner, max_N_N(dot_V3_V3(glNegative_V3((<any>this.uniformData.cc_lightDir)[i.v].xyz), SL), float_N(0.01)))
                 let cosOuter: FloatData = float()
-                glSet_N_N(cosOuter, float_N(this.uniformData.cc_lightSizeRangeAngle[i.v].z))
+                glSet_N_N(cosOuter, float_N((<any>this.uniformData.cc_lightSizeRangeAngle)[i.v].z))
                 let litAngleScale: FloatData = float()
                 glSet_N_N(litAngleScale, glDiv_N_N(float_N(1.0), max_N_N(float_N(0.001), glSub_N_N(cosInner, cosOuter))))
                 let litAngleOffset: FloatData = float()
                 glSet_N_N(litAngleOffset, glMul_N_N(glNegative_N(cosOuter), litAngleScale))
                 glMulSet_N_N(
                     att,
-                    this.GetAngleAtt_V3_V3_N_N(SL, glNegative_V3(this.uniformData.cc_lightDir[i.v].xyz), litAngleScale, litAngleOffset)
+                    this.GetAngleAtt_V3_V3_N_N(
+                        SL,
+                        glNegative_V3((<any>this.uniformData.cc_lightDir)[i.v].xyz),
+                        litAngleScale,
+                        litAngleOffset
+                    )
                 )
             }
             let lightColor: Vec3Data = vec3()
-            glSet_V3_V3(lightColor, this.uniformData.cc_lightColor[i.v].xyz)
-            if (glIsMore_N_N(float_N(this.uniformData.cc_lightPos[i.v].w), float_N(0.0))) {
+            glSet_V3_V3(lightColor, (<any>this.uniformData.cc_lightColor)[i.v].xyz)
+            if (glIsMore_N_N(float_N((<any>this.uniformData.cc_lightPos)[i.v].w), float_N(0.0))) {
                 let s: StandardSurface = new StandardSurface()
                 glSet_Struct_Struct(s, __s__)
                 let shadowPos: Vec4Data = vec4()
@@ -2672,7 +2678,7 @@ export class Impl_51be3ce9f0b7d7d460ec0b033a932277 extends FragShaderHandle {
                         clamp_N_N_N(
                             glSub_N_N(
                                 float_N(1.0),
-                                dot_V3_V3(N, normalize_V3(glSub_V3_V3(this.uniformData.cc_lightPos[i.v].xyz, s.position.xyz)))
+                                dot_V3_V3(N, normalize_V3(glSub_V3_V3((<any>this.uniformData.cc_lightPos)[i.v].xyz, s.position.xyz)))
                             ),
                             float_N(0.0),
                             float_N(1.0)
@@ -2700,7 +2706,7 @@ export class Impl_51be3ce9f0b7d7d460ec0b033a932277 extends FragShaderHandle {
                 finalColor,
                 glMul_V3_V3(
                     glMul_V3_N(
-                        glMul_V3_N(glMul_V3_N(glMul_N_V3(SNL, lightColor), float_N(this.uniformData.cc_lightColor[i.v].w)), illum),
+                        glMul_V3_N(glMul_V3_N(glMul_N_V3(SNL, lightColor), float_N((<any>this.uniformData.cc_lightColor)[i.v].w)), illum),
                         att
                     ),
                     glAdd_V3_V3(diffuseContrib, lspec)
@@ -2726,6 +2732,6 @@ export class Impl_51be3ce9f0b7d7d460ec0b033a932277 extends FragShaderHandle {
                 float_N(color.w)
             )
         )
-        glSet_V4_V4(gl_FragData[int_N(0).v], this.CCFragOutput_V4(color))
+        glSet_V4_V4((<any>gl_FragData)[int_N(0).v], this.CCFragOutput_V4(color))
     }
 }

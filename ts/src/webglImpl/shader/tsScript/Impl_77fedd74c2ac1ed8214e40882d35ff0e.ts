@@ -115,6 +115,7 @@ import {
     glAdd_V3_N,
     glDiv_V3_V3,
     getValueKeyByIndex,
+    getOutValueKeyByIndex,
 } from "../builtin/BuiltinOperator"
 import { gl_FragData, gl_FragColor, gl_Position, gl_FragCoord, gl_FragDepth, gl_FrontFacing, custom_isDiscard } from "../builtin/BuiltinVar"
 import { cpuRenderingContext } from "../../CpuRenderingContext"
@@ -206,7 +207,7 @@ export class Impl_77fedd74c2ac1ed8214e40882d35ff0e extends FragShaderHandle {
         let color: Vec4Data = vec4()
         glSet_V4_V4(color, __color__)
 
-        glSet_V3_V3(color.xyz, sqrt_V3(this.ACESToneMap_V3(color.out_xyz)))
+        glSet_V3_V3(color.out_xyz, sqrt_V3(this.ACESToneMap_V3(color.out_xyz)))
         return color
     }
     frag(): Vec4Data {

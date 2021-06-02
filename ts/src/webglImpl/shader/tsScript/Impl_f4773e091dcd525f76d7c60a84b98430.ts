@@ -117,6 +117,7 @@ import {
     glMul_N_N,
     glAdd_N_N,
     getValueKeyByIndex,
+    getOutValueKeyByIndex,
 } from "../builtin/BuiltinOperator"
 import { gl_FragData, gl_FragColor, gl_Position, gl_FragCoord, gl_FragDepth, gl_FrontFacing, custom_isDiscard } from "../builtin/BuiltinVar"
 import { cpuRenderingContext } from "../../CpuRenderingContext"
@@ -202,7 +203,7 @@ export class Impl_f4773e091dcd525f76d7c60a84b98430 extends FragShaderHandle {
                 glMul_N_N(float_N(0.0722), float_N(o.z))
             )
         )
-        o.x = o.y = o.z = gray.v
+        glSet_N_N(o.out_x, glSet_N_N(o.out_y, glSet_N_N(o.out_z, gray)))
         glMulSet_V4_V4(o, this.varyingData.color)
         this.ALPHA_TEST_V4(o)
         return o

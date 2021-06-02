@@ -108,7 +108,9 @@ import {
     glMul_M4_M4,
     glMul_M4_V4,
     glMul_N_N,
+    glSet_N_N,
     getValueKeyByIndex,
+    getOutValueKeyByIndex,
 } from "../builtin/BuiltinOperator"
 import { gl_FragData, gl_FragColor, gl_Position, gl_FragCoord, gl_FragDepth, gl_FrontFacing, custom_isDiscard } from "../builtin/BuiltinVar"
 import { cpuRenderingContext } from "../../CpuRenderingContext"
@@ -190,17 +192,17 @@ export class Impl_cc942b5cafaaee05ef888728bd9087a3 extends VertShaderHandle {
         glSet_M4_M4(matViewRotOnly, mat4_M3(mat3_M4(this.uniformData.cc_matView)))
         let matProj: Mat4Data = mat4()
         glSet_M4_M4(matProj, this.uniformData.cc_matProj)
-        if (glIsMore_N_N(float_N((<any>matProj)[getValueKeyByIndex(int_N(3))].w), float_N(0.0))) {
+        if (glIsMore_N_N(float_N((<any>matProj)[getOutValueKeyByIndex(int_N(3))].w), float_N(0.0))) {
             let scale: Vec2Data = vec2()
             glSet_V2_V2(scale, vec2_N_N(float_N(48.0), float_N(24.0)))
-            glMulSet_V2_V2((<any>matProj)[getValueKeyByIndex(int_N(0))].xy, scale)
-            glMulSet_V2_V2((<any>matProj)[getValueKeyByIndex(int_N(1))].xy, scale)
-            glSet_V2_V2((<any>matProj)[getValueKeyByIndex(int_N(2))].zw, vec2_N(glNegative_N(float_N(1.0))))
-            glSet_V2_V2((<any>matProj)[getValueKeyByIndex(int_N(3))].zw, vec2_N(float_N(0.0)))
+            glMulSet_V2_V2((<any>matProj)[getValueKeyByIndex(int_N(0))].out_xy, scale)
+            glMulSet_V2_V2((<any>matProj)[getValueKeyByIndex(int_N(1))].out_xy, scale)
+            glSet_V2_V2((<any>matProj)[getValueKeyByIndex(int_N(2))].out_zw, vec2_N(glNegative_N(float_N(1.0))))
+            glSet_V2_V2((<any>matProj)[getValueKeyByIndex(int_N(3))].out_zw, vec2_N(float_N(0.0)))
         }
         let pos: Vec4Data = vec4()
         glSet_V4_V4(pos, glMul_M4_V4(glMul_M4_M4(matProj, matViewRotOnly), this.varyingData.viewDir))
-        pos.z = glMul_N_N(float_N(0.99999), float_N(pos.w)).v
+        glSet_N_N(pos.out_z, glMul_N_N(float_N(0.99999), float_N(pos.w)))
         return pos
     }
     main(): void {

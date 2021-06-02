@@ -694,6 +694,7 @@ import {
     glSub_V2_N,
     glMul_V2_V2,
     getValueKeyByIndex,
+    getOutValueKeyByIndex,
 } from "../builtin/BuiltinOperator"
 import { gl_FragData, gl_FragColor, gl_Position, gl_FragCoord, gl_FragDepth, gl_FrontFacing, custom_isDiscard } from "../builtin/BuiltinVar"
 import { cpuRenderingContext } from "../../CpuRenderingContext"
@@ -823,10 +824,10 @@ export class Impl_ff4d69917f9f99c0d06100e766bc0ad9 extends VertShaderHandle {
             trace,
             glAdd_N_N(
                 glAdd_N_N(
-                    (<any>m)[getValueKeyByIndex(int_N(0))][getValueKeyByIndex(int_N(0))],
-                    (<any>m)[getValueKeyByIndex(int_N(1))][getValueKeyByIndex(int_N(1))]
+                    (<any>m)[getOutValueKeyByIndex(int_N(0))][getOutValueKeyByIndex(int_N(0))],
+                    (<any>m)[getOutValueKeyByIndex(int_N(1))][getOutValueKeyByIndex(int_N(1))]
                 ),
-                (<any>m)[getValueKeyByIndex(int_N(2))][getValueKeyByIndex(int_N(2))]
+                (<any>m)[getOutValueKeyByIndex(int_N(2))][getOutValueKeyByIndex(int_N(2))]
             )
         )
         let quat: Vec4Data = vec4()
@@ -840,36 +841,45 @@ export class Impl_ff4d69917f9f99c0d06100e766bc0ad9 extends VertShaderHandle {
 
             let s: FloatData = float()
             glSet_N_N(s, glDiv_N_N(float_N(0.5), sqrt_N(glAdd_N_N(trace, float_N(1.0)))))
-            quat.w = glDiv_N_N(float_N(0.25), s).v
-            quat.x = glMul_N_N(
-                glSub_N_N(
-                    (<any>m)[getValueKeyByIndex(int_N(2))][getValueKeyByIndex(int_N(1))],
-                    (<any>m)[getValueKeyByIndex(int_N(1))][getValueKeyByIndex(int_N(2))]
-                ),
-                s
-            ).v
-            quat.y = glMul_N_N(
-                glSub_N_N(
-                    (<any>m)[getValueKeyByIndex(int_N(0))][getValueKeyByIndex(int_N(2))],
-                    (<any>m)[getValueKeyByIndex(int_N(2))][getValueKeyByIndex(int_N(0))]
-                ),
-                s
-            ).v
-            quat.z = glMul_N_N(
-                glSub_N_N(
-                    (<any>m)[getValueKeyByIndex(int_N(1))][getValueKeyByIndex(int_N(0))],
-                    (<any>m)[getValueKeyByIndex(int_N(0))][getValueKeyByIndex(int_N(1))]
-                ),
-                s
-            ).v
+            glSet_N_N(quat.out_w, glDiv_N_N(float_N(0.25), s))
+            glSet_N_N(
+                quat.out_x,
+                glMul_N_N(
+                    glSub_N_N(
+                        (<any>m)[getOutValueKeyByIndex(int_N(2))][getOutValueKeyByIndex(int_N(1))],
+                        (<any>m)[getOutValueKeyByIndex(int_N(1))][getOutValueKeyByIndex(int_N(2))]
+                    ),
+                    s
+                )
+            )
+            glSet_N_N(
+                quat.out_y,
+                glMul_N_N(
+                    glSub_N_N(
+                        (<any>m)[getOutValueKeyByIndex(int_N(0))][getOutValueKeyByIndex(int_N(2))],
+                        (<any>m)[getOutValueKeyByIndex(int_N(2))][getOutValueKeyByIndex(int_N(0))]
+                    ),
+                    s
+                )
+            )
+            glSet_N_N(
+                quat.out_z,
+                glMul_N_N(
+                    glSub_N_N(
+                        (<any>m)[getOutValueKeyByIndex(int_N(1))][getOutValueKeyByIndex(int_N(0))],
+                        (<any>m)[getOutValueKeyByIndex(int_N(0))][getOutValueKeyByIndex(int_N(1))]
+                    ),
+                    s
+                )
+            )
         } else if (
             glIsMore_N_N(
-                (<any>m)[getValueKeyByIndex(int_N(0))][getValueKeyByIndex(int_N(0))],
-                (<any>m)[getValueKeyByIndex(int_N(1))][getValueKeyByIndex(int_N(1))]
+                (<any>m)[getOutValueKeyByIndex(int_N(0))][getOutValueKeyByIndex(int_N(0))],
+                (<any>m)[getOutValueKeyByIndex(int_N(1))][getOutValueKeyByIndex(int_N(1))]
             ) &&
             glIsMore_N_N(
-                (<any>m)[getValueKeyByIndex(int_N(0))][getValueKeyByIndex(int_N(0))],
-                (<any>m)[getValueKeyByIndex(int_N(2))][getValueKeyByIndex(int_N(2))]
+                (<any>m)[getOutValueKeyByIndex(int_N(0))][getOutValueKeyByIndex(int_N(0))],
+                (<any>m)[getOutValueKeyByIndex(int_N(2))][getOutValueKeyByIndex(int_N(2))]
             )
         ) {
             let xAxis: Vec3Data = vec3()
@@ -887,40 +897,49 @@ export class Impl_ff4d69917f9f99c0d06100e766bc0ad9 extends VertShaderHandle {
                     sqrt_N(
                         glSub_N_N(
                             glSub_N_N(
-                                glAdd_N_N(float_N(1.0), (<any>m)[getValueKeyByIndex(int_N(0))][getValueKeyByIndex(int_N(0))]),
-                                (<any>m)[getValueKeyByIndex(int_N(1))][getValueKeyByIndex(int_N(1))]
+                                glAdd_N_N(float_N(1.0), (<any>m)[getOutValueKeyByIndex(int_N(0))][getOutValueKeyByIndex(int_N(0))]),
+                                (<any>m)[getOutValueKeyByIndex(int_N(1))][getOutValueKeyByIndex(int_N(1))]
                             ),
-                            (<any>m)[getValueKeyByIndex(int_N(2))][getValueKeyByIndex(int_N(2))]
+                            (<any>m)[getOutValueKeyByIndex(int_N(2))][getOutValueKeyByIndex(int_N(2))]
                         )
                     )
                 )
             )
-            quat.w = glDiv_N_N(
-                glSub_N_N(
-                    (<any>m)[getValueKeyByIndex(int_N(2))][getValueKeyByIndex(int_N(1))],
-                    (<any>m)[getValueKeyByIndex(int_N(1))][getValueKeyByIndex(int_N(2))]
-                ),
-                s
-            ).v
-            quat.x = glMul_N_N(float_N(0.25), s).v
-            quat.y = glDiv_N_N(
-                glAdd_N_N(
-                    (<any>m)[getValueKeyByIndex(int_N(0))][getValueKeyByIndex(int_N(1))],
-                    (<any>m)[getValueKeyByIndex(int_N(1))][getValueKeyByIndex(int_N(0))]
-                ),
-                s
-            ).v
-            quat.z = glDiv_N_N(
-                glAdd_N_N(
-                    (<any>m)[getValueKeyByIndex(int_N(0))][getValueKeyByIndex(int_N(2))],
-                    (<any>m)[getValueKeyByIndex(int_N(2))][getValueKeyByIndex(int_N(0))]
-                ),
-                s
-            ).v
+            glSet_N_N(
+                quat.out_w,
+                glDiv_N_N(
+                    glSub_N_N(
+                        (<any>m)[getOutValueKeyByIndex(int_N(2))][getOutValueKeyByIndex(int_N(1))],
+                        (<any>m)[getOutValueKeyByIndex(int_N(1))][getOutValueKeyByIndex(int_N(2))]
+                    ),
+                    s
+                )
+            )
+            glSet_N_N(quat.out_x, glMul_N_N(float_N(0.25), s))
+            glSet_N_N(
+                quat.out_y,
+                glDiv_N_N(
+                    glAdd_N_N(
+                        (<any>m)[getOutValueKeyByIndex(int_N(0))][getOutValueKeyByIndex(int_N(1))],
+                        (<any>m)[getOutValueKeyByIndex(int_N(1))][getOutValueKeyByIndex(int_N(0))]
+                    ),
+                    s
+                )
+            )
+            glSet_N_N(
+                quat.out_z,
+                glDiv_N_N(
+                    glAdd_N_N(
+                        (<any>m)[getOutValueKeyByIndex(int_N(0))][getOutValueKeyByIndex(int_N(2))],
+                        (<any>m)[getOutValueKeyByIndex(int_N(2))][getOutValueKeyByIndex(int_N(0))]
+                    ),
+                    s
+                )
+            )
         } else if (
             glIsMore_N_N(
-                (<any>m)[getValueKeyByIndex(int_N(1))][getValueKeyByIndex(int_N(1))],
-                (<any>m)[getValueKeyByIndex(int_N(2))][getValueKeyByIndex(int_N(2))]
+                (<any>m)[getOutValueKeyByIndex(int_N(1))][getOutValueKeyByIndex(int_N(1))],
+                (<any>m)[getOutValueKeyByIndex(int_N(2))][getOutValueKeyByIndex(int_N(2))]
             )
         ) {
             let xAxis: Vec3Data = vec3()
@@ -938,36 +957,45 @@ export class Impl_ff4d69917f9f99c0d06100e766bc0ad9 extends VertShaderHandle {
                     sqrt_N(
                         glSub_N_N(
                             glSub_N_N(
-                                glAdd_N_N(float_N(1.0), (<any>m)[getValueKeyByIndex(int_N(1))][getValueKeyByIndex(int_N(1))]),
-                                (<any>m)[getValueKeyByIndex(int_N(0))][getValueKeyByIndex(int_N(0))]
+                                glAdd_N_N(float_N(1.0), (<any>m)[getOutValueKeyByIndex(int_N(1))][getOutValueKeyByIndex(int_N(1))]),
+                                (<any>m)[getOutValueKeyByIndex(int_N(0))][getOutValueKeyByIndex(int_N(0))]
                             ),
-                            (<any>m)[getValueKeyByIndex(int_N(2))][getValueKeyByIndex(int_N(2))]
+                            (<any>m)[getOutValueKeyByIndex(int_N(2))][getOutValueKeyByIndex(int_N(2))]
                         )
                     )
                 )
             )
-            quat.w = glDiv_N_N(
-                glSub_N_N(
-                    (<any>m)[getValueKeyByIndex(int_N(0))][getValueKeyByIndex(int_N(2))],
-                    (<any>m)[getValueKeyByIndex(int_N(2))][getValueKeyByIndex(int_N(0))]
-                ),
-                s
-            ).v
-            quat.x = glDiv_N_N(
-                glAdd_N_N(
-                    (<any>m)[getValueKeyByIndex(int_N(0))][getValueKeyByIndex(int_N(1))],
-                    (<any>m)[getValueKeyByIndex(int_N(1))][getValueKeyByIndex(int_N(0))]
-                ),
-                s
-            ).v
-            quat.y = glMul_N_N(float_N(0.25), s).v
-            quat.z = glDiv_N_N(
-                glAdd_N_N(
-                    (<any>m)[getValueKeyByIndex(int_N(1))][getValueKeyByIndex(int_N(2))],
-                    (<any>m)[getValueKeyByIndex(int_N(2))][getValueKeyByIndex(int_N(1))]
-                ),
-                s
-            ).v
+            glSet_N_N(
+                quat.out_w,
+                glDiv_N_N(
+                    glSub_N_N(
+                        (<any>m)[getOutValueKeyByIndex(int_N(0))][getOutValueKeyByIndex(int_N(2))],
+                        (<any>m)[getOutValueKeyByIndex(int_N(2))][getOutValueKeyByIndex(int_N(0))]
+                    ),
+                    s
+                )
+            )
+            glSet_N_N(
+                quat.out_x,
+                glDiv_N_N(
+                    glAdd_N_N(
+                        (<any>m)[getOutValueKeyByIndex(int_N(0))][getOutValueKeyByIndex(int_N(1))],
+                        (<any>m)[getOutValueKeyByIndex(int_N(1))][getOutValueKeyByIndex(int_N(0))]
+                    ),
+                    s
+                )
+            )
+            glSet_N_N(quat.out_y, glMul_N_N(float_N(0.25), s))
+            glSet_N_N(
+                quat.out_z,
+                glDiv_N_N(
+                    glAdd_N_N(
+                        (<any>m)[getOutValueKeyByIndex(int_N(1))][getOutValueKeyByIndex(int_N(2))],
+                        (<any>m)[getOutValueKeyByIndex(int_N(2))][getOutValueKeyByIndex(int_N(1))]
+                    ),
+                    s
+                )
+            )
         } else {
             let xAxis: Vec3Data = vec3()
             glSet_V3_V3(xAxis, __xAxis__)
@@ -984,36 +1012,45 @@ export class Impl_ff4d69917f9f99c0d06100e766bc0ad9 extends VertShaderHandle {
                     sqrt_N(
                         glSub_N_N(
                             glSub_N_N(
-                                glAdd_N_N(float_N(1.0), (<any>m)[getValueKeyByIndex(int_N(2))][getValueKeyByIndex(int_N(2))]),
-                                (<any>m)[getValueKeyByIndex(int_N(0))][getValueKeyByIndex(int_N(0))]
+                                glAdd_N_N(float_N(1.0), (<any>m)[getOutValueKeyByIndex(int_N(2))][getOutValueKeyByIndex(int_N(2))]),
+                                (<any>m)[getOutValueKeyByIndex(int_N(0))][getOutValueKeyByIndex(int_N(0))]
                             ),
-                            (<any>m)[getValueKeyByIndex(int_N(1))][getValueKeyByIndex(int_N(1))]
+                            (<any>m)[getOutValueKeyByIndex(int_N(1))][getOutValueKeyByIndex(int_N(1))]
                         )
                     )
                 )
             )
-            quat.w = glDiv_N_N(
-                glSub_N_N(
-                    (<any>m)[getValueKeyByIndex(int_N(1))][getValueKeyByIndex(int_N(0))],
-                    (<any>m)[getValueKeyByIndex(int_N(0))][getValueKeyByIndex(int_N(1))]
-                ),
-                s
-            ).v
-            quat.x = glDiv_N_N(
-                glAdd_N_N(
-                    (<any>m)[getValueKeyByIndex(int_N(0))][getValueKeyByIndex(int_N(2))],
-                    (<any>m)[getValueKeyByIndex(int_N(2))][getValueKeyByIndex(int_N(0))]
-                ),
-                s
-            ).v
-            quat.y = glDiv_N_N(
-                glAdd_N_N(
-                    (<any>m)[getValueKeyByIndex(int_N(1))][getValueKeyByIndex(int_N(2))],
-                    (<any>m)[getValueKeyByIndex(int_N(2))][getValueKeyByIndex(int_N(1))]
-                ),
-                s
-            ).v
-            quat.z = glMul_N_N(float_N(0.25), s).v
+            glSet_N_N(
+                quat.out_w,
+                glDiv_N_N(
+                    glSub_N_N(
+                        (<any>m)[getOutValueKeyByIndex(int_N(1))][getOutValueKeyByIndex(int_N(0))],
+                        (<any>m)[getOutValueKeyByIndex(int_N(0))][getOutValueKeyByIndex(int_N(1))]
+                    ),
+                    s
+                )
+            )
+            glSet_N_N(
+                quat.out_x,
+                glDiv_N_N(
+                    glAdd_N_N(
+                        (<any>m)[getOutValueKeyByIndex(int_N(0))][getOutValueKeyByIndex(int_N(2))],
+                        (<any>m)[getOutValueKeyByIndex(int_N(2))][getOutValueKeyByIndex(int_N(0))]
+                    ),
+                    s
+                )
+            )
+            glSet_N_N(
+                quat.out_y,
+                glDiv_N_N(
+                    glAdd_N_N(
+                        (<any>m)[getOutValueKeyByIndex(int_N(1))][getOutValueKeyByIndex(int_N(2))],
+                        (<any>m)[getOutValueKeyByIndex(int_N(2))][getOutValueKeyByIndex(int_N(1))]
+                    ),
+                    s
+                )
+            )
+            glSet_N_N(quat.out_z, glMul_N_N(float_N(0.25), s))
         }
 
         let len: FloatData = float()
@@ -1036,10 +1073,10 @@ export class Impl_ff4d69917f9f99c0d06100e766bc0ad9 extends VertShaderHandle {
             glSet_V3_V3(zAxis, __zAxis__)
 
             glSet_N_N(len, glDiv_N_N(float_N(1), sqrt_N(len)))
-            quat.x = glMul_N_N(float_N(quat.x), len).v
-            quat.y = glMul_N_N(float_N(quat.y), len).v
-            quat.z = glMul_N_N(float_N(quat.z), len).v
-            quat.w = glMul_N_N(float_N(quat.w), len).v
+            glSet_N_N(quat.out_x, glMul_N_N(float_N(quat.x), len))
+            glSet_N_N(quat.out_y, glMul_N_N(float_N(quat.y), len))
+            glSet_N_N(quat.out_z, glMul_N_N(float_N(quat.z), len))
+            glSet_N_N(quat.out_w, glMul_N_N(float_N(quat.w), len))
         }
         return quat
     }
@@ -1067,10 +1104,10 @@ export class Impl_ff4d69917f9f99c0d06100e766bc0ad9 extends VertShaderHandle {
         glSet_N_N(cz, cos_N(z))
         let quat: Vec4Data = vec4()
         glSet_V4_V4(quat, vec4_N(int_N(0)))
-        quat.x = glAdd_N_N(glMul_N_N(glMul_N_N(sx, cy), cz), glMul_N_N(glMul_N_N(cx, sy), sz)).v
-        quat.y = glAdd_N_N(glMul_N_N(glMul_N_N(cx, sy), cz), glMul_N_N(glMul_N_N(sx, cy), sz)).v
-        quat.z = glSub_N_N(glMul_N_N(glMul_N_N(cx, cy), sz), glMul_N_N(glMul_N_N(sx, sy), cz)).v
-        quat.w = glSub_N_N(glMul_N_N(glMul_N_N(cx, cy), cz), glMul_N_N(glMul_N_N(sx, sy), sz)).v
+        glSet_N_N(quat.out_x, glAdd_N_N(glMul_N_N(glMul_N_N(sx, cy), cz), glMul_N_N(glMul_N_N(cx, sy), sz)))
+        glSet_N_N(quat.out_y, glAdd_N_N(glMul_N_N(glMul_N_N(cx, sy), cz), glMul_N_N(glMul_N_N(sx, cy), sz)))
+        glSet_N_N(quat.out_z, glSub_N_N(glMul_N_N(glMul_N_N(cx, cy), sz), glMul_N_N(glMul_N_N(sx, sy), cz)))
+        glSet_N_N(quat.out_w, glSub_N_N(glMul_N_N(glMul_N_N(cx, cy), cz), glMul_N_N(glMul_N_N(sx, sy), sz)))
         return quat
     }
     matrixFromRT_V4_V3(__q__: Vec4Data, __p__: Vec3Data): Mat4Data {
@@ -1194,34 +1231,46 @@ export class Impl_ff4d69917f9f99c0d06100e766bc0ad9 extends VertShaderHandle {
         glSet_V4_V4(b, __b__)
 
         let quat: Vec4Data = vec4()
-        quat.x = glSub_N_N(
-            glAdd_N_N(
-                glAdd_N_N(glMul_N_N(float_N(a.x), float_N(b.w)), glMul_N_N(float_N(a.w), float_N(b.x))),
-                glMul_N_N(float_N(a.y), float_N(b.z))
-            ),
-            glMul_N_N(float_N(a.z), float_N(b.y))
-        ).v
-        quat.y = glSub_N_N(
-            glAdd_N_N(
-                glAdd_N_N(glMul_N_N(float_N(a.y), float_N(b.w)), glMul_N_N(float_N(a.w), float_N(b.y))),
-                glMul_N_N(float_N(a.z), float_N(b.x))
-            ),
-            glMul_N_N(float_N(a.x), float_N(b.z))
-        ).v
-        quat.z = glSub_N_N(
-            glAdd_N_N(
-                glAdd_N_N(glMul_N_N(float_N(a.z), float_N(b.w)), glMul_N_N(float_N(a.w), float_N(b.z))),
-                glMul_N_N(float_N(a.x), float_N(b.y))
-            ),
-            glMul_N_N(float_N(a.y), float_N(b.x))
-        ).v
-        quat.w = glSub_N_N(
+        glSet_N_N(
+            quat.out_x,
             glSub_N_N(
-                glSub_N_N(glMul_N_N(float_N(a.w), float_N(b.w)), glMul_N_N(float_N(a.x), float_N(b.x))),
-                glMul_N_N(float_N(a.y), float_N(b.y))
-            ),
-            glMul_N_N(float_N(a.z), float_N(b.z))
-        ).v
+                glAdd_N_N(
+                    glAdd_N_N(glMul_N_N(float_N(a.x), float_N(b.w)), glMul_N_N(float_N(a.w), float_N(b.x))),
+                    glMul_N_N(float_N(a.y), float_N(b.z))
+                ),
+                glMul_N_N(float_N(a.z), float_N(b.y))
+            )
+        )
+        glSet_N_N(
+            quat.out_y,
+            glSub_N_N(
+                glAdd_N_N(
+                    glAdd_N_N(glMul_N_N(float_N(a.y), float_N(b.w)), glMul_N_N(float_N(a.w), float_N(b.y))),
+                    glMul_N_N(float_N(a.z), float_N(b.x))
+                ),
+                glMul_N_N(float_N(a.x), float_N(b.z))
+            )
+        )
+        glSet_N_N(
+            quat.out_z,
+            glSub_N_N(
+                glAdd_N_N(
+                    glAdd_N_N(glMul_N_N(float_N(a.z), float_N(b.w)), glMul_N_N(float_N(a.w), float_N(b.z))),
+                    glMul_N_N(float_N(a.x), float_N(b.y))
+                ),
+                glMul_N_N(float_N(a.y), float_N(b.x))
+            )
+        )
+        glSet_N_N(
+            quat.out_w,
+            glSub_N_N(
+                glSub_N_N(
+                    glSub_N_N(glMul_N_N(float_N(a.w), float_N(b.w)), glMul_N_N(float_N(a.x), float_N(b.x))),
+                    glMul_N_N(float_N(a.y), float_N(b.y))
+                ),
+                glMul_N_N(float_N(a.z), float_N(b.z))
+            )
+        )
         return quat
     }
     rotateVecFromQuat_V3_V4(v: Vec3Data, __q__: Vec4Data): void {
@@ -1260,27 +1309,36 @@ export class Impl_ff4d69917f9f99c0d06100e766bc0ad9 extends VertShaderHandle {
                 glMul_N_N(float_N(q.z), float_N(v.z))
             )
         )
-        v.x = glSub_N_N(
-            glAdd_N_N(
-                glAdd_N_N(glMul_N_N(ix, float_N(q.w)), glMul_N_N(iw, glNegative_N(float_N(q.x)))),
-                glMul_N_N(iy, glNegative_N(float_N(q.z)))
-            ),
-            glMul_N_N(iz, glNegative_N(float_N(q.y)))
-        ).v
-        v.y = glSub_N_N(
-            glAdd_N_N(
-                glAdd_N_N(glMul_N_N(iy, float_N(q.w)), glMul_N_N(iw, glNegative_N(float_N(q.y)))),
-                glMul_N_N(iz, glNegative_N(float_N(q.x)))
-            ),
-            glMul_N_N(ix, glNegative_N(float_N(q.z)))
-        ).v
-        v.z = glSub_N_N(
-            glAdd_N_N(
-                glAdd_N_N(glMul_N_N(iz, float_N(q.w)), glMul_N_N(iw, glNegative_N(float_N(q.z)))),
-                glMul_N_N(ix, glNegative_N(float_N(q.y)))
-            ),
-            glMul_N_N(iy, glNegative_N(float_N(q.x)))
-        ).v
+        glSet_N_N(
+            v.out_x,
+            glSub_N_N(
+                glAdd_N_N(
+                    glAdd_N_N(glMul_N_N(ix, float_N(q.w)), glMul_N_N(iw, glNegative_N(float_N(q.x)))),
+                    glMul_N_N(iy, glNegative_N(float_N(q.z)))
+                ),
+                glMul_N_N(iz, glNegative_N(float_N(q.y)))
+            )
+        )
+        glSet_N_N(
+            v.out_y,
+            glSub_N_N(
+                glAdd_N_N(
+                    glAdd_N_N(glMul_N_N(iy, float_N(q.w)), glMul_N_N(iw, glNegative_N(float_N(q.y)))),
+                    glMul_N_N(iz, glNegative_N(float_N(q.x)))
+                ),
+                glMul_N_N(ix, glNegative_N(float_N(q.z)))
+            )
+        )
+        glSet_N_N(
+            v.out_z,
+            glSub_N_N(
+                glAdd_N_N(
+                    glAdd_N_N(glMul_N_N(iz, float_N(q.w)), glMul_N_N(iw, glNegative_N(float_N(q.z)))),
+                    glMul_N_N(ix, glNegative_N(float_N(q.y)))
+                ),
+                glMul_N_N(iy, glNegative_N(float_N(q.x)))
+            )
+        )
     }
     rotateInLocalSpace_V3_V3_V3_V3_V4(
         __pos__: Vec3Data,
@@ -1315,8 +1373,8 @@ export class Impl_ff4d69917f9f99c0d06100e766bc0ad9 extends VertShaderHandle {
         glSet_N_N(xOS, glSub_N_N(glMul_N_N(cos_N(angle), float_N(corner.x)), glMul_N_N(sin_N(angle), float_N(corner.y))))
         let yOS: FloatData = float()
         glSet_N_N(yOS, glAdd_N_N(glMul_N_N(sin_N(angle), float_N(corner.x)), glMul_N_N(cos_N(angle), float_N(corner.y))))
-        corner.x = xOS.v
-        corner.y = yOS.v
+        glSet_N_N(corner.out_x, xOS)
+        glSet_N_N(corner.out_y, yOS)
     }
     computeVertPos_V4_V2_V4_V3_M4(pos: Vec4Data, __vertOffset__: Vec2Data, __q__: Vec4Data, __s__: Vec3Data, __viewInv__: Mat4Data): void {
         let vertOffset: Vec2Data = vec2()
@@ -1338,9 +1396,9 @@ export class Impl_ff4d69917f9f99c0d06100e766bc0ad9 extends VertShaderHandle {
             camX,
             normalize_V3(
                 vec3_N_N_N(
-                    (<any>viewInv)[getValueKeyByIndex(int_N(0))][getValueKeyByIndex(int_N(0))],
-                    (<any>viewInv)[getValueKeyByIndex(int_N(1))][getValueKeyByIndex(int_N(0))],
-                    (<any>viewInv)[getValueKeyByIndex(int_N(2))][getValueKeyByIndex(int_N(0))]
+                    (<any>viewInv)[getOutValueKeyByIndex(int_N(0))][getOutValueKeyByIndex(int_N(0))],
+                    (<any>viewInv)[getOutValueKeyByIndex(int_N(1))][getOutValueKeyByIndex(int_N(0))],
+                    (<any>viewInv)[getOutValueKeyByIndex(int_N(2))][getOutValueKeyByIndex(int_N(0))]
                 )
             )
         )
@@ -1349,9 +1407,9 @@ export class Impl_ff4d69917f9f99c0d06100e766bc0ad9 extends VertShaderHandle {
             camY,
             normalize_V3(
                 vec3_N_N_N(
-                    (<any>viewInv)[getValueKeyByIndex(int_N(0))][getValueKeyByIndex(int_N(1))],
-                    (<any>viewInv)[getValueKeyByIndex(int_N(1))][getValueKeyByIndex(int_N(1))],
-                    (<any>viewInv)[getValueKeyByIndex(int_N(2))][getValueKeyByIndex(int_N(1))]
+                    (<any>viewInv)[getOutValueKeyByIndex(int_N(0))][getOutValueKeyByIndex(int_N(1))],
+                    (<any>viewInv)[getOutValueKeyByIndex(int_N(1))][getOutValueKeyByIndex(int_N(1))],
+                    (<any>viewInv)[getOutValueKeyByIndex(int_N(2))][getOutValueKeyByIndex(int_N(1))]
                 )
             )
         )
@@ -1360,13 +1418,13 @@ export class Impl_ff4d69917f9f99c0d06100e766bc0ad9 extends VertShaderHandle {
             camZ,
             normalize_V3(
                 vec3_N_N_N(
-                    (<any>viewInv)[getValueKeyByIndex(int_N(0))][getValueKeyByIndex(int_N(2))],
-                    (<any>viewInv)[getValueKeyByIndex(int_N(1))][getValueKeyByIndex(int_N(2))],
-                    (<any>viewInv)[getValueKeyByIndex(int_N(2))][getValueKeyByIndex(int_N(2))]
+                    (<any>viewInv)[getOutValueKeyByIndex(int_N(0))][getOutValueKeyByIndex(int_N(2))],
+                    (<any>viewInv)[getOutValueKeyByIndex(int_N(1))][getOutValueKeyByIndex(int_N(2))],
+                    (<any>viewInv)[getOutValueKeyByIndex(int_N(2))][getOutValueKeyByIndex(int_N(2))]
                 )
             )
         )
-        glAddSet_V3_V3(pos.xyz, this.rotateInLocalSpace_V3_V3_V3_V3_V4(viewSpaceVert, camX, camY, camZ, q))
+        glAddSet_V3_V3(pos.out_xyz, this.rotateInLocalSpace_V3_V3_V3_V3_V4(viewSpaceVert, camX, camY, camZ, q))
     }
     computeUV_N_V2_V2(__frameIndex__: FloatData, __vertIndex__: Vec2Data, __frameTile__: Vec2Data): Vec2Data {
         let frameIndex: FloatData = float()
@@ -1378,13 +1436,16 @@ export class Impl_ff4d69917f9f99c0d06100e766bc0ad9 extends VertShaderHandle {
 
         let aniUV: Vec2Data = vec2()
         glSet_V2_V2(aniUV, vec2_N_N(int_N(0), floor_N(glMul_N_N(frameIndex, float_N(frameTile.y)))))
-        aniUV.x = floor_N(
-            glSub_N_N(
-                glMul_N_N(glMul_N_N(frameIndex, float_N(frameTile.x)), float_N(frameTile.y)),
-                glMul_N_N(float_N(aniUV.y), float_N(frameTile.x))
+        glSet_N_N(
+            aniUV.out_x,
+            floor_N(
+                glSub_N_N(
+                    glMul_N_N(glMul_N_N(frameIndex, float_N(frameTile.x)), float_N(frameTile.y)),
+                    glMul_N_N(float_N(aniUV.y), float_N(frameTile.x))
+                )
             )
-        ).v
-        vertIndex.y = glSub_N_N(float_N(1), float_N(vertIndex.y)).v
+        )
+        glSet_N_N(vertIndex.out_y, glSub_N_N(float_N(1), float_N(vertIndex.y)))
         return glDiv_V2_V2(glAdd_V2_V2(aniUV.xy, vertIndex), vec2_N_N(float_N(frameTile.x), float_N(frameTile.y)))
     }
     unpackCurveData_N_V2(__tex__: Sampler2D, __coord__: Vec2Data): Vec3Data {
@@ -1464,7 +1525,7 @@ export class Impl_ff4d69917f9f99c0d06100e766bc0ad9 extends VertShaderHandle {
         glSet_V3_V3(size, this.attributeData.a_size_uv.xyz)
         let compScale: Vec3Data = vec3()
         glSet_V3_V3(compScale, glMul_V3_V3(this.uniformData.scale.xyz, size))
-        glAddSet_V3_V3(pos.xyz, glMul_V3_N(glMul_V3_N(velocity.xyz, normalizedTime), float_N(this.attributeData.a_dir_life.w)))
+        glAddSet_V3_V3(pos.out_xyz, glMul_V3_N(glMul_V3_N(velocity.xyz, normalizedTime), float_N(this.attributeData.a_dir_life.w)))
         glSet_V4_V4(pos, glMul_M4_V4(this.uniformData.cc_matWorld, pos))
         let rotation: Vec3Data = vec3()
         glSet_V3_V3(rotation, this.attributeData.a_rotation_uv.xyz)

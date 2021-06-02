@@ -385,6 +385,7 @@ import {
     glAdd_V2_V2,
     glDiv_N_N,
     getValueKeyByIndex,
+    getOutValueKeyByIndex,
 } from "../builtin/BuiltinOperator"
 import { gl_FragData, gl_FragColor, gl_Position, gl_FragCoord, gl_FragDepth, gl_FrontFacing, custom_isDiscard } from "../builtin/BuiltinVar"
 import { cpuRenderingContext } from "../../CpuRenderingContext"
@@ -498,7 +499,7 @@ export class Impl_ebab70d339fdb03467d11e92a5086ea5 extends VertShaderHandle {
             Sign,
             glSub_N_N(
                 float_N(1.0),
-                glMul_N_N(step_N_N(float_N(128.0), glAdd_N_N((<any>rgba)[getValueKeyByIndex(int_N(3))], float_N(0.5))), float_N(2.0))
+                glMul_N_N(step_N_N(float_N(128.0), glAdd_N_N((<any>rgba)[getOutValueKeyByIndex(int_N(3))], float_N(0.5))), float_N(2.0))
             )
         )
         let Exponent: FloatData = float()
@@ -508,9 +509,9 @@ export class Impl_ebab70d339fdb03467d11e92a5086ea5 extends VertShaderHandle {
                 glAdd_N_N(
                     glMul_N_N(
                         float_N(2.0),
-                        mod_N_N(float_N(int_N(glAdd_N_N((<any>rgba)[getValueKeyByIndex(int_N(3))], float_N(0.5)))), float_N(128.0))
+                        mod_N_N(float_N(int_N(glAdd_N_N((<any>rgba)[getOutValueKeyByIndex(int_N(3))], float_N(0.5)))), float_N(128.0))
                     ),
-                    step_N_N(float_N(128.0), glAdd_N_N((<any>rgba)[getValueKeyByIndex(int_N(2))], float_N(0.5)))
+                    step_N_N(float_N(128.0), glAdd_N_N((<any>rgba)[getOutValueKeyByIndex(int_N(2))], float_N(0.5)))
                 ),
                 float_N(127.0)
             )
@@ -522,12 +523,12 @@ export class Impl_ebab70d339fdb03467d11e92a5086ea5 extends VertShaderHandle {
                 glAdd_N_N(
                     glAdd_N_N(
                         glMul_N_N(
-                            mod_N_N(float_N(int_N(glAdd_N_N((<any>rgba)[getValueKeyByIndex(int_N(2))], float_N(0.5)))), float_N(128.0)),
+                            mod_N_N(float_N(int_N(glAdd_N_N((<any>rgba)[getOutValueKeyByIndex(int_N(2))], float_N(0.5)))), float_N(128.0)),
                             float_N(65536.0)
                         ),
-                        glMul_N_N((<any>rgba)[getValueKeyByIndex(int_N(1))], float_N(256.0))
+                        glMul_N_N((<any>rgba)[getOutValueKeyByIndex(int_N(1))], float_N(256.0))
                     ),
-                    (<any>rgba)[getValueKeyByIndex(int_N(0))]
+                    (<any>rgba)[getOutValueKeyByIndex(int_N(0))]
                 ),
                 float_N(8388608.0)
             )
