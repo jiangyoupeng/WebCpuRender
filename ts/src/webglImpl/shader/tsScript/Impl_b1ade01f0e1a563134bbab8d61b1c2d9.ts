@@ -45,6 +45,45 @@ return pos;
 }
 void main() { gl_Position = vs_main(); }
 */
+/*
+fact do glsl source: 
+#define CC_USE_HDR 0
+#define CC_USE_WORLD_SPACE 0
+#define CC_DRAW_WIRE_FRAME 0
+#define CC_RENDER_MODE 0
+#define CC_EFFECT_USED_FRAGMENT_UNIFORM_VECTORS 38
+#define CC_EFFECT_USED_VERTEX_UNIFORM_VECTORS 49
+#define CC_DEVICE_MAX_FRAGMENT_UNIFORM_VECTORS 1024
+#define CC_DEVICE_MAX_VERTEX_UNIFORM_VECTORS 4095
+#define CC_DEVICE_SUPPORT_FLOAT_TEXTURE 0
+
+precision mediump float;
+uniform vec4 mainTiling_Offset;
+uniform highp mat4 cc_matViewProj;
+uniform highp vec4 cc_cameraPos;
+uniform highp mat4 cc_matWorld;
+varying mediump vec2 uv;
+varying mediump vec4 color;
+attribute vec3 a_position;
+attribute vec4 a_texCoord;
+attribute vec3 a_texCoord1;
+attribute vec3 a_texCoord2;
+attribute vec4 a_color;
+vec4 vs_main() {
+highp vec4 pos = vec4(a_position, 1);
+vec4 velocity = vec4(a_texCoord1.xyz, 0);
+pos = cc_matWorld * pos;
+velocity = cc_matWorld * velocity;
+float vertOffset = (a_texCoord.x - 0.5) * a_texCoord.y;
+vec3 camUp = normalize(cross(pos.xyz - cc_cameraPos.xyz, velocity.xyz));
+pos.xyz += camUp * vertOffset;
+pos = cc_matViewProj * pos;
+uv = a_texCoord.zw * mainTiling_Offset.xy + mainTiling_Offset.zw;;
+color = a_color;
+return pos;
+}
+void main() { gl_Position = vs_main(); }
+*/
 import {
     vec4_V3_N,
     cross_V3_V3,
@@ -101,11 +140,11 @@ let CC_DRAW_WIRE_FRAME = new FloatData(0)
 let CC_USE_WORLD_SPACE = new FloatData(0)
 let CC_USE_HDR = new FloatData(0)
 class AttributeDataImpl implements AttributeData {
-    a_position: Vec3Data = new Vec3Data()!
-    a_texCoord: Vec4Data = new Vec4Data()!
-    a_texCoord1: Vec3Data = new Vec3Data()!
-    a_texCoord2: Vec3Data = new Vec3Data()!
-    a_color: Vec4Data = new Vec4Data()!
+    a_position: Vec3Data = new Vec3Data()
+    a_texCoord: Vec4Data = new Vec4Data()
+    a_texCoord1: Vec3Data = new Vec3Data()
+    a_texCoord2: Vec3Data = new Vec3Data()
+    a_color: Vec4Data = new Vec4Data()
     dataKeys: Map<string, any> = new Map([
         ["a_position", cpuRenderingContext.cachGameGl.FLOAT_VEC3],
         ["a_texCoord", cpuRenderingContext.cachGameGl.FLOAT_VEC4],

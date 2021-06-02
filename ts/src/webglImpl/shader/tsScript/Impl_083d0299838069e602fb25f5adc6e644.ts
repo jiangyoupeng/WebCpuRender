@@ -30,6 +30,35 @@ return CCFragOutput(col);
 }
 void main() { gl_FragColor = add(); }
 */
+/*
+fact do glsl source: 
+#define CC_USE_HDR 0
+#define CC_USE_WORLD_SPACE 0
+#define CC_RENDER_MODE 0
+#define CC_EFFECT_USED_FRAGMENT_UNIFORM_VECTORS 38
+#define CC_EFFECT_USED_VERTEX_UNIFORM_VECTORS 49
+#define CC_DEVICE_MAX_FRAGMENT_UNIFORM_VECTORS 1024
+#define CC_DEVICE_MAX_VERTEX_UNIFORM_VECTORS 4095
+#define CC_DEVICE_SUPPORT_FLOAT_TEXTURE 0
+
+precision mediump float;
+uniform mediump vec4 cc_exposure;
+vec3 SRGBToLinear (vec3 gamma) {
+return gamma * gamma;
+}
+vec4 CCFragOutput (vec4 color) {
+return color;
+}
+varying vec2 uv;
+varying vec4 color;
+uniform sampler2D mainTexture;
+uniform vec4 tintColor;
+vec4 add () {
+vec4 col = 2.0 * color * tintColor * texture2D(mainTexture, uv);
+return CCFragOutput(col);
+}
+void main() { gl_FragColor = add(); }
+*/
 import { texture2D_N_V2, float, float_N, bool, bool_N, int_N, int, vec4, vec3, vec2, mat3, mat4 } from "../builtin/BuiltinFunc"
 import { glSet_V2_V2, glSet_V4_V4, glSet_V3_V3, glMul_V3_V3, glMul_N_V4, glMul_V4_V4, getValueKeyByIndex } from "../builtin/BuiltinOperator"
 import { gl_FragData, gl_FragColor, gl_Position, gl_FragCoord, gl_FragDepth, gl_FrontFacing, custom_isDiscard } from "../builtin/BuiltinVar"

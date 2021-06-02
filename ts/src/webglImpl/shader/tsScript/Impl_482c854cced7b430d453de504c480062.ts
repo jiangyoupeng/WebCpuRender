@@ -26,6 +26,27 @@ return o;
 }
 void main() { gl_FragColor = frag(); }
 */
+/*
+fact do glsl source: 
+#define CC_EFFECT_USED_FRAGMENT_UNIFORM_VECTORS 0
+#define CC_EFFECT_USED_VERTEX_UNIFORM_VECTORS 46
+#define CC_DEVICE_MAX_FRAGMENT_UNIFORM_VECTORS 1024
+#define CC_DEVICE_MAX_VERTEX_UNIFORM_VECTORS 4095
+#define CC_DEVICE_SUPPORT_FLOAT_TEXTURE 0
+
+precision highp float;
+varying vec4 v_color;
+varying float v_dist;
+vec4 frag () {
+vec4 o = v_color;
+float aa = 0.05;
+float alpha = 1. - smoothstep(-aa, 0., abs(v_dist) - 1.0);
+o.rgb *= o.a;
+o *= alpha;
+return o;
+}
+void main() { gl_FragColor = frag(); }
+*/
 import { abs_N, smoothstep_N_N_N, float, float_N, bool, bool_N, int_N, int, vec4, vec3, vec2, mat3, mat4 } from "../builtin/BuiltinFunc"
 import {
     glSet_V4_V4,

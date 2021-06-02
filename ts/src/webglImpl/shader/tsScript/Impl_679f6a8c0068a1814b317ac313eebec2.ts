@@ -81,6 +81,89 @@ texcoords(fragCoord, resolution, v_rgbNW, v_rgbNE, v_rgbSW, v_rgbSE, v_rgbM);
 gl_FragColor = fxaa(cc_lighting_resultMap, fragCoord, resolution, v_rgbNW, v_rgbNE, v_rgbSW, v_rgbSE, v_rgbM);
 }
 */
+/*
+fact do glsl source: 
+#define USE_INSTANCING 0
+#define CC_USE_BAKED_ANIMATION 0
+#define CC_USE_SKINNING 0
+#define CC_MORPH_TARGET_HAS_TANGENT 0
+#define CC_MORPH_TARGET_HAS_NORMAL 0
+#define CC_MORPH_TARGET_HAS_POSITION 0
+#define CC_MORPH_PRECOMPUTED 0
+#define CC_MORPH_TARGET_COUNT 2
+#define CC_USE_MORPH 0
+#define CC_EFFECT_USED_FRAGMENT_UNIFORM_VECTORS 37
+#define CC_EFFECT_USED_VERTEX_UNIFORM_VECTORS 145
+
+precision highp float;
+uniform mediump vec4 cc_screenSize;
+varying vec2 v_uv;
+uniform sampler2D cc_lighting_resultMap;
+void texcoords(vec2 fragCoord, vec2 resolution,
+out vec2 v_rgbNW, out vec2 v_rgbNE,
+out vec2 v_rgbSW, out vec2 v_rgbSE,
+out vec2 v_rgbM) {
+vec2 inverseVP = 1.0 / resolution.xy;
+v_rgbNW = (fragCoord + vec2(-1.0, -1.0)) * inverseVP;
+v_rgbNE = (fragCoord + vec2(1.0, -1.0)) * inverseVP;
+v_rgbSW = (fragCoord + vec2(-1.0, 1.0)) * inverseVP;
+v_rgbSE = (fragCoord + vec2(1.0, 1.0)) * inverseVP;
+v_rgbM = vec2(fragCoord * inverseVP);
+}
+vec4 fxaa(sampler2D tex, vec2 fragCoord, vec2 resolution,
+vec2 v_rgbNW, vec2 v_rgbNE,
+vec2 v_rgbSW, vec2 v_rgbSE,
+vec2 v_rgbM) {
+vec4 color;
+mediump vec2 inverseVP = vec2(1.0 / resolution.x, 1.0 / resolution.y);
+vec3 rgbNW = texture2D(tex, v_rgbNW).xyz;
+vec3 rgbNE = texture2D(tex, v_rgbNE).xyz;
+vec3 rgbSW = texture2D(tex, v_rgbSW).xyz;
+vec3 rgbSE = texture2D(tex, v_rgbSE).xyz;
+vec4 texColor = texture2D(tex, v_rgbM);
+vec3 rgbM  = texColor.xyz;
+vec3 luma = vec3(0.299, 0.587, 0.114);
+float lumaNW = dot(rgbNW, luma);
+float lumaNE = dot(rgbNE, luma);
+float lumaSW = dot(rgbSW, luma);
+float lumaSE = dot(rgbSE, luma);
+float lumaM  = dot(rgbM,  luma);
+float lumaMin = min(lumaM, min(min(lumaNW, lumaNE), min(lumaSW, lumaSE)));
+float lumaMax = max(lumaM, max(max(lumaNW, lumaNE), max(lumaSW, lumaSE)));
+mediump vec2 dir;
+dir.x = -((lumaNW + lumaNE) - (lumaSW + lumaSE));
+dir.y =  ((lumaNW + lumaSW) - (lumaNE + lumaSE));
+float dirReduce = max((lumaNW + lumaNE + lumaSW + lumaSE) *
+(0.25 * (1.0 / 8.0)), (1.0/ 128.0));
+float rcpDirMin = 1.0 / (min(abs(dir.x), abs(dir.y)) + dirReduce);
+dir = min(vec2(8.0, 8.0),
+max(vec2(-8.0, -8.0),
+dir * rcpDirMin)) * inverseVP;
+vec3 rgbA = 0.5 * (
+texture2D(tex, fragCoord * inverseVP + dir * (1.0 / 3.0 - 0.5)).xyz +
+texture2D(tex, fragCoord * inverseVP + dir * (2.0 / 3.0 - 0.5)).xyz);
+vec3 rgbB = rgbA * 0.5 + 0.25 * (
+texture2D(tex, fragCoord * inverseVP + dir * -0.5).xyz +
+texture2D(tex, fragCoord * inverseVP + dir * 0.5).xyz);
+float lumaB = dot(rgbB, luma);
+if ((lumaB < lumaMin) || (lumaB > lumaMax))
+color = vec4(rgbA, texColor.a);
+else
+color = vec4(rgbB, texColor.a);
+return color;
+}
+void main () {
+mediump vec2 v_rgbNW;
+mediump vec2 v_rgbNE;
+mediump vec2 v_rgbSW;
+mediump vec2 v_rgbSE;
+mediump vec2 v_rgbM;
+vec2 resolution = cc_screenSize.xy;
+vec2 fragCoord = v_uv * resolution;
+texcoords(fragCoord, resolution, v_rgbNW, v_rgbNE, v_rgbSW, v_rgbSE, v_rgbM);
+gl_FragColor = fxaa(cc_lighting_resultMap, fragCoord, resolution, v_rgbNW, v_rgbNE, v_rgbSW, v_rgbSE, v_rgbM);
+}
+*/
 import {
     vec2_N_N,
     vec2_V2,

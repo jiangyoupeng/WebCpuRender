@@ -44,6 +44,46 @@ return CCFragOutput(vec4(c * cc_ambientSky.w, 1.0));
 }
 void main() { gl_FragColor = frag(); }
 */
+/*
+fact do glsl source: 
+#define USE_RGBE_CUBEMAP 0
+#define CC_USE_HDR 0
+#define CC_USE_IBL 0
+#define CC_EFFECT_USED_FRAGMENT_UNIFORM_VECTORS 37
+#define CC_EFFECT_USED_VERTEX_UNIFORM_VECTORS 37
+#define CC_DEVICE_MAX_FRAGMENT_UNIFORM_VECTORS 1024
+#define CC_DEVICE_MAX_VERTEX_UNIFORM_VECTORS 4095
+#define CC_DEVICE_SUPPORT_FLOAT_TEXTURE 0
+
+precision mediump float;
+uniform mediump vec4 cc_ambientSky;
+uniform samplerCube cc_environment;
+vec3 unpackRGBE (vec4 rgbe) {
+return rgbe.rgb * pow(2.0, rgbe.a * 255.0 - 128.0);
+}
+vec3 SRGBToLinear (vec3 gamma) {
+return gamma * gamma;
+}
+vec3 ACESToneMap (vec3 color) {
+color = min(color, vec3(8.0));
+const float A = 2.51;
+const float B = 0.03;
+const float C = 2.43;
+const float D = 0.59;
+const float E = 0.14;
+return (color * (A * color + B)) / (color * (C * color + D) + E);
+}
+vec4 CCFragOutput (vec4 color) {
+color.rgb = sqrt(ACESToneMap(color.rgb));
+return color;
+}
+varying mediump vec4 viewDir;
+vec4 frag () {
+vec3 c = SRGBToLinear(textureCube(cc_environment, viewDir.xyz).rgb);
+return CCFragOutput(vec4(c * cc_ambientSky.w, 1.0));
+}
+void main() { gl_FragColor = frag(); }
+*/
 import {
     pow_N_N,
     vec3_N,

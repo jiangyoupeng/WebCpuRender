@@ -66,6 +66,53 @@ return CCFragOutput(o);
 }
 void main() { gl_FragColor = frag(); }
 */
+/*
+fact do glsl source: 
+#define USE_ALPHA_TEST 0
+#define CC_USE_HDR 0
+#define SAMPLE_FROM_RT 0
+#define USE_TEXTURE 0
+#define USE_VERTEX_COLOR 0
+#define CC_FORWARD_ADD 0
+#define CC_USE_FOG 0
+#define USE_LIGHTMAP 0
+#define USE_BATCHING 0
+#define USE_INSTANCING 0
+#define CC_USE_BAKED_ANIMATION 0
+#define CC_USE_SKINNING 0
+#define CC_MORPH_TARGET_HAS_TANGENT 0
+#define CC_MORPH_TARGET_HAS_NORMAL 0
+#define CC_MORPH_TARGET_HAS_POSITION 0
+#define CC_MORPH_PRECOMPUTED 0
+#define CC_MORPH_TARGET_COUNT 2
+#define CC_USE_MORPH 0
+#define CC_EFFECT_USED_FRAGMENT_UNIFORM_VECTORS 39
+#define CC_EFFECT_USED_VERTEX_UNIFORM_VECTORS 195
+#define CC_DEVICE_MAX_FRAGMENT_UNIFORM_VECTORS 1024
+#define CC_DEVICE_MAX_VERTEX_UNIFORM_VECTORS 4095
+#define CC_DEVICE_SUPPORT_FLOAT_TEXTURE 0
+#define ALPHA_TEST_CHANNEL a
+
+precision highp float;
+uniform mediump vec4 cc_exposure;
+uniform mediump vec4 cc_fogColor;
+vec3 SRGBToLinear (vec3 gamma) {
+return gamma * gamma;
+}
+vec4 CCFragOutput (vec4 color) {
+return color;
+}
+varying float v_fog_factor;
+uniform vec4 mainColor;
+uniform vec4 colorScaleAndCutoff;
+vec4 frag () {
+vec4 o = mainColor;
+o.rgb *= colorScaleAndCutoff.xyz;
+o = vec4(mix(CC_FORWARD_ADD > 0 ? vec3(0.0) : cc_fogColor.rgb, o.rgb, v_fog_factor), o.a);
+return CCFragOutput(o);
+}
+void main() { gl_FragColor = frag(); }
+*/
 import {
     vec3_N,
     mix_V3_V3_N,

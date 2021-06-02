@@ -45,6 +45,34 @@ return o;
 }
 void main() { gl_FragColor = frag(); }
 */
+/*
+fact do glsl source: 
+#define USE_ALPHA_TEST 0
+#define TWO_COLORED 0
+#define USE_LOCAL 0
+#define CC_EFFECT_USED_FRAGMENT_UNIFORM_VECTORS 1
+#define CC_EFFECT_USED_VERTEX_UNIFORM_VECTORS 46
+#define CC_DEVICE_MAX_FRAGMENT_UNIFORM_VECTORS 1024
+#define CC_DEVICE_MAX_VERTEX_UNIFORM_VECTORS 4095
+#define CC_DEVICE_SUPPORT_FLOAT_TEXTURE 0
+
+precision highp float;
+void ALPHA_TEST (in vec4 color) {
+}
+void ALPHA_TEST (in float alpha) {
+}
+varying vec4 v_light;
+varying vec2 uv0;
+uniform sampler2D cc_spriteTexture;
+vec4 frag () {
+vec4 o = vec4(1, 1, 1, 1);
+o *= texture2D(cc_spriteTexture, uv0);
+o *= v_light;
+ALPHA_TEST(o);
+return o;
+}
+void main() { gl_FragColor = frag(); }
+*/
 import {
     vec4_N_N_N_N,
     texture2D_N_V2,

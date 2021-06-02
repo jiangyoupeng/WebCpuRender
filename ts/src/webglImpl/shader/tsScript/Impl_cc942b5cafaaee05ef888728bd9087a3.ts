@@ -39,6 +39,47 @@ return pos;
 }
 void main() { gl_Position = vert(); }
 */
+/*
+fact do glsl source: 
+#define USE_RGBE_CUBEMAP 0
+#define CC_USE_HDR 0
+#define CC_USE_IBL 0
+#define CC_EFFECT_USED_FRAGMENT_UNIFORM_VECTORS 37
+#define CC_EFFECT_USED_VERTEX_UNIFORM_VECTORS 37
+#define CC_DEVICE_MAX_FRAGMENT_UNIFORM_VECTORS 1024
+#define CC_DEVICE_MAX_VERTEX_UNIFORM_VECTORS 4095
+#define CC_DEVICE_SUPPORT_FLOAT_TEXTURE 0
+
+precision highp float;
+uniform highp mat4 cc_matView;
+uniform highp mat4 cc_matProj;
+struct StandardVertInput {
+highp vec4 position;
+vec3 normal;
+vec4 tangent;
+};
+attribute vec3 a_position;
+attribute vec3 a_normal;
+attribute vec2 a_texCoord;
+attribute vec4 a_tangent;
+varying mediump vec4 viewDir;
+vec4 vert () {
+viewDir = vec4(a_position, 1.0);
+mat4 matViewRotOnly = mat4(mat3(cc_matView));
+mat4 matProj = cc_matProj;
+if (matProj[3].w > 0.0) {
+vec2 scale = vec2(48.0, 24.0);
+matProj[0].xy *= scale;
+matProj[1].xy *= scale;
+matProj[2].zw = vec2(-1.0);
+matProj[3].zw = vec2(0.0);
+}
+vec4 pos = matProj * matViewRotOnly * viewDir;
+pos.z = 0.99999 * pos.w;
+return pos;
+}
+void main() { gl_Position = vert(); }
+*/
 import {
     vec4_V3_N,
     mat3_M4,
@@ -98,10 +139,10 @@ class StandardVertInput implements StructData {
     tangent: Vec4Data = vec4()
 }
 class AttributeDataImpl implements AttributeData {
-    a_position: Vec3Data = new Vec3Data()!
-    a_normal: Vec3Data = new Vec3Data()!
-    a_texCoord: Vec2Data = new Vec2Data()!
-    a_tangent: Vec4Data = new Vec4Data()!
+    a_position: Vec3Data = new Vec3Data()
+    a_normal: Vec3Data = new Vec3Data()
+    a_texCoord: Vec2Data = new Vec2Data()
+    a_tangent: Vec4Data = new Vec4Data()
     dataKeys: Map<string, any> = new Map([
         ["a_position", cpuRenderingContext.cachGameGl.FLOAT_VEC3],
         ["a_normal", cpuRenderingContext.cachGameGl.FLOAT_VEC3],

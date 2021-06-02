@@ -627,6 +627,163 @@ void surf (out StandardSurface s) {
   }
 #endif
 */
+/*
+fact do glsl source: 
+#define CC_PIPELINE_TYPE 0
+#define USE_ALPHA_TEST 0
+#define USE_EMISSIVE_MAP 0
+#define USE_OCCLUSION_MAP 0
+#define USE_METALLIC_ROUGHNESS_MAP 0
+#define USE_PBR_MAP 0
+#define USE_ALBEDO_MAP 1
+#define CC_USE_HDR 0
+#define CC_USE_IBL 0
+#define SAMPLE_FROM_RT 0
+#define HAS_SECOND_UV 0
+#define USE_NORMAL_MAP 0
+#define USE_VERTEX_COLOR 0
+#define CC_RECEIVE_SHADOW 0
+#define CC_FORWARD_ADD 0
+#define CC_USE_FOG 4
+#define USE_LIGHTMAP 0
+#define USE_BATCHING 0
+#define USE_INSTANCING 0
+#define CC_USE_BAKED_ANIMATION 0
+#define CC_USE_SKINNING 0
+#define CC_MORPH_TARGET_HAS_TANGENT 0
+#define CC_MORPH_TARGET_HAS_NORMAL 0
+#define CC_MORPH_TARGET_HAS_POSITION 0
+#define CC_MORPH_PRECOMPUTED 0
+#define CC_MORPH_TARGET_COUNT 2
+#define CC_USE_MORPH 0
+#define CC_EFFECT_USED_FRAGMENT_UNIFORM_VECTORS 59
+#define CC_EFFECT_USED_VERTEX_UNIFORM_VECTORS 216
+#define CC_DEVICE_MAX_FRAGMENT_UNIFORM_VECTORS 1024
+#define CC_DEVICE_MAX_VERTEX_UNIFORM_VECTORS 4095
+#define CC_DEVICE_SUPPORT_FLOAT_TEXTURE 0
+#define ALPHA_TEST_CHANNEL a
+#define EMISSIVE_UV v_uv
+#define PBR_UV v_uv
+#define NORMAL_UV v_uv
+#define ALBEDO_UV v_uv
+
+precision highp float;
+uniform highp vec4 cc_cameraPos;
+  uniform mediump vec4 cc_exposure;
+  uniform mediump vec4 cc_mainLitDir;
+  uniform mediump vec4 cc_mainLitColor;
+  uniform mediump vec4 cc_ambientSky;
+  uniform mediump vec4 cc_ambientGround;
+  uniform mediump vec4 cc_fogColor;
+     uniform vec4 albedo;
+     uniform vec4 albedoScaleAndCutoff;
+     uniform vec4 pbrParams;
+     uniform vec4 emissive;
+     uniform vec4 emissiveScaleParam;
+varying float v_fog_factor;
+vec3 SRGBToLinear (vec3 gamma) {
+  return gamma * gamma;
+}
+uniform highp mat4 cc_matLightView;
+  uniform lowp vec4 cc_shadowNFLSInfo;
+  uniform lowp vec4 cc_shadowWHPBInfo;
+  uniform lowp vec4 cc_shadowLPNNInfo;
+  uniform lowp vec4 cc_shadowColor;
+float GGXMobile (float roughness, float NoH, vec3 H, vec3 N) {
+  vec3 NxH = cross(N, H);
+  float OneMinusNoHSqr = dot(NxH, NxH);
+  float a = roughness * roughness;
+  float n = NoH * a;
+  float p = a / (OneMinusNoHSqr + n * n);
+  return p * p;
+}
+float CalcSpecular (float roughness, float NoH, vec3 H, vec3 N) {
+  return (roughness * 0.25 + 0.25) * GGXMobile(roughness, NoH, H, N);
+}
+vec3 BRDFApprox (vec3 specular, float roughness, float NoV) {
+  const vec4 c0 = vec4(-1.0, -0.0275, -0.572, 0.022);
+  const vec4 c1 = vec4(1.0, 0.0425, 1.04, -0.04);
+  vec4 r = roughness * c0 + c1;
+  float a004 = min(r.x * r.x, exp2(-9.28 * NoV)) * r.x + r.y;
+  vec2 AB = vec2(-1.04, 1.04) * a004 + r.zw;
+  AB.y *= clamp(50.0 * specular.g, 0.0, 1.0);
+  return specular * AB.x + AB.y;
+}
+struct StandardSurface {
+  vec4 albedo;
+  vec3 position;
+  vec3 normal;
+  vec3 emissive;
+  vec3 lightmap;
+  float lightmap_test;
+  float roughness;
+  float metallic;
+  float occlusion;
+};
+vec4 CCStandardShadingBase (StandardSurface s, vec4 shadowPos) {
+  vec3 diffuse = s.albedo.rgb * (1.0 - s.metallic);
+  vec3 specular = mix(vec3(0.04), s.albedo.rgb, s.metallic);
+  vec3 N = normalize(s.normal);
+  vec3 V = normalize(cc_cameraPos.xyz - s.position);
+  float NV = max(abs(dot(N, V)), 0.001);
+  specular = BRDFApprox(specular, s.roughness, NV);
+  vec3 L = normalize(-cc_mainLitDir.xyz);
+  vec3 H = normalize(L + V);
+  float NH = max(dot(N, H), 0.0);
+  float NL = max(dot(N, L), 0.001);
+  vec3 finalColor = NL * cc_mainLitColor.rgb * cc_mainLitColor.w;
+  vec3 diffuseContrib = diffuse;
+    diffuseContrib /= 3.14159265359;
+  vec3 specularContrib = specular * CalcSpecular(s.roughness, NH, H, N);
+  finalColor *= (diffuseContrib + specularContrib);
+  float fAmb = 0.5 - N.y * 0.5;
+  vec3 ambDiff = mix(cc_ambientSky.rgb, cc_ambientGround.rgb, fAmb) * cc_ambientSky.w;
+  finalColor += (ambDiff.rgb * diffuse);
+  finalColor = finalColor * s.occlusion;
+  finalColor += s.emissive;
+  return vec4(finalColor, s.albedo.a);
+}
+vec3 ACESToneMap (vec3 color) {
+  color = min(color, vec3(8.0));
+  const float A = 2.51;
+  const float B = 0.03;
+  const float C = 2.43;
+  const float D = 0.59;
+  const float E = 0.14;
+  return (color * (A * color + B)) / (color * (C * color + D) + E);
+}
+vec4 CCFragOutput (vec4 color) {
+    color.rgb = sqrt(ACESToneMap(color.rgb));
+  return color;
+}
+varying highp vec4 v_shadowPos;
+varying vec3 v_position;
+varying vec2 v_uv;
+varying vec2 v_uv1;
+varying vec3 v_normal;
+  uniform sampler2D albedoMap;
+void surf (out StandardSurface s) {
+  vec4 baseColor = albedo;
+    vec4 texColor = texture2D(albedoMap, v_uv);
+    texColor.rgb = SRGBToLinear(texColor.rgb);
+    baseColor *= texColor;
+  s.albedo = baseColor;
+  s.albedo.rgb *= albedoScaleAndCutoff.xyz;
+  s.normal = v_normal;
+  s.position = v_position;
+  vec4 pbr = pbrParams;
+  s.occlusion = clamp(pbr.x, 0.0, 0.96);
+  s.roughness = clamp(pbr.y, 0.04, 1.0);
+  s.metallic = pbr.z;
+  s.emissive = emissive.rgb * emissiveScaleParam.xyz;
+}
+  void main () {
+    StandardSurface s; surf(s);
+    vec4 color = CCStandardShadingBase(s, v_shadowPos);
+    color = vec4(mix(CC_FORWARD_ADD > 0 ? vec3(0.0) : cc_fogColor.rgb, color.rgb, v_fog_factor), color.a);
+    gl_FragData[0] = CCFragOutput(color);
+  }
+*/
 import {
     cross_V3_V3,
     dot_V3_V3,
@@ -943,25 +1100,25 @@ export class Impl_b7ee481f59661c68ac91aae453fcaa0d extends FragShaderHandle {
             finalColor,
             glMul_V3_N(glMul_N_V3(NL, this.uniformData.cc_mainLitColor.xyz), float_N(this.uniformData.cc_mainLitColor.w))
         )
-        let diffuseContrib: Vec3Data = vec3()
-        glSet_V3_V3(diffuseContrib, diffuse)
-        glDivSet_V3_N(diffuseContrib, float_N(3.14159265359))
-        let specularContrib: Vec3Data = vec3()
-        glSet_V3_V3(specularContrib, glMul_V3_N(specular, this.CalcSpecular_N_N_V3_V3(s.roughness, NH, H, N)))
-        glMulSet_V3_V3(finalColor, glAdd_V3_V3(diffuseContrib, specularContrib))
-        let fAmb: FloatData = float()
-        glSet_N_N(fAmb, glSub_N_N(float_N(0.5), glMul_N_N(float_N(N.y), float_N(0.5))))
-        let ambDiff: Vec3Data = vec3()
-        glSet_V3_V3(
-            ambDiff,
-            glMul_V3_N(
-                mix_V3_V3_N(this.uniformData.cc_ambientSky.xyz, this.uniformData.cc_ambientGround.xyz, fAmb),
-                float_N(this.uniformData.cc_ambientSky.w)
-            )
-        )
-        glAddSet_V3_V3(finalColor, glMul_V3_V3(ambDiff.xyz, diffuse))
-        glSet_V3_V3(finalColor, glMul_V3_N(finalColor, s.occlusion))
-        glAddSet_V3_V3(finalColor, s.emissive)
+        // let diffuseContrib: Vec3Data = vec3()
+        // glSet_V3_V3(diffuseContrib, diffuse)
+        // glDivSet_V3_N(diffuseContrib, float_N(3.14159265359))
+        // let specularContrib: Vec3Data = vec3()
+        // glSet_V3_V3(specularContrib, glMul_V3_N(specular, this.CalcSpecular_N_N_V3_V3(s.roughness, NH, H, N)))
+        // glMulSet_V3_V3(finalColor, glAdd_V3_V3(diffuseContrib, specularContrib))
+        // let fAmb: FloatData = float()
+        // glSet_N_N(fAmb, glSub_N_N(float_N(0.5), glMul_N_N(float_N(N.y), float_N(0.5))))
+        // let ambDiff: Vec3Data = vec3()
+        // glSet_V3_V3(
+        //     ambDiff,
+        //     glMul_V3_N(
+        //         mix_V3_V3_N(this.uniformData.cc_ambientSky.xyz, this.uniformData.cc_ambientGround.xyz, fAmb),
+        //         float_N(this.uniformData.cc_ambientSky.w)
+        //     )
+        // )
+        // glAddSet_V3_V3(finalColor, glMul_V3_V3(ambDiff.xyz, diffuse))
+        // glSet_V3_V3(finalColor, glMul_V3_N(finalColor, s.occlusion))
+        // glAddSet_V3_V3(finalColor, s.emissive)
         return vec4_V3_N(finalColor, float_N(s.albedo.w))
     }
     ACESToneMap_V3(__color__: Vec3Data): Vec3Data {
@@ -1014,17 +1171,17 @@ export class Impl_b7ee481f59661c68ac91aae453fcaa0d extends FragShaderHandle {
         this.surf_StandardSurface(s)
         let color: Vec4Data = vec4()
         glSet_V4_V4(color, this.CCStandardShadingBase_StandardSurface_V4(s, this.varyingData.v_shadowPos))
-        glSet_V4_V4(
-            color,
-            vec4_V3_N(
-                mix_V3_V3_N(
-                    glIsMore_N_N(CC_FORWARD_ADD, int_N(0)) ? vec3_N(float_N(0.0)) : this.uniformData.cc_fogColor.xyz,
-                    color.xyz,
-                    this.varyingData.v_fog_factor
-                ),
-                float_N(color.w)
-            )
-        )
+        // glSet_V4_V4(
+        //     color,
+        //     vec4_V3_N(
+        //         mix_V3_V3_N(
+        //             glIsMore_N_N(CC_FORWARD_ADD, int_N(0)) ? vec3_N(float_N(0.0)) : this.uniformData.cc_fogColor.xyz,
+        //             color.xyz,
+        //             this.varyingData.v_fog_factor
+        //         ),
+        //         float_N(color.w)
+        //     )
+        // )
         glSet_V4_V4(gl_FragData[int_N(0).v], this.CCFragOutput_V4(color))
     }
 }

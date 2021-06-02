@@ -288,6 +288,71 @@ return clipPos;
 }
 void main() { gl_Position = vert(); }
 */
+/*
+fact do glsl source: 
+#define USE_ALPHA_TEST 0
+#define USE_ALBEDO_MAP 0
+#define HAS_SECOND_UV 0
+#define USE_LIGHTMAP 0
+#define USE_BATCHING 0
+#define USE_INSTANCING 0
+#define CC_USE_BAKED_ANIMATION 0
+#define CC_USE_SKINNING 0
+#define CC_MORPH_TARGET_HAS_TANGENT 0
+#define CC_MORPH_TARGET_HAS_NORMAL 0
+#define CC_MORPH_TARGET_HAS_POSITION 0
+#define CC_MORPH_PRECOMPUTED 0
+#define CC_MORPH_TARGET_COUNT 2
+#define CC_USE_MORPH 0
+#define CC_EFFECT_USED_FRAGMENT_UNIFORM_VECTORS 22
+#define CC_EFFECT_USED_VERTEX_UNIFORM_VECTORS 179
+#define CC_DEVICE_MAX_FRAGMENT_UNIFORM_VECTORS 1024
+#define CC_DEVICE_MAX_VERTEX_UNIFORM_VECTORS 4095
+#define CC_DEVICE_SUPPORT_FLOAT_TEXTURE 0
+#define ALPHA_TEST_CHANNEL a
+#define ALBEDO_UV v_uv
+
+precision highp float;
+highp float decode32 (highp vec4 rgba) {
+rgba = rgba * 255.0;
+highp float Sign = 1.0 - (step(128.0, (rgba[3]) + 0.5)) * 2.0;
+highp float Exponent = 2.0 * (mod(float(int((rgba[3]) + 0.5)), 128.0)) + (step(128.0, (rgba[2]) + 0.5)) - 127.0;
+highp float Mantissa = (mod(float(int((rgba[2]) + 0.5)), 128.0)) * 65536.0 + rgba[1] * 256.0 + rgba[0] + 8388608.0;
+return Sign * exp2(Exponent - 23.0) * Mantissa;
+}
+struct StandardVertInput {
+highp vec4 position;
+vec3 normal;
+vec4 tangent;
+};
+attribute vec3 a_position;
+attribute vec3 a_normal;
+attribute vec2 a_texCoord;
+attribute vec4 a_tangent;
+uniform highp mat4 cc_matWorld;
+uniform highp mat4 cc_matWorldIT;
+uniform vec4 tilingOffset;
+uniform highp mat4 cc_matLightViewProj;
+varying vec2 v_uv;
+varying vec2 v_uv1;
+varying vec4 v_worldPos;
+varying float v_clip_depth;
+vec4 vert () {
+StandardVertInput In;
+In.position = vec4(a_position, 1.0);
+In.normal = a_normal;
+In.tangent = a_tangent;
+mat4 matWorld, matWorldIT;
+matWorld = cc_matWorld;
+matWorldIT = cc_matWorldIT;
+v_worldPos = matWorld * In.position;
+vec4 clipPos = cc_matLightViewProj * v_worldPos;
+v_uv = a_texCoord * tilingOffset.xy + tilingOffset.zw;
+v_clip_depth = clipPos.z / clipPos.w * 0.5 + 0.5;
+return clipPos;
+}
+void main() { gl_Position = vert(); }
+*/
 import {
     step_N_N,
     int_N,
@@ -361,10 +426,10 @@ class StandardVertInput implements StructData {
     tangent: Vec4Data = vec4()
 }
 class AttributeDataImpl implements AttributeData {
-    a_position: Vec3Data = new Vec3Data()!
-    a_normal: Vec3Data = new Vec3Data()!
-    a_texCoord: Vec2Data = new Vec2Data()!
-    a_tangent: Vec4Data = new Vec4Data()!
+    a_position: Vec3Data = new Vec3Data()
+    a_normal: Vec3Data = new Vec3Data()
+    a_texCoord: Vec2Data = new Vec2Data()
+    a_tangent: Vec4Data = new Vec4Data()
     dataKeys: Map<string, any> = new Map([
         ["a_position", cpuRenderingContext.cachGameGl.FLOAT_VEC3],
         ["a_normal", cpuRenderingContext.cachGameGl.FLOAT_VEC3],

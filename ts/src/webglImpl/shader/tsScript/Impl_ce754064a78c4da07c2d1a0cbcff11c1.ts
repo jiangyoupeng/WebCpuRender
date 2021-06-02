@@ -171,6 +171,162 @@ vec4 frag () {
 }
 void main() { gl_FragColor = frag(); }
 */
+/*
+fact do glsl source: 
+#define CC_PIPELINE_TYPE 0
+#define CC_USE_IBL 0
+#define HAS_SECOND_UV 0
+#define CC_RECEIVE_SHADOW 0
+#define CC_FORWARD_ADD 0
+#define CC_USE_FOG 0
+#define USE_LIGHTMAP 0
+#define USE_BATCHING 0
+#define USE_INSTANCING 0
+#define CC_USE_BAKED_ANIMATION 0
+#define CC_USE_SKINNING 0
+#define CC_MORPH_TARGET_HAS_TANGENT 0
+#define CC_MORPH_TARGET_HAS_NORMAL 0
+#define CC_MORPH_TARGET_HAS_POSITION 0
+#define CC_MORPH_PRECOMPUTED 0
+#define CC_MORPH_TARGET_COUNT 2
+#define CC_USE_MORPH 0
+#define CC_EFFECT_USED_FRAGMENT_UNIFORM_VECTORS 54
+#define CC_EFFECT_USED_VERTEX_UNIFORM_VECTORS 210
+#define CC_DEVICE_MAX_FRAGMENT_UNIFORM_VECTORS 1024
+#define CC_DEVICE_MAX_VERTEX_UNIFORM_VECTORS 4095
+#define CC_DEVICE_SUPPORT_FLOAT_TEXTURE 0
+
+precision highp float;
+varying float v_fog_factor;
+struct StandardSurface {
+  vec4 albedo;
+  vec3 position;
+  vec3 normal;
+  vec3 emissive;
+  vec3 lightmap;
+  float lightmap_test;
+  float roughness;
+  float metallic;
+  float occlusion;
+};
+varying vec2 v_uv;
+uniform sampler2D mainTexture;
+varying float factor_fog;
+   uniform vec4 mainColor;
+void test1Func(float asvdsx, inout float asv, in float qwes, out float qwescxs){
+}
+vec4 frag () {
+  float a = 1.;
+  a++;
+  a--;
+  ++a;
+  --a;
+  vec3 I = vec3(1,0,0);
+  I++;
+  I--;
+  --I;
+  ++I;
+  mat3 mat3test = mat3(1.,1.,1.,1.,1.,1.,0.1,0.2,0.3);
+  mat3test--;
+  mat3test++;
+  StandardSurface s;
+  s.position.xy = vec2(0.1,0.5);
+  StandardSurface s1 = s;
+  s1.position.xy = vec2(0,0);
+  if (v_uv.x < 0.5){
+    vec3 v_uv;
+    v_uv = vec3(1,1,1);
+  }else{
+    vec2 v_uv;
+    v_uv = vec2(0,0);
+  }
+  const int qweqeas = 1;
+  vec3 testV3 = vec3(0.5);
+  vec3 Nref = vec3(0.5,0,0);
+  I += 3.;
+  I += I.zyx;
+  I -= I.zyx;
+  I -= 3.;
+  I = -I;
+  I *= 1.;
+  I /= 1.;
+  vec3 N = vec3(0.5,0.5,0.5);
+  vec3 t = normalize(N);
+  I += 1.;
+  I += a;
+  float b = 2.;
+  b += a;
+  float c = 2.;
+  float gg, bb, tt = 1.;
+  float wwww, www = a, zzz = b = c = 1. + gg + I.x;
+  vec2 yx = vec2(I.xy + (c + (a + b * c * (a + b) * c) * b + I.x + dot(I, N)));
+  yx.x = 2. + vec2(I.xy + (c + (a + b * c * (a + b) * c) * b + I.x + dot(I, N))).x;
+  yx[qweqeas+0] = 1.;
+  for (int i = 1; i < 3; i++) {
+  }
+  vec4 asd = vec4(1,1,1,1);
+  asd.stpq = vec4(1,1,1,1);
+  vec2 te = vec2(1,1);
+  asd =  asd / 0.5;
+  float tes = asd.r;
+  vec2 stepTest = step(te, te);
+  mat3 matrix3 = mat3(1.,1.,1.,1.,1.,1.,0.1,0.2,0.3);
+  mat4 matrix4 = mat4(matrix3);
+  vec4 matrix4Test = matrix4[0];
+  matrix4Test.x = 0.;
+  matrix4Test.y = 0.;
+  matrix4Test.z = 0.;
+  matrix4Test.w = 0.;
+  matrix4[0] = matrix4Test;
+  matrix4[0][0] = 1.;
+  matrix4[0][1] = 1.;
+  matrix4[0][2] = 1.;
+  matrix4[0][3] = 1.;
+  vec4 test = vec4(0.5);
+  test[1] = 2.;
+  test[1] *= 1.;
+  test = test * matrix4;
+  vec4 test1 = vec4(test.xy, 1., 1.);
+  vec4 col = mainColor * texture2D(mainTexture, v_uv);
+  vec4 vec4TestA = vec4(1,1,1,1);
+  vec4 vec4TestB = vec4TestA;
+  a = 0.;
+  bool tqweqwe = a > 0.;
+  if (a > 0.9){
+  }else if(a > 0.8){
+  }else if(a > 0.7){
+  }else{
+  }
+  if (tqweqwe){}
+  for (int i = 1;  (i < 3); i++) {
+      int tes = 3;
+  }
+  vec4 color;
+  float lumaB;
+  float lumaMin;
+  float lumaMax;
+  if ((lumaB < lumaMin) || (lumaB > lumaMax)){
+      color = vec4(2);
+  }else{
+      color = vec4(2);
+  }
+  if ((lumaB < lumaMin) || (lumaB > lumaMax))
+    color = vec4(1);
+  else if (lumaB < lumaMin)
+    color = vec4(1);
+  else if (lumaB > lumaMax)
+    color = vec4(1);
+  else
+    color = vec4(1);
+  color.x = 1.;
+  color.y = 1.;
+  color.z = 1.;
+  color.w = 1.;
+  test1Func((color.x + color.y + color.z + color).z , color.y, color.z, color.w);
+  return vec4(color);
+}
+void main() { gl_FragColor = frag(); }
+*/
 import {
     vec3_N_N_N,
     mat3_N_N_N_N_N_N_N_N_N,

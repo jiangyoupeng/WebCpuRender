@@ -34,6 +34,42 @@ gl_Position = vec4(position.x, position.y, 1.0, 1.0);
 v_uv = a_texCoord;
 }
 */
+/*
+fact do glsl source: 
+#define CC_USE_FOG 4
+#define CC_PIPELINE_TYPE 0
+#define CC_USE_HDR 0
+#define CC_FORWARD_ADD 0
+#define USE_BATCHING 0
+#define USE_LIGHTMAP 0
+#define CC_USE_IBL 0
+#define CC_RECEIVE_SHADOW 0
+#define CC_EFFECT_USED_FRAGMENT_UNIFORM_VECTORS 53
+#define CC_EFFECT_USED_VERTEX_UNIFORM_VECTORS 37
+#define CC_DEVICE_MAX_FRAGMENT_UNIFORM_VECTORS 1024
+#define CC_DEVICE_MAX_VERTEX_UNIFORM_VECTORS 4095
+#define CC_DEVICE_SUPPORT_FLOAT_TEXTURE 0
+
+precision highp float;
+struct StandardVertInput {
+highp vec4 position;
+vec3 normal;
+vec4 tangent;
+};
+attribute vec3 a_position;
+attribute vec3 a_normal;
+attribute vec2 a_texCoord;
+attribute vec4 a_tangent;
+uniform highp vec4 cc_cameraPos;
+varying vec2 v_uv;
+void main () {
+vec4 position;
+position = vec4(a_position, 1.0);
+position.xy = cc_cameraPos.w == 0.0 ? vec2(position.xy.x, -position.xy.y) : position.xy;
+gl_Position = vec4(position.x, position.y, 1.0, 1.0);
+v_uv = a_texCoord;
+}
+*/
 import {
     vec4_V3_N,
     vec2_N_N,
@@ -85,10 +121,10 @@ class StandardVertInput implements StructData {
     tangent: Vec4Data = vec4()
 }
 class AttributeDataImpl implements AttributeData {
-    a_position: Vec3Data = new Vec3Data()!
-    a_normal: Vec3Data = new Vec3Data()!
-    a_texCoord: Vec2Data = new Vec2Data()!
-    a_tangent: Vec4Data = new Vec4Data()!
+    a_position: Vec3Data = new Vec3Data()
+    a_normal: Vec3Data = new Vec3Data()
+    a_texCoord: Vec2Data = new Vec2Data()
+    a_tangent: Vec4Data = new Vec4Data()
     dataKeys: Map<string, any> = new Map([
         ["a_position", cpuRenderingContext.cachGameGl.FLOAT_VEC3],
         ["a_normal", cpuRenderingContext.cachGameGl.FLOAT_VEC3],

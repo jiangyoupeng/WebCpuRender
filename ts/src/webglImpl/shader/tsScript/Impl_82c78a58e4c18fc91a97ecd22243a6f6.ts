@@ -365,6 +365,129 @@ return cc_matProj * (cc_matView * matWorld) * position;
 }
 void main() { gl_Position = vert(); }
 */
+/*
+fact do glsl source: 
+#define USE_ALPHA_TEST 0
+#define CC_USE_HDR 0
+#define SAMPLE_FROM_RT 0
+#define USE_TEXTURE 0
+#define USE_VERTEX_COLOR 0
+#define CC_FORWARD_ADD 0
+#define CC_USE_FOG 0
+#define USE_LIGHTMAP 0
+#define USE_BATCHING 0
+#define USE_INSTANCING 0
+#define CC_USE_BAKED_ANIMATION 0
+#define CC_USE_SKINNING 0
+#define CC_MORPH_TARGET_HAS_TANGENT 0
+#define CC_MORPH_TARGET_HAS_NORMAL 0
+#define CC_MORPH_TARGET_HAS_POSITION 0
+#define CC_MORPH_PRECOMPUTED 0
+#define CC_MORPH_TARGET_COUNT 2
+#define CC_USE_MORPH 0
+#define CC_EFFECT_USED_FRAGMENT_UNIFORM_VECTORS 39
+#define CC_EFFECT_USED_VERTEX_UNIFORM_VECTORS 195
+#define CC_DEVICE_MAX_FRAGMENT_UNIFORM_VECTORS 1024
+#define CC_DEVICE_MAX_VERTEX_UNIFORM_VECTORS 4095
+#define CC_DEVICE_SUPPORT_FLOAT_TEXTURE 0
+#define ALPHA_TEST_CHANNEL a
+
+precision highp float;
+highp float decode32 (highp vec4 rgba) {
+rgba = rgba * 255.0;
+highp float Sign = 1.0 - (step(128.0, (rgba[3]) + 0.5)) * 2.0;
+highp float Exponent = 2.0 * (mod(float(int((rgba[3]) + 0.5)), 128.0)) + (step(128.0, (rgba[2]) + 0.5)) - 127.0;
+highp float Mantissa = (mod(float(int((rgba[2]) + 0.5)), 128.0)) * 65536.0 + rgba[1] * 256.0 + rgba[0] + 8388608.0;
+return Sign * exp2(Exponent - 23.0) * Mantissa;
+}
+struct StandardVertInput {
+highp vec4 position;
+vec3 normal;
+vec4 tangent;
+};
+attribute vec3 a_position;
+attribute vec3 a_normal;
+attribute vec2 a_texCoord;
+attribute vec4 a_tangent;
+uniform highp mat4 cc_matView;
+uniform highp mat4 cc_matProj;
+uniform highp vec4 cc_cameraPos;
+uniform mediump vec4 cc_fogBase;
+uniform mediump vec4 cc_fogAdd;
+uniform highp mat4 cc_matWorld;
+float LinearFog(vec4 pos) {
+vec4 wPos = pos;
+float cam_dis = distance(cc_cameraPos, wPos);
+float fogStart = cc_fogBase.x;
+float fogEnd = cc_fogBase.y;
+return clamp((fogEnd - cam_dis) / (fogEnd - fogStart), 0., 1.);
+}
+float ExpFog(vec4 pos) {
+vec4 wPos = pos;
+float fogAtten = cc_fogAdd.z;
+float fogDensity = cc_fogBase.z;
+float cam_dis = distance(cc_cameraPos, wPos) / fogAtten * 4.;
+float f = exp(-cam_dis * fogDensity);
+return f;
+}
+float ExpSquaredFog(vec4 pos) {
+vec4 wPos = pos;
+float fogAtten = cc_fogAdd.z;
+float fogDensity = cc_fogBase.z;
+float cam_dis = distance(cc_cameraPos, wPos) / fogAtten * 4.;
+float f = exp(-cam_dis * cam_dis * fogDensity * fogDensity);
+return f;
+}
+float LayeredFog(vec4 pos) {
+vec4 wPos = pos;
+float fogAtten = cc_fogAdd.z;
+float _FogTop = cc_fogAdd.x;
+float _FogRange = cc_fogAdd.y;
+vec3 camWorldProj = cc_cameraPos.xyz;
+camWorldProj.y = 0.;
+vec3 worldPosProj = wPos.xyz;
+worldPosProj.y = 0.;
+float fDeltaD = distance(worldPosProj, camWorldProj) / fogAtten * 2.0;
+float fDeltaY, fDensityIntegral;
+if (cc_cameraPos.y > _FogTop) {
+if (wPos.y < _FogTop) {
+fDeltaY = (_FogTop - wPos.y) / _FogRange * 2.0;
+fDensityIntegral = fDeltaY * fDeltaY * 0.5;
+} else {
+fDeltaY = 0.;
+fDensityIntegral = 0.;
+}
+} else {
+if (wPos.y < _FogTop) {
+float fDeltaA = (_FogTop - cc_cameraPos.y) / _FogRange * 2.;
+float fDeltaB = (_FogTop - wPos.y) / _FogRange * 2.;
+fDeltaY = abs(fDeltaA - fDeltaB);
+fDensityIntegral = abs((fDeltaA * fDeltaA * 0.5) - (fDeltaB * fDeltaB * 0.5));
+} else {
+fDeltaY = abs(_FogTop - cc_cameraPos.y) / _FogRange * 2.;
+fDensityIntegral = abs(fDeltaY * fDeltaY * 0.5);
+}
+}
+float fDensity;
+if (fDeltaY != 0.) {
+fDensity = (sqrt(1.0 + ((fDeltaD / fDeltaY) * (fDeltaD / fDeltaY)))) * fDensityIntegral;
+} else {
+fDensity = 0.;
+}
+float f = exp(-fDensity);
+return f;
+}
+varying float v_fog_factor;
+vec4 vert () {
+vec4 position;
+position = vec4(a_position, 1.0);
+mat4 matWorld;
+matWorld = cc_matWorld;
+v_fog_factor = LinearFog(matWorld * position);
+return cc_matProj * (cc_matView * matWorld) * position;
+}
+void main() { gl_Position = vert(); }
+*/
 import {
     step_N_N,
     int_N,
@@ -450,10 +573,10 @@ class StandardVertInput implements StructData {
     tangent: Vec4Data = vec4()
 }
 class AttributeDataImpl implements AttributeData {
-    a_position: Vec3Data = new Vec3Data()!
-    a_normal: Vec3Data = new Vec3Data()!
-    a_texCoord: Vec2Data = new Vec2Data()!
-    a_tangent: Vec4Data = new Vec4Data()!
+    a_position: Vec3Data = new Vec3Data()
+    a_normal: Vec3Data = new Vec3Data()
+    a_texCoord: Vec2Data = new Vec2Data()
+    a_tangent: Vec4Data = new Vec4Data()
     dataKeys: Map<string, any> = new Map([
         ["a_position", cpuRenderingContext.cachGameGl.FLOAT_VEC3],
         ["a_normal", cpuRenderingContext.cachGameGl.FLOAT_VEC3],

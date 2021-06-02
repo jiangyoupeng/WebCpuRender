@@ -236,6 +236,50 @@ gl_Position.y = gl_Position.y;
 v_uv = a_texCoord;
 }
 */
+/*
+fact do glsl source: 
+#define USE_INSTANCING 0
+#define CC_USE_BAKED_ANIMATION 0
+#define CC_USE_SKINNING 0
+#define CC_MORPH_TARGET_HAS_TANGENT 0
+#define CC_MORPH_TARGET_HAS_NORMAL 0
+#define CC_MORPH_TARGET_HAS_POSITION 0
+#define CC_MORPH_PRECOMPUTED 0
+#define CC_MORPH_TARGET_COUNT 2
+#define CC_USE_MORPH 0
+#define CC_EFFECT_USED_FRAGMENT_UNIFORM_VECTORS 37
+#define CC_EFFECT_USED_VERTEX_UNIFORM_VECTORS 145
+
+precision highp float;
+highp float decode32 (highp vec4 rgba) {
+rgba = rgba * 255.0;
+highp float Sign = 1.0 - (step(128.0, (rgba[3]) + 0.5)) * 2.0;
+highp float Exponent = 2.0 * (mod(float(int((rgba[3]) + 0.5)), 128.0)) + (step(128.0, (rgba[2]) + 0.5)) - 127.0;
+highp float Mantissa = (mod(float(int((rgba[2]) + 0.5)), 128.0)) * 65536.0 + rgba[1] * 256.0 + rgba[0] + 8388608.0;
+return Sign * exp2(Exponent - 23.0) * Mantissa;
+}
+struct StandardVertInput {
+highp vec4 position;
+vec3 normal;
+vec4 tangent;
+};
+attribute vec3 a_position;
+attribute vec3 a_normal;
+attribute vec2 a_texCoord;
+attribute vec4 a_tangent;
+uniform highp vec4 cc_cameraPos;
+varying vec2 v_uv;
+void main () {
+StandardVertInput In;
+In.position = vec4(a_position, 1.0);
+In.normal = a_normal;
+In.tangent = a_tangent;
+In.position.xy = cc_cameraPos.w == 0.0 ? vec2(In.position.xy.x, -In.position.xy.y) : In.position.xy;
+gl_Position = In.position;
+gl_Position.y = gl_Position.y;
+v_uv = a_texCoord;
+}
+*/
 import {
     step_N_N,
     int_N,
@@ -299,10 +343,10 @@ class StandardVertInput implements StructData {
     tangent: Vec4Data = vec4()
 }
 class AttributeDataImpl implements AttributeData {
-    a_position: Vec3Data = new Vec3Data()!
-    a_normal: Vec3Data = new Vec3Data()!
-    a_texCoord: Vec2Data = new Vec2Data()!
-    a_tangent: Vec4Data = new Vec4Data()!
+    a_position: Vec3Data = new Vec3Data()
+    a_normal: Vec3Data = new Vec3Data()
+    a_texCoord: Vec2Data = new Vec2Data()
+    a_tangent: Vec4Data = new Vec4Data()
     dataKeys: Map<string, any> = new Map([
         ["a_position", cpuRenderingContext.cachGameGl.FLOAT_VEC3],
         ["a_normal", cpuRenderingContext.cachGameGl.FLOAT_VEC3],

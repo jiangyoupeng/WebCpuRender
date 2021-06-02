@@ -369,13 +369,21 @@ export class GLSLInterpreter {
             remainContent += lineStr + "\n"
         }
 
-        // console.log(remainContent)
+        console.log(remainContent)
         // defines.forEach((value: string | number, key: string) => {
         //     remainContent = `#define ${key} ${value}\n` + remainContent
         // })
 
         let token = tokenizeString(remainContent)
         let ast = parseArray(token)
+
+        let factDoGlsl = remainContent
+        strDefines.forEach((value: string, key: string) => {
+            factDoGlsl = `#define ${key} ${value}\n` + factDoGlsl
+        })
+        defines.forEach((value: number, key: string) => {
+            factDoGlsl = `#define ${key} ${value}\n` + factDoGlsl
+        })
 
         let uniformData: Map<string, string> = new Map()
         let varyingData: Map<string, string> = new Map()
@@ -464,6 +472,8 @@ export class GLSLInterpreter {
         let originSource = "/*\norigin glsl source: \n"
         originSource += source + "\n*/\n"
         // console.log(originSource + tsScript)
+
+        originSource += `/*\nfact do glsl source: \n` + factDoGlsl + `*/\n`
 
         let outStr = originSource + importStr + shaderBeginContent + tsScript
 

@@ -49,6 +49,40 @@ return pos;
 }
 void main() { gl_Position = vert(); }
 */
+/*
+fact do glsl source: 
+#define IS_GRAY 0
+#define USE_TEXTURE 1
+#define USE_ALPHA_TEST 0
+#define CC_USE_EMBEDDED_ALPHA 0
+#define USE_PIXEL_ALIGNMENT 0
+#define SAMPLE_FROM_RT 0
+#define USE_LOCAL 0
+#define CC_EFFECT_USED_FRAGMENT_UNIFORM_VECTORS 1
+#define CC_EFFECT_USED_VERTEX_UNIFORM_VECTORS 46
+#define CC_DEVICE_MAX_FRAGMENT_UNIFORM_VECTORS 1024
+#define CC_DEVICE_MAX_VERTEX_UNIFORM_VECTORS 4095
+#define CC_DEVICE_SUPPORT_FLOAT_TEXTURE 0
+
+precision highp float;
+uniform highp mat4 cc_matView;
+uniform highp mat4 cc_matProj;
+uniform highp mat4 cc_matViewProj;
+uniform highp vec4 cc_cameraPos;
+attribute vec3 a_position;
+attribute vec2 a_texCoord;
+attribute vec4 a_color;
+varying vec4 color;
+varying vec2 uv0;
+vec4 vert () {
+vec4 pos = vec4(a_position, 1);
+pos = cc_matViewProj * pos;
+uv0 = a_texCoord;
+color = a_color;
+return pos;
+}
+void main() { gl_Position = vert(); }
+*/
 import { vec4_V3_N, float, float_N, bool, bool_N, int_N, int, vec4, vec3, vec2, mat3, mat4 } from "../builtin/BuiltinFunc"
 import { glSet_V4_V4, glSet_V2_V2, glMul_M4_V4, getValueKeyByIndex } from "../builtin/BuiltinOperator"
 import { gl_FragData, gl_FragColor, gl_Position, gl_FragCoord, gl_FragDepth, gl_FrontFacing, custom_isDiscard } from "../builtin/BuiltinVar"
@@ -79,9 +113,9 @@ let USE_ALPHA_TEST = new FloatData(0)
 let USE_TEXTURE = new FloatData(1)
 let IS_GRAY = new FloatData(0)
 class AttributeDataImpl implements AttributeData {
-    a_position: Vec3Data = new Vec3Data()!
-    a_texCoord: Vec2Data = new Vec2Data()!
-    a_color: Vec4Data = new Vec4Data()!
+    a_position: Vec3Data = new Vec3Data()
+    a_texCoord: Vec2Data = new Vec2Data()
+    a_color: Vec4Data = new Vec4Data()
     dataKeys: Map<string, any> = new Map([
         ["a_position", cpuRenderingContext.cachGameGl.FLOAT_VEC3],
         ["a_texCoord", cpuRenderingContext.cachGameGl.FLOAT_VEC2],

@@ -66,6 +66,65 @@ vec4 frag () {
 }
 void main() { gl_FragColor = frag(); }
 */
+/*
+fact do glsl source: 
+#define USE_ALPHA_TEST 0
+#define USE_ALBEDO_MAP 1
+#define HAS_SECOND_UV 0
+#define USE_LIGHTMAP 0
+#define USE_BATCHING 0
+#define USE_INSTANCING 0
+#define CC_USE_BAKED_ANIMATION 0
+#define CC_USE_SKINNING 0
+#define CC_MORPH_TARGET_HAS_TANGENT 0
+#define CC_MORPH_TARGET_HAS_NORMAL 0
+#define CC_MORPH_TARGET_HAS_POSITION 0
+#define CC_MORPH_PRECOMPUTED 0
+#define CC_MORPH_TARGET_COUNT 2
+#define CC_USE_MORPH 0
+#define CC_EFFECT_USED_FRAGMENT_UNIFORM_VECTORS 22
+#define CC_EFFECT_USED_VERTEX_UNIFORM_VECTORS 179
+#define CC_DEVICE_MAX_FRAGMENT_UNIFORM_VECTORS 1024
+#define CC_DEVICE_MAX_VERTEX_UNIFORM_VECTORS 4095
+#define CC_DEVICE_SUPPORT_FLOAT_TEXTURE 0
+#define ALPHA_TEST_CHANNEL a
+#define ALBEDO_UV v_uv
+
+precision highp float;
+   uniform vec4 albedo;
+   uniform vec4 albedoScaleAndCutoff;
+vec4 packDepthToRGBA (float depth) {
+  vec4 ret = vec4(1.0, 255.0, 65025.0, 160581375.0) * depth;
+  ret = fract(ret);
+  ret -= ret.yzww * vec4(1.0 / 255.0, 1.0 / 255.0, 1.0 / 255.0, 0.0);
+  return ret;
+}
+uniform highp mat4 cc_matLightView;
+  uniform lowp vec4 cc_shadowNFLSInfo;
+  uniform lowp vec4 cc_shadowLPNNInfo;
+varying vec2 v_uv;
+varying vec2 v_uv1;
+varying vec4 v_worldPos;
+varying float v_clip_depth;
+  uniform sampler2D albedoMap;
+vec4 frag () {
+  vec4 baseColor = albedo;
+    baseColor *= texture2D(albedoMap, v_uv);
+  if(cc_shadowLPNNInfo.x > 0.000001 && cc_shadowLPNNInfo.x < 1.999999) {
+    if (cc_shadowNFLSInfo.z > 0.000001) {
+      vec4 viewStartPos = cc_matLightView * v_worldPos;
+      float dist = length(viewStartPos.xyz);
+      float linearDepth = cc_shadowNFLSInfo.x + (-dist / (cc_shadowNFLSInfo.y - cc_shadowNFLSInfo.x));
+      return vec4(linearDepth, 1.0, 1.0, 1.0);
+    }
+  }
+  if (cc_shadowLPNNInfo.y > 0.000001) {
+    return packDepthToRGBA(v_clip_depth);
+  }
+  return vec4(v_clip_depth, 1.0, 1.0, 1.0);
+}
+void main() { gl_FragColor = frag(); }
+*/
 import {
     vec4_N_N_N_N,
     fract_V4,
