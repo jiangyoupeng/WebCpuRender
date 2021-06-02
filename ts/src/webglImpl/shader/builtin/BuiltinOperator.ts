@@ -106,6 +106,18 @@ export function glAdd_V4_V4(left: Vec4Data, right: Vec4Data): Vec4Data {
     return data
 }
 
+export function glAdd_M3_M3(left: Mat3Data, right: Mat3Data): Mat3Data {
+    let data = mat3Data.getData()
+    Mat3Data.add(data, left, right)
+    return data
+}
+
+export function glAdd_M4_M4(left: Mat4Data, right: Mat4Data): Mat4Data {
+    let data = mat4Data.getData()
+    Mat4Data.add(data, left, right)
+    return data
+}
+
 export function glAddSet_N_N(left: NumData, right: NumData): void {
     left.v = left.v + right.v
 }
@@ -230,6 +242,48 @@ export function glSub_V4_V4(left: Vec4Data, right: Vec4Data): Vec4Data {
     data.y = left.y - right.y
     data.z = left.z - right.z
     data.w = left.w - right.w
+    return data
+}
+
+export function glSub_M3_M3(left: Mat3Data, right: Mat3Data): Mat3Data {
+    let data = mat3Data.getData()
+    Mat3Data.subtract(data, left, right)
+    return data
+}
+
+export function glSub_M3_N(left: Mat3Data, right: NumData): Mat3Data {
+    let data = mat3Data.getData()
+    let v = right.v
+    data.m00 = left.m00 - v
+    data.m01 = left.m01 - v
+    data.m02 = left.m02 - v
+    data.m03 = left.m03 - v
+    data.m04 = left.m04 - v
+    data.m05 = left.m05 - v
+    data.m06 = left.m06 - v
+    data.m07 = left.m07 - v
+    data.m08 = left.m08 - v
+    return data
+}
+
+export function glSub_N_M3(left: NumData, right: Mat3Data): Mat3Data {
+    let data = mat3Data.getData()
+    let v = left.v
+    data.m00 = v - right.m00
+    data.m01 = v - right.m01
+    data.m02 = v - right.m02
+    data.m03 = v - right.m03
+    data.m04 = v - right.m04
+    data.m05 = v - right.m05
+    data.m06 = v - right.m06
+    data.m07 = v - right.m07
+    data.m08 = v - right.m08
+    return data
+}
+
+export function glSub_M4_M4(left: Mat4Data, right: Mat4Data): Mat4Data {
+    let data = mat4Data.getData()
+    Mat4Data.subtract(data, left, right)
     return data
 }
 
@@ -372,9 +426,33 @@ export function glMul_M3_M3(left: Mat3Data, right: Mat3Data): Mat3Data {
     return data
 }
 
+export function glMul_M3_N(left: Mat3Data, right: NumData): Mat3Data {
+    let data = mat3Data.getData()
+    Mat3Data.multiplyScalar(data, left, right.v)
+    return data
+}
+
+export function glMul_N_M3(left: NumData, right: Mat3Data): Mat3Data {
+    let data = mat3Data.getData()
+    Mat3Data.multiplyScalar(data, right, left.v)
+    return data
+}
+
 export function glMul_M4_M4(left: Mat4Data, right: Mat4Data): Mat4Data {
     let data = mat4Data.getData()
     Mat4Data.multiply(data, left, right)
+    return data
+}
+
+export function glMul_M4_N(left: Mat4Data, right: NumData): Mat4Data {
+    let data = mat4Data.getData()
+    Mat4Data.multiplyScalar(data, left, right.v)
+    return data
+}
+
+export function glMul_N_M4(left: NumData, right: Mat4Data): Mat4Data {
+    let data = mat4Data.getData()
+    Mat4Data.multiplyScalar(data, right, left.v)
     return data
 }
 
