@@ -75,7 +75,7 @@ class OneFrameCachGlData {
     cachGlDatas: CachGlData[] = []
 }
 let showGlDebugLog = false
-let debugCpuRender = true
+let debugCpuRender = false
 let createTsImplGlslFile = true
 let replaceShaderSource = true
 let createRenderFile = false
