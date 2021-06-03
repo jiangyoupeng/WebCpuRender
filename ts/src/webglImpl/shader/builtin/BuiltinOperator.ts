@@ -820,7 +820,7 @@ export function glDiv_M3_M3(left: Mat3Data, right: Mat3Data): Mat3Data {
     data.m05 = left.m05 / right.m05
     data.m06 = left.m06 / right.m06
     data.m07 = left.m07 / right.m07
-    data.m08 = left.m07 / right.m08
+    data.m08 = left.m08 / right.m08
     return data
 }
 
