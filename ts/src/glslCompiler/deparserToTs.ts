@@ -770,9 +770,9 @@ function deparse_binary(node: any) {
     }
 
     let leftIndex = output.length
-    if (leftIndex == 877) {
-        debugger
-    }
+    // if (leftIndex == 877) {
+    //     debugger
+    // }
     let leftType: string = deparse(node.children[0])
     if (!leftType) {
         debugger

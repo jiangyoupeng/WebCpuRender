@@ -1878,6 +1878,7 @@ export function texture2D_N_V2(texIndex: IntData, uv: Vec2Data) {
 
 export function textureCube_NA_V3(texIndex: SamplerCube, uv: Vec3Data) {
     // return cpuRenderingContext.customSampler2D(texIndex.v, uv)
+    debugger
     console.error("textureCube_IA_V3 还未实现")
     return new Vec4Data()
 }

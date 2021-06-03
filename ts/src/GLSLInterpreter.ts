@@ -369,7 +369,7 @@ export class GLSLInterpreter {
             remainContent += lineStr + "\n"
         }
 
-        console.log(remainContent)
+        // console.log(remainContent)
         // defines.forEach((value: string | number, key: string) => {
         //     remainContent = `#define ${key} ${value}\n` + remainContent
         // })
@@ -486,7 +486,7 @@ export class GLSLInterpreter {
             semi: false,
             printWidth: 140,
         })
-        console.log(outStr)
+        // console.log(outStr)
         return [hash, outStr]
     }
 }

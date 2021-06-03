@@ -41,7 +41,6 @@ import {
 import { clamp_V4_N_N } from "./shader/builtin/BuiltinFunc"
 import { custom_isDiscard, gl_FragColor, gl_FragData, gl_Position } from "./shader/builtin/BuiltinVar"
 import { Rect } from "./shader/builtin/Rect"
-import { Impl_083d0299838069e602fb25f5adc6e644 } from "./shader/tsScript/Impl_083d0299838069e602fb25f5adc6e644"
 import { FragShaderHandle, VaryingData } from "./ShaderDefine"
 
 let cpuCachData = new BuiltinDataCach()
@@ -75,7 +74,7 @@ class OneFrameCachGlData {
     cachGlDatas: CachGlData[] = []
 }
 let showGlDebugLog = false
-let debugCpuRender = false
+let debugCpuRender = true
 let createTsImplGlslFile = true
 let replaceShaderSource = true
 let createRenderFile = false
@@ -95,8 +94,8 @@ function writeGlRenderData() {
 }
 
 let testShaderSourceNum = 0
-let testShaderBegin: number = 62
-// let testShaderBegin: number = 0
+// let testShaderBegin: number = 62
+let testShaderBegin: number = 0
 let testShaderEnd: number = 1000
 
 class AttributeReadInfo {
