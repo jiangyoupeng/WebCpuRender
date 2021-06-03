@@ -111,6 +111,79 @@ export function glAdd_M3_M3(left: Mat3Data, right: Mat3Data): Mat3Data {
     Mat3Data.add(data, left, right)
     return data
 }
+export function glAdd_M3_N(left: Mat3Data, right: NumData): Mat3Data {
+    let data = mat3Data.getData()
+    let v = right.v
+    data.m00 = left.m00 + v
+    data.m01 = left.m01 + v
+    data.m02 = left.m02 + v
+    data.m03 = left.m03 + v
+    data.m04 = left.m04 + v
+    data.m05 = left.m05 + v
+    data.m06 = left.m06 + v
+    data.m07 = left.m07 + v
+    data.m08 = left.m08 + v
+    return data
+}
+
+export function glAdd_M4_N(left: Mat4Data, right: NumData): Mat4Data {
+    let data = mat4Data.getData()
+    let v = right.v
+    data.m00 = left.m00 + v
+    data.m01 = left.m01 + v
+    data.m02 = left.m02 + v
+    data.m03 = left.m03 + v
+    data.m04 = left.m04 + v
+    data.m05 = left.m05 + v
+    data.m06 = left.m06 + v
+    data.m07 = left.m07 + v
+    data.m08 = left.m08 + v
+    data.m09 = left.m09 + v
+    data.m10 = left.m10 + v
+    data.m11 = left.m11 + v
+    data.m12 = left.m12 + v
+    data.m13 = left.m13 + v
+    data.m14 = left.m14 + v
+    data.m15 = left.m15 + v
+    return data
+}
+
+export function glAdd_N_M4(left: NumData, right: Mat4Data): Mat4Data {
+    let data = mat4Data.getData()
+    let v = left.v
+    data.m00 = v + right.m00
+    data.m01 = v + right.m01
+    data.m02 = v + right.m02
+    data.m03 = v + right.m03
+    data.m04 = v + right.m04
+    data.m05 = v + right.m05
+    data.m06 = v + right.m06
+    data.m07 = v + right.m07
+    data.m08 = v + right.m08
+    data.m09 = v + right.m09
+    data.m10 = v + right.m10
+    data.m11 = v + right.m11
+    data.m12 = v + right.m12
+    data.m13 = v + right.m13
+    data.m14 = v + right.m14
+    data.m15 = v + right.m15
+    return data
+}
+
+export function glAdd_N_M3(left: NumData, right: Mat3Data): Mat3Data {
+    let data = mat3Data.getData()
+    let v = left.v
+    data.m00 = v + right.m00
+    data.m01 = v + right.m01
+    data.m02 = v + right.m02
+    data.m03 = v + right.m03
+    data.m04 = v + right.m04
+    data.m05 = v + right.m05
+    data.m06 = v + right.m06
+    data.m07 = v + right.m07
+    data.m08 = v + right.m08
+    return data
+}
 
 export function glAdd_M4_M4(left: Mat4Data, right: Mat4Data): Mat4Data {
     let data = mat4Data.getData()
@@ -152,6 +225,47 @@ export function glAddSet_V4_N(left: Vec4Data, right: NumData): void {
     left.y = left.y + v
     left.z = left.z + v
     left.w = left.w + v
+}
+
+export function glAddSet_M3_N(left: Mat3Data, right: NumData): void {
+    let v = right.v
+    left.m00 += v
+    left.m01 += v
+    left.m02 += v
+    left.m03 += v
+    left.m04 += v
+    left.m05 += v
+    left.m06 += v
+    left.m07 += v
+    left.m08 += v
+}
+
+export function glAddSet_M4_N(left: Mat4Data, right: NumData): void {
+    let v = right.v
+    left.m00 += v
+    left.m01 += v
+    left.m02 += v
+    left.m03 += v
+    left.m04 += v
+    left.m05 += v
+    left.m06 += v
+    left.m07 += v
+    left.m08 += v
+    left.m09 += v
+    left.m10 += v
+    left.m11 += v
+    left.m12 += v
+    left.m13 += v
+    left.m14 += v
+    left.m15 += v
+}
+
+export function glAddSet_M3_M3(left: Mat3Data, right: Mat3Data): void {
+    Mat3Data.add(left, left, right)
+}
+
+export function glAddSet_M4_M4(left: Mat4Data, right: Mat4Data): void {
+    Mat4Data.add(left, left, right)
 }
 
 export function glAddSet_V4_V4(left: Vec4Data, right: Vec4Data): void {
@@ -287,6 +401,50 @@ export function glSub_M4_M4(left: Mat4Data, right: Mat4Data): Mat4Data {
     return data
 }
 
+export function glSub_M4_N(left: Mat4Data, right: NumData): Mat4Data {
+    let data = mat4Data.getData()
+    let v = right.v
+    data.m00 = left.m00 - v
+    data.m01 = left.m01 - v
+    data.m02 = left.m02 - v
+    data.m03 = left.m03 - v
+    data.m04 = left.m04 - v
+    data.m05 = left.m05 - v
+    data.m06 = left.m06 - v
+    data.m07 = left.m07 - v
+    data.m08 = left.m08 - v
+    data.m09 = left.m09 - v
+    data.m10 = left.m10 - v
+    data.m11 = left.m11 - v
+    data.m12 = left.m12 - v
+    data.m13 = left.m13 - v
+    data.m14 = left.m14 - v
+    data.m15 = left.m15 - v
+    return data
+}
+
+export function glSub_N_M4(left: NumData, right: Mat4Data): Mat4Data {
+    let data = mat4Data.getData()
+    let v = left.v
+    data.m00 = v - right.m00
+    data.m01 = v - right.m01
+    data.m02 = v - right.m02
+    data.m03 = v - right.m03
+    data.m04 = v - right.m04
+    data.m05 = v - right.m05
+    data.m06 = v - right.m06
+    data.m07 = v - right.m07
+    data.m08 = v - right.m08
+    data.m09 = v - right.m09
+    data.m10 = v - right.m10
+    data.m11 = v - right.m11
+    data.m12 = v - right.m12
+    data.m13 = v - right.m13
+    data.m14 = v - right.m14
+    data.m15 = v - right.m15
+    return data
+}
+
 export function glSubSet_N_N(left: NumData, right: NumData): void {
     left.v = left.v - right.v
 }
@@ -328,6 +486,47 @@ export function glSubSet_V4_V4(left: Vec4Data, right: Vec4Data): void {
     left.y = left.y - right.y
     left.z = left.z - right.z
     left.w = left.w - right.w
+}
+
+export function glSubSet_M3_N(left: Mat3Data, right: NumData): void {
+    let v = right.v
+    left.m00 -= v
+    left.m01 -= v
+    left.m02 -= v
+    left.m03 -= v
+    left.m04 -= v
+    left.m05 -= v
+    left.m06 -= v
+    left.m07 -= v
+    left.m08 -= v
+}
+
+export function glSubSet_M4_N(left: Mat4Data, right: NumData): void {
+    let v = right.v
+    left.m00 -= v
+    left.m01 -= v
+    left.m02 -= v
+    left.m03 -= v
+    left.m04 -= v
+    left.m05 -= v
+    left.m06 -= v
+    left.m07 -= v
+    left.m08 -= v
+    left.m09 -= v
+    left.m10 -= v
+    left.m11 -= v
+    left.m12 -= v
+    left.m13 -= v
+    left.m14 -= v
+    left.m15 -= v
+}
+
+export function glSubSet_M3_M3(left: Mat3Data, right: Mat3Data): void {
+    Mat3Data.subtract(left, left, right)
+}
+
+export function gSubSet_M4_M4(left: Mat4Data, right: Mat4Data): void {
+    Mat4Data.subtract(left, left, right)
 }
 
 export function glMul_N_N(left: NumData, right: NumData): NumData {
@@ -511,6 +710,22 @@ export function glMul_V4_M4(left: Vec4Data, right: Mat4Data): Vec4Data {
     return data
 }
 
+export function glMulSet_M3_N(left: Mat3Data, right: NumData): void {
+    Mat3Data.multiplyScalar(left, left, right.v)
+}
+
+export function glMulSet_M4_N(left: Mat4Data, right: NumData): void {
+    Mat4Data.multiplyScalar(left, left, right.v)
+}
+
+export function glMulSet_M3_M3(left: Mat3Data, right: Mat3Data): void {
+    Mat3Data.multiply(left, left, right)
+}
+
+export function gMulSet_M4_M4(left: Mat4Data, right: Mat4Data): void {
+    Mat4Data.multiply(left, left, right)
+}
+
 export function glDiv_N_N(left: NumData, right: NumData): NumData {
     let data = left.ctor()
     data.v = left.v / right.v
@@ -595,6 +810,92 @@ export function glDiv_V4_V4(left: Vec4Data, right: Vec4Data): Vec4Data {
     return data
 }
 
+export function glDiv_M3_M3(left: Mat3Data, right: Mat3Data): Mat3Data {
+    let data = mat3Data.getData()
+    data.m00 = left.m00 / right.m00
+    data.m01 = left.m01 / right.m01
+    data.m02 = left.m02 / right.m02
+    data.m03 = left.m03 / right.m03
+    data.m04 = left.m04 / right.m04
+    data.m05 = left.m05 / right.m05
+    data.m06 = left.m06 / right.m06
+    data.m07 = left.m07 / right.m07
+    data.m08 = left.m07 / right.m08
+    return data
+}
+
+export function glDiv_M3_N(left: Mat3Data, right: NumData): Mat3Data {
+    let data = mat3Data.getData()
+    Mat3Data.multiplyScalar(data, left, 1 / right.v)
+    return data
+}
+
+export function glDiv_N_M3(left: NumData, right: Mat3Data): Mat3Data {
+    let data = mat3Data.getData()
+    let v = left.v
+    data.m00 = v / right.m00
+    data.m01 = v / right.m01
+    data.m02 = v / right.m02
+    data.m03 = v / right.m03
+    data.m04 = v / right.m04
+    data.m05 = v / right.m05
+    data.m06 = v / right.m06
+    data.m07 = v / right.m07
+    data.m08 = v / right.m08
+    // 除法左右关系是有所谓的
+    return data
+}
+
+export function glDiv_M4_M4(left: Mat4Data, right: Mat4Data): Mat4Data {
+    let data = mat4Data.getData()
+    data.m00 = left.m00 / right.m00
+    data.m01 = left.m01 / right.m01
+    data.m02 = left.m02 / right.m02
+    data.m03 = left.m03 / right.m03
+    data.m04 = left.m04 / right.m04
+    data.m05 = left.m05 / right.m05
+    data.m06 = left.m06 / right.m06
+    data.m07 = left.m07 / right.m07
+    data.m08 = left.m07 / right.m08
+    data.m09 = left.m09 / right.m09
+    data.m10 = left.m10 / right.m10
+    data.m11 = left.m11 / right.m11
+    data.m12 = left.m12 / right.m12
+    data.m13 = left.m13 / right.m13
+    data.m14 = left.m14 / right.m14
+    data.m15 = left.m15 / right.m15
+    return data
+}
+
+export function glDiv_M4_N(left: Mat4Data, right: NumData): Mat4Data {
+    let data = mat4Data.getData()
+    Mat4Data.multiplyScalar(data, left, 1 / right.v)
+    return data
+}
+
+export function glDiv_N_M4(left: NumData, right: Mat4Data): Mat4Data {
+    let data = mat4Data.getData()
+    let v = left.v
+    data.m00 = v / right.m00
+    data.m01 = v / right.m01
+    data.m02 = v / right.m02
+    data.m03 = v / right.m03
+    data.m04 = v / right.m04
+    data.m05 = v / right.m05
+    data.m06 = v / right.m06
+    data.m07 = v / right.m07
+    data.m08 = v / right.m08
+    data.m09 = v / right.m09
+    data.m10 = v / right.m10
+    data.m11 = v / right.m11
+    data.m12 = v / right.m12
+    data.m13 = v / right.m13
+    data.m14 = v / right.m14
+    data.m15 = v / right.m15
+    // 除法左右关系是有所谓的
+    return data
+}
+
 export function glDivSet_N_N(left: NumData, right: NumData): void {
     left.v = left.v / right.v
 }
@@ -629,6 +930,45 @@ export function glDivSet_V4_N(left: Vec4Data, right: NumData): void {
     left.y = left.y / v
     left.z = left.z / v
     left.w = left.w / v
+}
+
+export function glDivSet_M3_M3(left: Mat3Data, right: Mat3Data): void {
+    left.m00 = left.m00 / right.m00
+    left.m01 = left.m01 / right.m01
+    left.m02 = left.m02 / right.m02
+    left.m03 = left.m03 / right.m03
+    left.m04 = left.m04 / right.m04
+    left.m05 = left.m05 / right.m05
+    left.m06 = left.m06 / right.m06
+    left.m07 = left.m07 / right.m07
+    left.m08 = left.m08 / right.m08
+}
+
+export function glDivSet_M3_N(left: Mat3Data, right: NumData): void {
+    Mat3Data.multiplyScalar(left, left, 1 / right.v)
+}
+
+export function glDivSet_M4_M4(left: Mat4Data, right: Mat4Data): void {
+    left.m00 = left.m00 / right.m00
+    left.m01 = left.m01 / right.m01
+    left.m02 = left.m02 / right.m02
+    left.m03 = left.m03 / right.m03
+    left.m04 = left.m04 / right.m04
+    left.m05 = left.m05 / right.m05
+    left.m06 = left.m06 / right.m06
+    left.m07 = left.m07 / right.m07
+    left.m08 = left.m07 / right.m08
+    left.m09 = left.m09 / right.m09
+    left.m10 = left.m10 / right.m10
+    left.m11 = left.m11 / right.m11
+    left.m12 = left.m12 / right.m12
+    left.m13 = left.m13 / right.m13
+    left.m14 = left.m14 / right.m14
+    left.m15 = left.m15 / right.m15
+}
+
+export function glDivSet_M4_N(left: Mat4Data, right: NumData): void {
+    Mat4Data.multiplyScalar(left, left, 1 / right.v)
 }
 
 export function glNegative_N(v: NumData): NumData {
