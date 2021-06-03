@@ -1,6 +1,6 @@
 import { clamp } from "lodash"
 import { fileSaveAs } from "../FileSaver"
-import { GLSLInterpreter } from "../GLSLInterpreter"
+import { GLSLInterpreter } from "../glslCompiler/GLSLInterpreter"
 import { GeometricOperations } from "./geometricOperations/GeometricOperations"
 let SparkMD5 = require("Spark-md5")
 import {
@@ -38,7 +38,6 @@ import {
     IVec2Data,
     clearShaderCachData,
 } from "./shader/builtin/BuiltinData"
-import { clamp_V4_N_N } from "./shader/builtin/BuiltinFunc"
 import { custom_isDiscard, gl_FragColor, gl_FragData, gl_Position } from "./shader/builtin/BuiltinVar"
 import { Rect } from "./shader/builtin/Rect"
 import { FragShaderHandle, VaryingData } from "./ShaderDefine"
@@ -57,10 +56,6 @@ let globalBufferIndex = 1
 let globalTextureIndex = 1
 let globalFramebufferIndex = 1
 let globalRenderbufferIndex = 1
-
-let canvas: HTMLCanvasElement = <HTMLCanvasElement>document.getElementById("GameCanvas")!
-// 暂时屏蔽
-// let testGl: any = canvas.getContext("webgl")
 
 class CachGlData {
     glCall: string = ""

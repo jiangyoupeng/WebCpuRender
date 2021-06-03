@@ -1,58 +1,18 @@
 import { builtinDataAtt } from "./builtinAtt"
-
-var Nothing = ""
-class WsManager {
-    enabled: boolean = false
-    indent_text: string = ""
-    level = 0
-    tabcache: string[]
-    optional: Function = null!
-
-    constructor(whitespace_enabled: boolean = false, indent_text: string = "") {
-        this.enabled = whitespace_enabled
-        this.indent_text = indent_text
-        this.level = 0
-        this.tabcache = ["", indent_text, indent_text + indent_text, indent_text + indent_text + indent_text]
-
-        this.optional = whitespace_enabled ? this.required : this.disabled
-    }
-
-    indent() {
-        ++this.level
-    }
-
-    dedent() {
-        --this.level
-    }
-
-    disabled() {
-        return Nothing
-    }
-
-    required(c: string) {
-        if (c === "\n" && this.enabled) {
-            // 增加;一边ts对代码的重排处理
-            c += this.tab()
-        }
-        return c
-    }
-
-    tab() {
-        // yes, we're caching tabs.
-        // why? well, every line is going to be calling this,
-        // which would suck if we were indented a bunch in a block.
-        if (this.tabcache[this.level]) {
-            return this.tabcache[this.level]
-        }
-
-        var _ = ""
-        for (var i = 0, len = this.level, o = this.indent_text; i < len; ++i) {
-            _ += o
-        }
-
-        return (this.tabcache[len] = _)
-    }
-}
+import { DeparseGlslGlobalVal, InOutType } from "./DeparseGlslGlobalVal"
+import {
+    builtinFuns,
+    builtinValue,
+    convertToAbbreviation,
+    convertToBuiltinCall,
+    convertToTsType,
+    glslBuiltinType,
+    tsbuiltinFunsWithReturn,
+    tsbuiltinOperationFunsWithReturn,
+    builtinAbbreviation,
+} from "./deparserConverMap"
+import { customGetTypeNumStr, splitArrData } from "./deparserFunc"
+import { WsManager } from "./WsManager"
 
 var needs_semicolon: any = {
     decl: true,
@@ -64,552 +24,6 @@ var needs_semicolon: any = {
     expr: true,
     "do-while": true,
     struct: true,
-}
-
-var builtinValue = {
-    gl_FragData: "Vec4Data[]",
-    gl_Position: "Vec4Data",
-    gl_FragCoord: "Vec4Data",
-    gl_FragDepth: "FloatData",
-    gl_FrontFacing: "BoolData",
-    gl_FragColor: "Vec4Data",
-}
-
-var convertToTsType = {
-    int: "IntData",
-    "int[]": "IntData[]",
-    float: "FloatData",
-    "float[]": "FloatData[]",
-    double: "FloatData",
-    "double[]": "FloatData[]",
-    vec2: "Vec2Data",
-    "vec2[]": "Vec2Data[]",
-    vec3: "Vec3Data",
-    "vec3[]": "Vec3Data[]",
-    vec4: "Vec4Data",
-    "vec4[]": "Vec4Data[]",
-    mat3: "Mat3Data",
-    "mat3[]": "Mat3Data[]",
-    mat4: "Mat4Data",
-    "mat4[]": "Mat4Data[]",
-    sampler2D: "Sampler2D",
-    samplerCube: "SamplerCube",
-    void: "void",
-    bool: "BoolData",
-    "bool[]": "BoolData[]",
-}
-
-var convertToBuiltinCall = {
-    IntData: "int",
-    FloatData: "float",
-    Vec2Data: "vec2",
-    Vec3Data: "vec3",
-    Vec4Data: "vec4",
-    Mat3Data: "mat3",
-    Mat4Data: "mat4",
-    BoolData: "bool",
-}
-
-let tsbuiltinOperationFunsWithReturn = {
-    glAdd_N_N: "NumData",
-    glAdd_N_V2: "Vec2Data",
-    glAdd_N_V3: "Vec3Data",
-    glAdd_N_V4: "Vec4Data",
-    glAdd_V2_N: "Vec2Data",
-    glAdd_V2_V2: "Vec2Data",
-    glAdd_V3_N: "Vec3Data",
-    glAdd_V3_V3: "Vec3Data",
-    glAdd_V4_N: "Vec4Data",
-    glAdd_V4_V4: "Vec4Data",
-    glAdd_M3_M3: "Mat3Data",
-    glAdd_M3_N: "Mat3Data",
-    glAdd_M4_N: "Mat4Data",
-    glAdd_N_M4: "Mat4Data",
-    glAdd_N_M3: "Mat3Data",
-    glAdd_M4_M4: "Mat4Data",
-    glAddSet_N_N: "void",
-    glAddSet_V2_N: "void",
-    glAddSet_V2_V2: "void",
-    glAddSet_V3_N: "void",
-    glAddSet_V3_V3: "void",
-    glAddSet_V4_N: "void",
-    glAddSet_M3_N: "void",
-    glAddSet_M4_N: "void",
-    glAddSet_M3_M3: "void",
-    glAddSet_M4_M4: "void",
-    glAddSet_V4_V4: "void",
-    glSub_N_N: "NumData",
-    glSub_N_V2: "Vec2Data",
-    glSub_N_V3: "Vec3Data",
-    glSub_N_V4: "Vec4Data",
-    glSub_V2_N: "Vec2Data",
-    glSub_V2_V2: "Vec2Data",
-    glSub_V3_N: "Vec3Data",
-    glSub_V3_V3: "Vec3Data",
-    glSub_V4_N: "Vec4Data",
-    glSub_V4_V4: "Vec4Data",
-    glSub_M3_M3: "Mat3Data",
-    glSub_M3_N: "Mat3Data",
-    glSub_N_M3: "Mat3Data",
-    glSub_M4_M4: "Mat4Data",
-    glSub_M4_N: "Mat4Data",
-    glSub_N_M4: "Mat4Data",
-    glSubSet_N_N: "void",
-    glSubSet_V2_N: "void",
-    glSubSet_V2_V2: "void",
-    glSubSet_V3_N: "void",
-    glSubSet_V3_V3: "void",
-    glSubSet_V4_N: "void",
-    glSubSet_V4_V4: "void",
-    glSubSet_M3_N: "void",
-    glSubSet_M4_N: "void",
-    glSubSet_M3_M3: "void",
-    gSubSet_M4_M4: "void",
-    glMul_N_N: "NumData",
-    glMul_N_V2: "Vec2Data",
-    glMul_N_V3: "Vec3Data",
-    glMul_N_V4: "Vec4Data",
-    glMul_V2_N: "Vec2Data",
-    glMul_V2_V2: "Vec2Data",
-    glMul_V3_N: "Vec3Data",
-    glMul_V3_V3: "Vec3Data",
-    glMul_V3_M3: "Vec3Data",
-    glMul_V4_N: "Vec4Data",
-    glMul_V4_V4: "Vec4Data",
-    glMul_M3_M3: "Mat3Data",
-    glMul_M3_N: "Mat3Data",
-    glMul_N_M3: "Mat3Data",
-    glMul_M4_M4: "Mat4Data",
-    glMul_M4_N: "Mat4Data",
-    glMul_N_M4: "Mat4Data",
-    glMulSet_N_N: "void",
-    glMulSet_V2_N: "void",
-    glMulSet_V2_V2: "void",
-    glMulSet_V3_N: "void",
-    glMulSet_V3_V3: "void",
-    glMulSet_V4_N: "void",
-    glMulSet_V4_V4: "void",
-    glMul_M4_V4: "Vec4Data",
-    glMul_V4_M4: "Vec4Data",
-    glMulSet_M3_N: "void",
-    glMulSet_M4_N: "void",
-    glMulSet_M3_M3: "void",
-    gMulSet_M4_M4: "void",
-    glDiv_N_N: "NumData",
-    glDiv_N_V2: "Vec2Data",
-    glDiv_N_V3: "Vec3Data",
-    glDiv_N_V4: "Vec4Data",
-    glDiv_V2_N: "Vec2Data",
-    glDiv_V2_V2: "Vec2Data",
-    glDiv_V3_N: "Vec3Data",
-    glDiv_V3_V3: "Vec3Data",
-    glDiv_V4_N: "Vec4Data",
-    glDiv_V4_V4: "Vec4Data",
-    glDiv_M3_M3: "Mat3Data",
-    glDiv_M3_N: "Mat3Data",
-    glDiv_N_M3: "Mat3Data",
-    glDiv_M4_M4: "Mat4Data",
-    glDiv_M4_N: "Mat4Data",
-    glDiv_N_M4: "Mat4Data",
-    glDivSet_N_N: "void",
-    glDivSet_V2_N: "void",
-    glDivSet_V2_V2: "void",
-    glDivSet_V3_N: "void",
-    glDivSet_V3_V3: "void",
-    glDivSet_V4_N: "void",
-    glDivSet_M3_M3: "void",
-    glDivSet_M3_N: "void",
-    glDivSet_M4_M4: "void",
-    glDivSet_M4_N: "void",
-    glNegative_N: "NumData",
-    glNegative_V2: "Vec2Data",
-    glNegative_V3: "Vec3Data",
-    glNegative_V4: "Vec4Data",
-    glSet_A_A: "ValueType[]",
-    glSet_AA_AA: "ValueType[][]",
-    glSet_N_N: "NumData",
-    glSet_B_B: "BoolData",
-    glSet_B_b: "BoolData",
-    glSet_V2_V2: "Vec2Data",
-    glSet_V3_V3: "Vec3Data",
-    glSet_V4_V4: "Vec4Data",
-    glSet_M3_M3: "Mat3Data",
-    glSet_M4_M4: "Mat4Data",
-    glSet_Struct_Struct: "any",
-    glIsNotEqual_N_N: "boolean",
-    glIsEqual_N_N: "boolean",
-    glIsLessEqual_N_N: "boolean",
-    glIsLess_N_N: "boolean",
-    glIsMore_N_N: "boolean",
-    glIsMoreEqual_N_N: "boolean",
-    glFrontAddSelf_N: "NumData",
-    glAfterAddSelf_N: "NumData",
-    glFrontSubSelf_N: "NumData",
-    glAfterSubSelf_N: "NumData",
-    glFrontAddSelf_V2: "Vec2Data",
-    glAfterAddSelf_V2: "Vec2Data",
-    glFrontSubSelf_V2: "Vec2Data",
-    glAfterSubSelf_V2: "Vec2Data",
-    glFrontAddSelf_V3: "Vec3Data",
-    glAfterAddSelf_V3: "Vec3Data",
-    glFrontSubSelf_V3: "Vec3Data",
-    glAfterSubSelf_V3: "Vec3Data",
-    glFrontAddSelf_V4: "Vec4Data",
-    glAfterAddSelf_V4: "Vec4Data",
-    glFrontSubSelf_V4: "Vec4Data",
-    glAfterSubSelf_V4: "Vec4Data",
-    glFrontAddSelf_M3: "Mat3Data",
-    glAfterAddSelf_M3: "Mat3Data",
-    glFrontSubSelf_M3: "Mat3Data",
-    glAfterSubSelf_M3: "Mat3Data",
-    glFrontAddSelf_M4: "Mat4Data",
-    glAfterAddSelf_M4: "Mat4Data",
-    glFrontSubSelf_M4: "Mat4Data",
-    glAfterSubSelf_M4: "Mat4Data",
-    getValueKeyByIndex: "string",
-    getOutValueKeyByIndex: "string",
-}
-
-let glslBuiltinType = {
-    Mat3Data: true,
-    Mat4Data: true,
-    Vec4Data: true,
-    Vec3Data: true,
-    Vec2Data: true,
-    Sampler2D: true,
-    SamplerCube: true,
-}
-
-let tsbuiltinFunsWithReturn = {
-    radian_N: "NumData",
-    radian_V2: "Vec2Data",
-    radian_V3: "Vec3Data",
-    radian_V4: "Vec4Data",
-    degrees_N: "NumData",
-    degrees_V2: "Vec2Data",
-    degrees_V3: "Vec3Data",
-    degrees_V4: "Vec4Data",
-    sin_N: "NumData",
-    sin_V2: "Vec2Data",
-    sin_V3: "Vec3Data",
-    sin_V4: "Vec4Data",
-    cos_N: "NumData",
-    cos_V2: "Vec2Data",
-    cos_V3: "Vec3Data",
-    cos_V4: "Vec4Data",
-    tan_N: "NumData",
-    tan_V2: "Vec2Data",
-    tan_V3: "Vec3Data",
-    tan_V4: "Vec4Data",
-    asin_N: "NumData",
-    asin_V2: "Vec2Data",
-    asin_V3: "Vec3Data",
-    asin_V4: "Vec4Data",
-    acos_N: "NumData",
-    acos_V2: "Vec2Data",
-    acos_V3: "Vec3Data",
-    acos_V4: "Vec4Data",
-    atan_N: "NumData",
-    atan_V2: "Vec2Data",
-    atan_V3: "Vec3Data",
-    atan_V4: "Vec4Data",
-    atan_N_N: "NumData",
-    atan_V2_V2: "Vec2Data",
-    atan_V3_V3: "Vec3Data",
-    atan_V4_V4: "Vec4Data",
-    sinh_N: "NumData",
-    sinh_V2: "Vec2Data",
-    sinh_V3: "Vec3Data",
-    sinh_V4: "Vec4Data",
-    cosh_N: "NumData",
-    cosh_V2: "Vec2Data",
-    cosh_V3: "Vec3Data",
-    cosh_V4: "Vec4Data",
-    tanh_N: "NumData",
-    tanh_V2: "Vec2Data",
-    tanh_V3: "Vec3Data",
-    tanh_V4: "Vec4Data",
-    asinh_N: "NumData",
-    asinh_V2: "Vec2Data",
-    asinh_V3: "Vec3Data",
-    asinh_V4: "Vec4Data",
-    acosh_N: "NumData",
-    acosh_V2: "Vec2Data",
-    acosh_V3: "Vec3Data",
-    acosh_V4: "Vec4Data",
-    atanh_N: "NumData",
-    atanh_V2: "Vec2Data",
-    atanh_V3: "Vec3Data",
-    atanh_V4: "Vec4Data",
-    abs_N: "NumData",
-    abs_V2: "Vec2Data",
-    abs_V3: "Vec3Data",
-    abs_V4: "Vec4Data",
-    ceil_N: "NumData",
-    ceil_V2: "Vec2Data",
-    ceil_V3: "Vec3Data",
-    ceil_V4: "Vec4Data",
-    clamp_N_N_N: "NumData",
-    clamp_V2_N_N: "Vec2Data",
-    clamp_V3_N_N: "Vec3Data",
-    clamp_V4_N_N: "Vec4Data",
-    clamp_V2_V2_V2: "Vec2Data",
-    clamp_V3_V3_V3: "Vec3Data",
-    clamp_V4_V4_V4: "Vec4Data",
-    mix_N_N_N: "NumData",
-    mix_V2_V2_N: "Vec2Data",
-    mix_V3_V3_N: "Vec3Data",
-    mix_V4_V4_N: "Vec4Data",
-    mix_V2_V2_V2: "Vec2Data",
-    mix_V3_V3_V3: "Vec3Data",
-    mix_V4_V4_V4: "Vec4Data",
-    floor_N: "NumData",
-    floor_V2: "Vec2Data",
-    floor_V3: "Vec3Data",
-    floor_V4: "Vec4Data",
-    fract_N: "NumData",
-    fract_V2: "Vec2Data",
-    fract_V3: "Vec3Data",
-    fract_V4: "Vec4Data",
-    exp2_N: "NumData",
-    exp2_V2: "Vec2Data",
-    exp2_V3: "Vec3Data",
-    exp2_V4: "Vec4Data",
-    exp_N: "NumData",
-    exp_V2: "Vec2Data",
-    exp_V3: "Vec3Data",
-    exp_V4: "Vec4Data",
-    inversesqrt_N: "NumData",
-    inversesqrt_V2: "Vec2Data",
-    inversesqrt_V3: "Vec3Data",
-    inversesqrt_V4: "Vec4Data",
-    log_N: "NumData",
-    log_V2: "Vec2Data",
-    log_V3: "Vec3Data",
-    log_V4: "Vec4Data",
-    log2_N: "NumData",
-    log2_V2: "Vec2Data",
-    log2_V3: "Vec3Data",
-    log2_V4: "Vec4Data",
-    max_N_N: "NumData",
-    max_V2_N: "Vec2Data",
-    max_V3_N: "Vec3Data",
-    max_V4_N: "Vec4Data",
-    max_V2_V2: "Vec2Data",
-    max_V3_V3: "Vec3Data",
-    max_V4_V4: "Vec4Data",
-    min_N_N: "NumData",
-    min_V2_N: "Vec2Data",
-    min_V3_N: "Vec3Data",
-    min_V4_N: "Vec4Data",
-    min_V2_V2: "Vec2Data",
-    min_V3_V3: "Vec3Data",
-    min_V4_V4: "Vec4Data",
-    mod_N_N: "NumData",
-    mod_V2_N: "Vec2Data",
-    mod_V3_N: "Vec3Data",
-    mod_V4_N: "Vec4Data",
-    mod_V2_V2: "Vec2Data",
-    mod_V3_V3: "Vec3Data",
-    mod_V4_V4: "Vec4Data",
-    pow_N_N: "NumData",
-    pow_V2_V2: "Vec2Data",
-    pow_V3: "Vec3Data",
-    pow_V4: "Vec4Data",
-    round_N: "NumData",
-    round_V2: "Vec2Data",
-    round_V3: "Vec3Data",
-    round_V4: "Vec4Data",
-    sign_N: "NumData",
-    sign_V2: "Vec2Data",
-    sign_V3: "Vec3Data",
-    sign_V4: "Vec4Data",
-    smoothstep_N_N_N: "NumData",
-    smoothstep_V2_N_N: "Vec2Data",
-    smoothstep_V3_N_N: "Vec3Data",
-    smoothstep_V4_N_N: "Vec4Data",
-    smoothstep_V2_V2_V2: "Vec2Data",
-    smoothstep_V3_V3_V3: "Vec3Data",
-    smoothstep_V4_V4_V4: "Vec4Data",
-    sqrt_N: "NumData",
-    sqrt_V2: "Vec2Data",
-    sqrt_V3: "Vec3Data",
-    sqrt_V4: "Vec4Data",
-    step_N_N: "NumData",
-    step_N_V2: "Vec2Data",
-    step_N_V3: "Vec3Data",
-    step_N_V4: "Vec4Data",
-    step_V2_V2: "Vec2Data",
-    step_V3_V3: "Vec3Data",
-    step_V4_V4: "Vec4Data",
-    trunc_N: "NumData",
-    trunc_V2: "Vec2Data",
-    trunc_V3: "Vec3Data",
-    trunc_V4: "Vec4Data",
-    cross_V3_V3: "Vec3Data",
-    distance_N_N: "FloatData",
-    distance_V2_V2: "FloatData",
-    distance_V3_V3: "FloatData",
-    distance_V4_V4: "FloatData",
-    dot_N_N: "FloatData",
-    dot_V2_V2: "FloatData",
-    dot_V3_V3: "FloatData",
-    dot_V4_V4: "FloatData",
-    equal_N_N: "boolean",
-    equal_V2_V2: "boolean",
-    equal_V3_V3: "boolean",
-    equal_V4_V4: "boolean",
-    faceforward_N_N_N: "NumData",
-    faceforward_V2_V2_V2: "Vec2Data",
-    faceforward_V3_V3_V3: "Vec3Data",
-    faceforward_V4_V4_V4: "Vec4Data",
-    length_N: "FloatData",
-    length_V2: "FloatData",
-    length_V3: "FloatData",
-    length_V4: "FloatData",
-    normalize_N: "NumData",
-    normalize_V2: "Vec2Data",
-    normalize_V3: "Vec3Data",
-    normalize_V4: "Vec4Data",
-    notEqual_N_N: "boolean",
-    notEqual_V2_V2: "boolean",
-    notEqual_V3_V3: "boolean",
-    notEqual_V4_V4: "boolean",
-    reflect_N_N: "NumData",
-    reflect_V2_V2: "Vec2Data",
-    reflect_V3_V3: "Vec3Data",
-    reflect_V4_V4: "Vec4Data",
-    refract_N_N_N: "NumData",
-    refract_V2_V2_N: "Vec2Data",
-    refract_V3_V3_N: "Vec3Data",
-    refract_V4_V4_N: "Vec4Data",
-    determinant_M3: "FloatData",
-    determinant_M4: "FloatData",
-    inverse_M3: "Mat3Data",
-    inverse_M4: "Mat4Data",
-    int: "IntData",
-    int_N: "IntData",
-    float: "IntData",
-    float_N: "FloatData",
-    vec2: "Vec2Data",
-    vec2_N: "Vec2Data",
-    vec2_N_N: "Vec2Data",
-    vec2_V2: "Vec2Data",
-    vec3: "Vec3Data",
-    vec3_N: "Vec3Data",
-    vec3_N_N_N: "Vec3Data",
-    vec3_V2_N: "Vec3Data",
-    vec3_N_V2: "Vec3Data",
-    vec3_V3: "Vec3Data",
-    vec4: "Vec4Data",
-    vec4_N: "Vec4Data",
-    vec4_N_N_N_N: "Vec4Data",
-    vec4_N_N_V2: "Vec4Data",
-    vec4_N_V3: "Vec4Data",
-    vec4_V2_N_N: "Vec4Data",
-    vec4_V2_V2: "Vec4Data",
-    vec4_V3_N: "Vec4Data",
-    vec4_V4: "Vec4Data",
-    mat3: "Mat3Data",
-    mat3_N_N_N_N_N_N_N_N_N: "Mat3Data",
-    mat3_M3: "Mat3Data",
-    mat3_M4: "Mat3Data",
-    mat3_V3_V3_V3: "Mat3Data",
-    mat4: "Mat4Data",
-    mat4_M3: "Mat4Data",
-    mat4_M4: "Mat4Data",
-    mat4_V4_V4_V4_V4: "Mat4Data",
-    mat4_N_N_N_N_N_N_N_N_N_N_N_N_N_N_N_N: "Mat4Data",
-    texture2D_N_V2: "Vec4Data",
-    textureCube_NA_V3: "Vec4Data",
-}
-
-let builtinFuns = {
-    radian: true,
-    degrees: true,
-    sin: true,
-    cos: true,
-    tan: true,
-    asin: true,
-    acos: true,
-    atan: true,
-    sinh: true,
-    cosh: true,
-    tanh: true,
-    asinh: true,
-    acosh: true,
-    atanh: true,
-    abs: true,
-    ceil: true,
-    clamp: true,
-    mix: true,
-    floor: true,
-    fract: true,
-    exp2: true,
-    exp: true,
-    inversesqrt: true,
-    log: true,
-    log2: true,
-    max: true,
-    min: true,
-    mod: true,
-    pow: true,
-    round: true,
-    sign: true,
-    smoothstep: true,
-    sqrt: true,
-    step: true,
-    trunc: true,
-    cross: true,
-    distance: true,
-    dot: true,
-    equal: true,
-    faceforward: true,
-    length: true,
-    normalize: true,
-    notEqual: true,
-    reflect: true,
-    refract: true,
-    determinant: true,
-    inverse: true,
-    int: true,
-    float: true,
-    vec2: true,
-    vec3: true,
-    vec4: true,
-    mat3: true,
-    mat4: true,
-}
-
-const builtinAbbreviation = {
-    Vec2Data: "V2",
-    "Vec2Data[]": "V2A",
-    Vec3Data: "V3",
-    "Vec3Data[]": "V3A",
-    Vec4Data: "V4",
-    "Vec4Data[]": "V4[]",
-    Mat3Data: "M3",
-    "Mat3Data[]": "M3A",
-    Mat4Data: "M4",
-    "Mat4Data[]": "M4A",
-    FloatData: "N",
-    "FloatData[]": "NA",
-    IntData: "N",
-    "IntData[]": "NA",
-    NumData: "N",
-    "NumData[]": "NA",
-    number: "N",
-    "number[]": "NA",
-    BoolData: "B",
-    "BoolData[]": "BA",
-    boolean: "b",
-    "boolean[]": "bA",
-    Sampler2D: "N",
-    SamplerCube: "NA",
-}
-
-function convertToAbbreviation(str: string) {
-    return (<any>builtinAbbreviation)[str] || str
 }
 
 const types = {
@@ -649,37 +63,209 @@ const types = {
 let output: string[] = []
 let ws: WsManager = null!
 
-// 等待推入的声明对象
-let waitPushDecVal: Map<string, string> = new Map()
-let nowTypeCach: string = ""
-let nowFuncTypeCach: string = ""
-let nowBlockLevel: number = 0
-let isFuncArgs = false
-let inForDefine = false
+let deparseGlobalVal: DeparseGlslGlobalVal = new DeparseGlslGlobalVal()
 
-let useBuiltinFuncs: Set<string> = new Set()
-let useBuiltinOperators: Set<string> = new Set()
+export function deparseToTs(
+    ast: any,
+    whitespace_enabled: boolean = false,
+    indent_text: string = "  ",
+    ud: Map<string, string>,
+    vd: Map<string, string>,
+    ad: Map<string, string>,
+    sdm: Map<string, Map<string, string>>,
+    d: Map<string, number | string>,
+    isVert: boolean = false,
+    hash: string
+) {
+    output.length = 0
+    ws = new WsManager(whitespace_enabled, indent_text)
+    deparseGlobalVal.forceInit(ud, vd, ad, sdm, d)
 
-// 当前声明的数组数量
-let declArrNum: number[] = []
-// 是否处于左赋值语句中
-let isLeftSet = false
-let inFunc: boolean = false
-let isFuncBlock: boolean = false
-let uniformData: Map<string, string> = new Map()
-let varyingData: Map<string, string> = new Map()
-let attributeData: Map<string, string> = new Map()
-let structDataMap: Map<string, Map<string, string>> = new Map()
-let defines: Map<string, number | string>
+    let attributeStr = "class AttributeDataImpl implements AttributeData {\n"
+    let attributerDataKeysStr = "    dataKeys: Map<string, any> = new Map([\n"
+    let attributerDataSizeStr = "    dataSize: Map<string, number> = new Map([\n"
+    deparseGlobalVal.attributeData.forEach((value, key: string) => {
+        let convertType: string = (<any>convertToTsType)[value]
+        if (convertType) {
+            let arrData = splitArrData(key, deparseGlobalVal.defines)
+            let factObjName = arrData.factObjName
 
-let customFuns: Map<string, string> = new Map()
-let customFunsInOutType: Map<string, InOutType[]> = new Map()
-// 对应每一层块的变量 会往当前块往父节点块的变量查找 如果都找不到 那么会往类数据查找
-// funcObj会记录对象名和类型
-let nowFucObj: Map<number, Map<string, string>> = new Map()
+            if (arrData && arrData.arrNum > 0) {
+                console.error("attribute 变量暂不支持数组")
+            }
+            let typeNumStr = customGetTypeNumStr(convertType)
+            attributerDataKeysStr += `        ["${key}", cpuRenderingContext.cachGameGl.${typeNumStr}],\n`
+            attributerDataSizeStr += `        ["${key}", 1],\n`
+            attributeStr += `    ${key}: ${convertType} = new ${convertType}()\n`
+        } else {
+            console.error("不识别的shader 数据结构: " + value)
+        }
+    })
+    attributerDataKeysStr += `    ])\n`
+    attributerDataSizeStr += `    ])\n`
+    attributeStr += attributerDataKeysStr + attributerDataSizeStr
+    attributeStr += "}\n"
 
-// 用于函数参数in 的替代声明
-let funcArgsInReplace: { name: string; type: string }[] = []
+    let varyingStr = "class VaryingDataImpl extends VaryingData {\n"
+    let dataKeysStr = "    dataKeys: Map<string, any> = new Map([\n"
+    let copyFuncStr = `    copy(varying: VaryingDataImpl) {\n`
+    deparseGlobalVal.varyingData.forEach((value, key: string) => {
+        let convertType: string = (<any>convertToTsType)[value]
+        if (convertType) {
+            let arrData = splitArrData(key, deparseGlobalVal.defines)
+            if (arrData && arrData.arrNum > 0) {
+                console.error("varying 变量暂不支持数组")
+            }
+            varyingStr += `    ${key}: ${convertType} = new ${convertType}()\n`
+            let typeNumStr = customGetTypeNumStr(convertType)
+            dataKeysStr += `        ["${key}", cpuRenderingContext.cachGameGl.${typeNumStr}],\n`
+
+            let abbreviation = convertToAbbreviation(convertType)
+            let setFunc = `glSet_${abbreviation}_${abbreviation}`
+            copyFuncStr += `        ${setFunc}(varying.${key}, this.${key})\n`
+            deparseGlobalVal.useBuiltinOperators.add(setFunc)
+        } else {
+            console.error("不识别的shader 数据结构: " + value)
+        }
+    })
+    dataKeysStr += `    ])\n`
+
+    varyingStr += `
+    factoryCreate() {
+        return new VaryingDataImpl()
+    }\n`
+
+    varyingStr += dataKeysStr + copyFuncStr + `    }\n`
+    varyingStr += "}\n"
+
+    // 对uniform和struct中的数组对象进行处理
+    let tmpUniformData: Map<string, string> = new Map()
+    let uniformStr = `class UniformDataImpl implements UniformData {\n`
+    let uniformDataKeysStr = "    dataKeys: Map<string, any> = new Map([\n"
+    let uniformDataSizeStr = "    dataSize: Map<string, number> = new Map([\n"
+    deparseGlobalVal.uniformData.forEach((value, key: string) => {
+        let convertType: string = (<any>convertToTsType)[value]
+        if (convertType) {
+            let arrData = splitArrData(key, deparseGlobalVal.defines)
+            let factObjName = arrData.factObjName
+
+            let typeNumStr = customGetTypeNumStr(convertType)
+            uniformDataKeysStr += `        ["${factObjName}", cpuRenderingContext.cachGameGl.${typeNumStr}],\n`
+            uniformDataSizeStr += `        ["${factObjName}", ${arrData.arrNum || 1}],\n`
+            tmpUniformData.set(factObjName, `${convertType}${arrData.arrNum > 0 ? "[]" : ""}`)
+
+            if (arrData.arrNum > 0) {
+                uniformStr += `    ${factObjName}: ${convertType}${arrData.arrNum > 0 ? "[]" : ""} = [`
+                let lastIndex = arrData.arrNum - 1
+                for (let index = 0; index < arrData.arrNum; index++) {
+                    uniformStr += `new ${convertType}()`
+                    if (index != lastIndex) {
+                        uniformStr += `, `
+                    }
+                }
+                uniformStr += `]\n`
+            } else {
+                uniformStr += `    ${factObjName}: ${convertType}${arrData.arrNum > 0 ? "[]" : ""} = new ${convertType}()\n`
+            }
+        } else {
+            console.error("不识别的shader 数据结构: " + value)
+        }
+    })
+    uniformDataKeysStr += `    ])\n`
+    uniformDataSizeStr += `    ])\n`
+    uniformStr += uniformDataKeysStr + uniformDataSizeStr + "}\n"
+    deparseGlobalVal.uniformData = tmpUniformData
+
+    let structStr = ""
+    let tmpStructDataMap: Map<string, Map<string, string>> = new Map()
+    deparseGlobalVal.structDataMap.forEach((value: Map<string, string>, key: string) => {
+        structStr += `class ${key} implements StructData {\n`
+
+        let tmpStructValue: Map<string, string> = new Map()
+        tmpStructDataMap.set(key, tmpStructValue)
+        value.forEach((objType: string, objName: string) => {
+            let arrData = splitArrData(objName, deparseGlobalVal.defines)
+            let factObjName = arrData.factObjName
+
+            let convertType: string = (<any>convertToTsType)[objType]
+            let builtinFuncCall = (<any>convertToBuiltinCall)[convertType]
+            let createStr = ""
+            if (builtinFuncCall) {
+                createStr = `${builtinFuncCall}()`
+            } else {
+                createStr = ` new ${convertType}()`
+            }
+            if (arrData.arrNum > 0) {
+                tmpStructValue.set(factObjName, `${convertType}[]`)
+                structStr += `    ${factObjName}: ${convertType}[] = [`
+
+                for (let index = 0; index < arrData.arrNum; index++) {
+                    if (index !== arrData.arrNum - 1) {
+                        structStr += `${createStr},`
+                    } else {
+                        structStr += `${createStr}]\n`
+                    }
+                }
+            } else {
+                tmpStructValue.set(factObjName, `${convertType}`)
+                structStr += `    ${factObjName}: ${convertType} = ${createStr}\n`
+            }
+        })
+        structStr += `}\n`
+    })
+    deparseGlobalVal.structDataMap = tmpStructDataMap
+
+    deparse(ast)
+    let tsScript = output.join("")
+    tsScript = tsScript.replace(/\n/g, "\n    ") + "\n"
+    if (isVert) {
+        tsScript = `    attributeData: AttributeDataImpl = new AttributeDataImpl()\n` + tsScript
+        tsScript = `    uniformData: UniformDataImpl = new UniformDataImpl()\n` + tsScript
+        tsScript = `    varyingData: VaryingDataImpl = new VaryingDataImpl()\n` + tsScript
+    } else {
+        tsScript = `    uniformData: UniformDataImpl = new UniformDataImpl()\n` + tsScript
+        tsScript = `    varyingData: VaryingDataImpl = new VaryingDataImpl()\n` + tsScript
+    }
+    tsScript = `export class Impl_${hash} extends ${isVert ? "VertShaderHandle" : "FragShaderHandle"}{\n` + tsScript + "}\n"
+    // console.log(hash)
+
+    let defineStr = ""
+    deparseGlobalVal.defines.forEach((value: string | number, key: string) => {
+        if (!isNaN(parseFloat(<string>value))) {
+            defineStr += `let ${key} = new FloatData(${value})\n`
+        } else {
+            defineStr += `let ${key} = "${value}"\n`
+        }
+    })
+    tsScript = defineStr + structStr + attributeStr + varyingStr + uniformStr + tsScript
+
+    let importStr = "import {\n"
+    deparseGlobalVal.useBuiltinFuncs.add("float")
+    deparseGlobalVal.useBuiltinFuncs.add("float_N")
+    deparseGlobalVal.useBuiltinFuncs.add("bool")
+    deparseGlobalVal.useBuiltinFuncs.add("bool_N")
+    deparseGlobalVal.useBuiltinFuncs.add("int_N")
+    deparseGlobalVal.useBuiltinFuncs.add("int")
+    deparseGlobalVal.useBuiltinFuncs.add("vec4")
+    deparseGlobalVal.useBuiltinFuncs.add("vec3")
+    deparseGlobalVal.useBuiltinFuncs.add("vec2")
+    deparseGlobalVal.useBuiltinFuncs.add("mat3")
+    deparseGlobalVal.useBuiltinFuncs.add("mat4")
+    deparseGlobalVal.useBuiltinFuncs.forEach((funNames: string) => {
+        importStr += `    ${funNames},\n`
+    })
+    importStr += `} from "../builtin/BuiltinFunc"\n`
+    importStr += "import {\n"
+    deparseGlobalVal.useBuiltinOperators.add("getValueKeyByIndex")
+    deparseGlobalVal.useBuiltinOperators.add("getOutValueKeyByIndex")
+    deparseGlobalVal.useBuiltinOperators.forEach((funNames: string) => {
+        importStr += `    ${funNames},\n`
+    })
+    importStr += `} from "../builtin/BuiltinOperator"\n`
+    importStr += `import { gl_FragData, gl_FragColor, gl_Position, gl_FragCoord, gl_FragDepth, gl_FrontFacing, custom_isDiscard} from "../builtin/BuiltinVar"\n`
+    importStr += `import { cpuRenderingContext } from "../../CpuRenderingContext"\n`
+    return [importStr, tsScript]
+}
 
 function outputPush(str: string) {
     if (!isNaN(parseFloat(str))) {
@@ -706,14 +292,14 @@ function outputReplace(index: number, str: string) {
 
 function convertToClassObj(str: string) {
     let objStr: string | undefined
-    if (defines.get(str) !== undefined) {
+    if (deparseGlobalVal.defines.get(str) !== undefined) {
         objStr = str
     } else {
-        objStr = uniformData.get(str)
+        objStr = deparseGlobalVal.uniformData.get(str)
         if (!objStr) {
-            objStr = varyingData.get(str)
+            objStr = deparseGlobalVal.varyingData.get(str)
             if (!objStr) {
-                objStr = attributeData.get(str)
+                objStr = deparseGlobalVal.attributeData.get(str)
                 if (!objStr) {
                     objStr = str
                 } else {
@@ -731,12 +317,12 @@ function convertToClassObj(str: string) {
 }
 
 function getStructType(str: string) {
-    let sd = structDataMap.get(str)
+    let sd = deparseGlobalVal.structDataMap.get(str)
     return sd
 }
 
 function deparse_binary(node: any) {
-    if (!isFuncBlock) {
+    if (!deparseGlobalVal.isFuncBlock) {
         return
     }
     var is_bracket = node.data === "["
@@ -816,7 +402,7 @@ function deparse_binary(node: any) {
                     leftType == "Mat3Data" ||
                     leftType == "Mat4Data"
                 ) {
-                    if (isLeftSet) {
+                    if (deparseGlobalVal.isLeftSet) {
                         outputInsert(leftEnd + 3, "getValueKeyByIndex(")
                     } else {
                         outputInsert(leftEnd + 3, "getOutValueKeyByIndex(")
@@ -833,7 +419,7 @@ function deparse_binary(node: any) {
                     leftType == "Mat3Data" ||
                     leftType == "Mat4Data"
                 ) {
-                    if (isLeftSet) {
+                    if (deparseGlobalVal.isLeftSet) {
                         outputInsert(leftEnd + 1, "getValueKeyByIndex(")
                     } else {
                         outputInsert(leftEnd + 1, "getOutValueKeyByIndex(")
@@ -848,23 +434,6 @@ function deparse_binary(node: any) {
         }
     }
     let rightEnd = output.length
-
-    // console.log("*********************begin binary***************")
-    // // 分析左边的类型
-    // let str = ""
-    // for (let index = leftIndex; index < leftEnd; index++) {
-    //     str += output[index]
-    // }
-    // str += node.data
-    // console.log(node.data)
-    // for (let index = rightIndex; index < rightEnd; index++) {
-    //     str += output[index]
-    // }
-    // console.log("leftLength:" + (leftEnd - leftIndex) + " rightLength:" + (rightEnd - rightIndex))
-    // console.log("opeStr: " + str)
-
-    // console.log("*********************end binary***************")
-
     if (operatorReplace) {
         operatorReplace = operatorReplace + "_" + convertToAbbreviation("" + leftType) + "_" + convertToAbbreviation("" + rightType)
         outputInsert(leftIndex, operatorReplace + "(")
@@ -872,7 +441,7 @@ function deparse_binary(node: any) {
         outputInsert(rightEnd + 1, ")")
         outputReplace(operatorIndex + 1, ",")
 
-        useBuiltinOperators.add(operatorReplace)
+        deparseGlobalVal.useBuiltinOperators.add(operatorReplace)
     }
     if (is_bracket) {
         outputPush("]")
@@ -883,7 +452,6 @@ function deparse_binary(node: any) {
         } else if (leftType == "Mat4Data") {
             return "Vec4Data"
         } else {
-            //
             return leftType.substring(0, leftType.lastIndexOf("["))
         }
     }
@@ -898,14 +466,14 @@ function deparse_binary(node: any) {
 }
 
 function deparse_break(node: any) {
-    if (!isFuncBlock) {
+    if (!deparseGlobalVal.isFuncBlock) {
         return
     }
     outputPush("break")
 }
 
 function deparse_builtin(node: any) {
-    if (!isFuncBlock) {
+    if (!deparseGlobalVal.isFuncBlock) {
         return
     }
 
@@ -926,7 +494,7 @@ function deparse_builtin(node: any) {
 }
 
 function deparse_continue(node: any) {
-    if (!isFuncBlock) {
+    if (!deparseGlobalVal.isFuncBlock) {
         return
     }
     outputPush("continue")
@@ -934,7 +502,7 @@ function deparse_continue(node: any) {
 
 function deparse_decl(node: any) {
     // it's five long
-    if (!isFuncBlock) {
+    if (!deparseGlobalVal.isFuncBlock) {
         return
     }
 
@@ -958,10 +526,10 @@ function deparse_decl(node: any) {
         if (child.type !== "placeholder") {
             if (child.type == "keyword" || child.type == "ident") {
                 if (hasFunc) {
-                    nowFuncTypeCach = child.token.data
+                    deparseGlobalVal.nowFuncTypeCach = child.token.data
                 } else {
-                    nowTypeCach = child.token.data
-                    cachValType = nowTypeCach
+                    deparseGlobalVal.nowTypeCach = child.token.data
+                    cachValType = deparseGlobalVal.nowTypeCach
                 }
                 continue
             }
@@ -975,25 +543,25 @@ function deparse_decl(node: any) {
 
     // 避免有天才声明了同一个类型在同一个语句中
     // 所以声明语句放在最后添加
-    if (waitPushDecVal.size) {
-        waitPushDecVal.forEach((value: string, key: string) => {
-            let setData = nowFucObj.get(nowBlockLevel)
+    if (deparseGlobalVal.waitPushDecVal.size) {
+        deparseGlobalVal.waitPushDecVal.forEach((value: string, key: string) => {
+            let setData = deparseGlobalVal.nowFucObj.get(deparseGlobalVal.nowBlockLevel)
             if (!setData) {
                 setData = new Map()
-                nowFucObj.set(nowBlockLevel, setData)
+                deparseGlobalVal.nowFucObj.set(deparseGlobalVal.nowBlockLevel, setData)
             }
             setData.set(key, value)
         })
-        waitPushDecVal.clear()
+        deparseGlobalVal.waitPushDecVal.clear()
     }
-    return cachValType || nowFuncTypeCach
+    return cachValType || deparseGlobalVal.nowFuncTypeCach
 }
 
 function deparse_decllist(node: any) {
-    if (!isFuncBlock) {
+    if (!deparseGlobalVal.isFuncBlock) {
         return
     }
-    let tmpCachType = nowTypeCach
+    let tmpCachType = deparseGlobalVal.nowTypeCach
     let decllistBegin = output.length
 
     let setFunc = "glSet"
@@ -1015,20 +583,20 @@ function deparse_decllist(node: any) {
         setFunc = "glSet_Struct_Struct"
     }
 
-    if (nowTypeCach !== "") {
+    if (deparseGlobalVal.nowTypeCach !== "") {
         // 判断是否数组类型
         let arrTypeStr = ""
-        declArrNum = []
+        deparseGlobalVal.declArrNum = []
         // 数据定义应该只可能是常量数值 所以不用考虑其它情况
         for (var i = 1, len = node.children.length; i < len; ++i) {
             if (node.children[i].type === "quantifier") {
                 arrTypeStr += "[]"
-                declArrNum.push(parseInt(node.children[i].children[0].children[0].data))
+                deparseGlobalVal.declArrNum.push(parseInt(node.children[i].children[0].children[0].data))
             }
         }
-        if (declArrNum.length > 0) {
-            nowTypeCach = nowTypeCach + arrTypeStr
-            tmpCachType = nowTypeCach
+        if (deparseGlobalVal.declArrNum.length > 0) {
+            deparseGlobalVal.nowTypeCach = deparseGlobalVal.nowTypeCach + arrTypeStr
+            tmpCachType = deparseGlobalVal.nowTypeCach
         }
     }
 
@@ -1039,7 +607,7 @@ function deparse_decllist(node: any) {
         if (i > 0) {
             if (node.children[i].type !== "ident") {
                 if (node.children[i].type !== "quantifier") {
-                    if (inForDefine) {
+                    if (deparseGlobalVal.inForDefine) {
                         outputPush(ws.optional(" "))
                         outputPush("=")
                         outputPush(ws.optional(" "))
@@ -1049,22 +617,13 @@ function deparse_decllist(node: any) {
                         outputPush(node.children[i - 1].data)
                         outputPush(", ")
                         isSet = true
-                        useBuiltinOperators.add(setFunc)
-
-                        // console.log("*********************begin decllist***************")
-                        // // 分析左边的类型
-                        // let str = ""
-                        // for (let index = decllistBegin; index < setFuncIndex; index++) {
-                        //     str += output[index]
-                        // }
-                        // console.log("decllistStr: " + str)
-                        // console.log("*********************end decllist***************")
+                        deparseGlobalVal.useBuiltinOperators.add(setFunc)
                     }
                 } else {
                     continue
                 }
             } else {
-                nowTypeCach = tmpCachType
+                deparseGlobalVal.nowTypeCach = tmpCachType
                 outputPush(ws.required("\n"))
             }
         }
@@ -1072,7 +631,7 @@ function deparse_decllist(node: any) {
         if (isSet) {
             if (type == "boolean") {
                 outputReplace(setFuncIndex, "glSet_B_b(")
-                useBuiltinOperators.add("glSet_B_b")
+                deparseGlobalVal.useBuiltinOperators.add("glSet_B_b")
             }
             outputPush(")")
         }
@@ -1080,14 +639,14 @@ function deparse_decllist(node: any) {
 }
 
 function deparse_discard(node: any) {
-    if (!isFuncBlock) {
+    if (!deparseGlobalVal.isFuncBlock) {
         return
     }
     outputPush("custom_isDiscard.v = true")
 }
 
 function deparse_do_while(node: any) {
-    if (!isFuncBlock) {
+    if (!deparseGlobalVal.isFuncBlock) {
         return
     }
     var is_stmtlist = node.children[0].type === "stmtlist"
@@ -1114,7 +673,7 @@ function deparse_do_while(node: any) {
 }
 
 function deparse_expr(node: any) {
-    if (!isFuncBlock) {
+    if (!deparseGlobalVal.isFuncBlock) {
         return
     }
     if (node.children.length) {
@@ -1124,16 +683,16 @@ function deparse_expr(node: any) {
 
 // 测试过for 里面的判断应该不能直接用bool变量
 function deparse_forloop(node: any) {
-    if (!isFuncBlock) {
+    if (!deparseGlobalVal.isFuncBlock) {
         return
     }
 
     var is_stmtlist = node.children[3].type === "stmtlist"
 
     outputPush("for(")
-    inForDefine = true
+    deparseGlobalVal.inForDefine = true
     deparse(node.children[0])
-    inForDefine = false
+    deparseGlobalVal.inForDefine = false
     outputPush(";")
     outputPush(ws.optional(" "))
     deparse(node.children[1])
@@ -1167,7 +726,7 @@ function deparse_function(node: any) {
 
     let customName = funcName
     let replaceIndex = []
-    funcArgsInReplace = []
+    deparseGlobalVal.funcArgsInReplace = []
     let replace
     if (returnTypes.length > 0) {
         for (let index = 0; index < returnTypes.length; index++) {
@@ -1179,15 +738,15 @@ function deparse_function(node: any) {
                 let oldData = output[argsInfo.index]
                 outputReplace(argsInfo.index, `__${oldData}__`)
                 replaceIndex.push(index)
-                funcArgsInReplace.push({ name: oldData, type: (<any>convertToTsType)[element] || element })
+                deparseGlobalVal.funcArgsInReplace.push({ name: oldData, type: (<any>convertToTsType)[element] || element })
             }
         }
     }
     outputPush(")")
-    outputPush(": " + (<any>convertToTsType)[nowFuncTypeCach])
-    customFuns.set(customName, nowFuncTypeCach)
-    // customFunsInOutType(customName, )
-    nowFuncTypeCach = ""
+    outputPush(": " + (<any>convertToTsType)[deparseGlobalVal.nowFuncTypeCach])
+    deparseGlobalVal.customFuns.set(customName, deparseGlobalVal.nowFuncTypeCach)
+    // deparseGlobalVal.customFunsInOutType(customName, )
+    deparseGlobalVal.nowFuncTypeCach = ""
     outputReplace(funcIndex, customName)
 
     if (node.children[2]) {
@@ -1196,17 +755,11 @@ function deparse_function(node: any) {
     }
 }
 
-enum InOutType {
-    in,
-    out,
-    inout,
-}
-
 function deparse_functionargs(node: any) {
     var len = node.children.length,
         len_minus_one = len - 1
 
-    isFuncArgs = true
+    deparseGlobalVal.isFuncArgs = true
     let returnTypes = []
 
     let argsInfoArr = []
@@ -1228,13 +781,13 @@ function deparse_functionargs(node: any) {
         }
     }
 
-    isFuncArgs = false
+    deparseGlobalVal.isFuncArgs = false
     return [returnTypes, argsInfoArr]
 }
 
 function getFuncObjType(name: string) {
-    for (let index = nowBlockLevel; index >= 0; index--) {
-        const setData = nowFucObj.get(index)
+    for (let index = deparseGlobalVal.nowBlockLevel; index >= 0; index--) {
+        const setData = deparseGlobalVal.nowFucObj.get(index)
         if (setData && setData.has(name)) {
             return setData.get(name)
         }
@@ -1243,48 +796,44 @@ function getFuncObjType(name: string) {
 }
 
 function deparse_ident(node: any) {
-    if (nowTypeCach !== "") {
-        if (inFunc) {
+    if (deparseGlobalVal.nowTypeCach !== "") {
+        if (deparseGlobalVal.inFunc) {
             outputPush("let ")
         }
         outputPush(node.data)
-        let letType = (<any>convertToTsType)[nowTypeCach] || nowTypeCach
+        let letType = (<any>convertToTsType)[deparseGlobalVal.nowTypeCach] || deparseGlobalVal.nowTypeCach
         outputPush(": " + letType)
 
-        // let setData = nowFucObj.get(nowBlockLevel)
+        // let setData = deparseGlobalVal.nowFucObj.get(deparseGlobalVal.nowBlockLevel)
         // if (!setData) {
         //     setData = new Map()
-        //     nowFucObj.set(nowBlockLevel, setData)
+        //     deparseGlobalVal.nowFucObj.set(deparseGlobalVal.nowBlockLevel, setData)
         // }
         // setData.set(node.data, letType)
-        waitPushDecVal.set(node.data, letType)
+        deparseGlobalVal.waitPushDecVal.set(node.data, letType)
 
         let grandParentNode = node.parent.parent
 
-        if (inFunc && !inForDefine) {
+        if (deparseGlobalVal.inFunc && !deparseGlobalVal.inForDefine) {
             outputPush(ws.optional(" "))
             outputPush("=")
             outputPush(ws.optional(" "))
 
-            let sd = getStructType(nowTypeCach)
+            let sd = getStructType(deparseGlobalVal.nowTypeCach)
 
             let createStr = ""
             // 判断是否struct 类型
-
-            let splitData = splitArrData(nowTypeCach)
-
+            let splitData = splitArrData(deparseGlobalVal.nowTypeCach, deparseGlobalVal.defines)
             if (sd) {
                 createStr = "new " + splitData.factObjName + "()"
-                // outputPush(ws.optional("new " + nowTypeCach + "()"))
             } else {
                 createStr = splitData.factObjName + "()"
-                // outputPush(ws.optional(nowTypeCach + "()"))
             }
 
-            if (declArrNum.length > 0) {
+            if (deparseGlobalVal.declArrNum.length > 0) {
                 let copyArrStr = createStr
-                for (let index = declArrNum.length - 1; index >= 0; index--) {
-                    let arrNum = declArrNum[index]
+                for (let index = deparseGlobalVal.declArrNum.length - 1; index >= 0; index--) {
+                    let arrNum = deparseGlobalVal.declArrNum[index]
                     let arr = `[`
                     for (let t = 0; t < arrNum; t++) {
                         if (t !== arrNum - 1) {
@@ -1302,11 +851,11 @@ function deparse_ident(node: any) {
             }
             outputPush("\n")
         }
-        nowTypeCach = ""
-    } else if (nowFuncTypeCach == "") {
+        deparseGlobalVal.nowTypeCach = ""
+    } else if (deparseGlobalVal.nowFuncTypeCach == "") {
         let isFuncObj = false
-        for (let index = nowBlockLevel; index >= 0; index--) {
-            const setData = nowFucObj.get(index)
+        for (let index = deparseGlobalVal.nowBlockLevel; index >= 0; index--) {
+            const setData = deparseGlobalVal.nowFucObj.get(index)
             if (setData && setData.has(node.data)) {
                 isFuncObj = true
                 break
@@ -1399,7 +948,7 @@ function deparse_literal(node: any) {
 }
 
 function deparse_precision(node: any) {
-    if (!isFuncBlock) {
+    if (!deparseGlobalVal.isFuncBlock) {
         return
     }
     var len = node.children.length,
@@ -1446,7 +995,7 @@ function deparse_stmt(node: any) {
     if (has_child && node.children[0].type === "decl") {
         if (node.children[0].children.length > 5 && node.children[0].children[5].type === "function") {
             isFunSet = true
-            isFuncBlock = true
+            deparseGlobalVal.isFuncBlock = true
             semicolon = !node.children[0].children[5].children[2]
         }
     }
@@ -1456,16 +1005,16 @@ function deparse_stmt(node: any) {
     }
 
     var last = output[output.length - 1]
-    if (isFuncBlock && (!last || last.charAt(0) !== "\n")) {
+    if (deparseGlobalVal.isFuncBlock && (!last || last.charAt(0) !== "\n")) {
         needs_newline && outputPush(ws.optional("\n"))
     }
 
     deparse(node.children[0])
-    if (isFuncBlock) {
+    if (deparseGlobalVal.isFuncBlock) {
         if (semicolon) outputPush(";")
     }
     if (isFunSet) {
-        isFuncBlock = false
+        deparseGlobalVal.isFuncBlock = false
     }
 }
 
@@ -1473,15 +1022,15 @@ function deparse_stmtlist(node: any) {
     var has_parent = node.parent !== null && node.parent !== undefined
 
     if (has_parent) {
-        inFunc = true
+        deparseGlobalVal.inFunc = true
         outputPush("{")
-        nowBlockLevel++
+        deparseGlobalVal.nowBlockLevel++
         ws.indent()
         outputPush(ws.optional("\n"))
 
-        if (funcArgsInReplace.length > 0) {
-            for (let index = 0; index < funcArgsInReplace.length; index++) {
-                const element = funcArgsInReplace[index]
+        if (deparseGlobalVal.funcArgsInReplace.length > 0) {
+            for (let index = 0; index < deparseGlobalVal.funcArgsInReplace.length; index++) {
+                const element = deparseGlobalVal.funcArgsInReplace[index]
 
                 let builtinFuncCall = (<any>convertToBuiltinCall)[element.type]
                 if (builtinFuncCall) {
@@ -1495,7 +1044,7 @@ function deparse_stmtlist(node: any) {
                 let setFunc = `glSet_${setType}_${setType}`
                 outputPush(`${setFunc}(${element.name}, __${element.name}__)\n`)
 
-                useBuiltinOperators.add(setFunc)
+                deparseGlobalVal.useBuiltinOperators.add(setFunc)
             }
         }
     }
@@ -1505,11 +1054,11 @@ function deparse_stmtlist(node: any) {
     }
 
     if (has_parent) {
-        nowFucObj.delete(nowBlockLevel)
-        nowBlockLevel--
-        if (nowBlockLevel == 0) {
-            inFunc = false
-            nowFucObj.delete(nowBlockLevel)
+        deparseGlobalVal.nowFucObj.delete(deparseGlobalVal.nowBlockLevel)
+        deparseGlobalVal.nowBlockLevel--
+        if (deparseGlobalVal.nowBlockLevel == 0) {
+            deparseGlobalVal.inFunc = false
+            deparseGlobalVal.nowFucObj.delete(deparseGlobalVal.nowBlockLevel)
         }
         ws.dedent()
         outputPush(ws.optional("\n"))
@@ -1518,7 +1067,7 @@ function deparse_stmtlist(node: any) {
 }
 
 function deparse_struct(node: any) {
-    if (!isFuncBlock) {
+    if (!deparseGlobalVal.isFuncBlock) {
         return
     }
     outputPush("struct")
@@ -1548,7 +1097,7 @@ function deparse_struct(node: any) {
 }
 
 function deparse_assign(node: any) {
-    if (!isFuncBlock) {
+    if (!deparseGlobalVal.isFuncBlock) {
         return
     }
 
@@ -1569,9 +1118,9 @@ function deparse_assign(node: any) {
     }
 
     let leftBeginIndex = output.length
-    isLeftSet = true
+    deparseGlobalVal.isLeftSet = true
     let leftAssignType = deparse(node.children[0])
-    isLeftSet = false
+    deparseGlobalVal.isLeftSet = false
     let leftEndIndex = output.length
     outputPush(ws.optional(" "))
     let operatorIndex = output.length
@@ -1606,7 +1155,7 @@ function deparse_assign(node: any) {
         if (glOpetatior.indexOf("undefined") !== -1) {
             debugger
         }
-        useBuiltinOperators.add(glOpetatior)
+        deparseGlobalVal.useBuiltinOperators.add(glOpetatior)
         return (<any>tsbuiltinOperationFunsWithReturn)[glOpetatior]
     } else {
         return returnType
@@ -1614,7 +1163,7 @@ function deparse_assign(node: any) {
 }
 
 function deparse_unary(node: any) {
-    if (!isFuncBlock) {
+    if (!deparseGlobalVal.isFuncBlock) {
         return
     }
 
@@ -1638,13 +1187,13 @@ function deparse_unary(node: any) {
         // // 因为左边插入了
         outputDel(beginIndex + 1, 1)
         outputPush(")")
-        useBuiltinOperators.add(operatorReplace)
+        deparseGlobalVal.useBuiltinOperators.add(operatorReplace)
     }
     return deparseType
 }
 
 function deparse_whileloop(node: any) {
-    if (!isFuncBlock) {
+    if (!deparseGlobalVal.isFuncBlock) {
         return
     }
     var is_stmtlist = node.children[1].type === "stmtlist"
@@ -1657,7 +1206,7 @@ function deparse_whileloop(node: any) {
 }
 
 function deparse_call(node: any) {
-    if (!isFuncBlock) {
+    if (!deparseGlobalVal.isFuncBlock) {
         return
     }
     var len = node.children.length,
@@ -1703,9 +1252,9 @@ function deparse_call(node: any) {
     outputPush(")")
     let returnType = (<any>tsbuiltinFunsWithReturn)[tsFuncName] || ""
     if (returnType) {
-        useBuiltinFuncs.add(tsFuncName)
+        deparseGlobalVal.useBuiltinFuncs.add(tsFuncName)
     } else {
-        returnType = customFuns.get(tsFuncName)
+        returnType = deparseGlobalVal.customFuns.get(tsFuncName)
         returnType = (<any>convertToTsType)[returnType] || returnType
     }
     if (!returnType) {
@@ -1737,20 +1286,22 @@ function getObjType(element: string) {
 
         let myIndex = element.indexOf("this.attributeData.")
         if (myIndex !== -1) {
-            return (<any>convertToTsType)[attributeData.get(element.substring(myIndex + "this.attributeData.".length))!]
+            return (<any>convertToTsType)[deparseGlobalVal.attributeData.get(element.substring(myIndex + "this.attributeData.".length))!]
         }
 
         myIndex = element.indexOf("this.varyingData.")
         if (myIndex !== -1) {
-            return (nowObjType = (<any>convertToTsType)[varyingData.get(element.substring(myIndex + "this.varyingData.".length))!])
+            return (nowObjType = (<any>convertToTsType)[
+                deparseGlobalVal.varyingData.get(element.substring(myIndex + "this.varyingData.".length))!
+            ])
         }
 
         myIndex = element.indexOf("this.uniformData.")
         if (myIndex !== -1) {
-            return (nowObjType = uniformData.get(element.substring(myIndex + "this.uniformData.".length))!)
+            return (nowObjType = deparseGlobalVal.uniformData.get(element.substring(myIndex + "this.uniformData.".length))!)
         }
 
-        nowObjType = defines.get(element)
+        nowObjType = deparseGlobalVal.defines.get(element)
         if (nowObjType !== undefined) {
             if (!isNaN(parseFloat(<string>nowObjType))) {
                 nowObjType = "number"
@@ -1786,7 +1337,7 @@ function getSonObjType(element: string, parentObjType: string) {
 }
 
 function deparse_operator(node: any) {
-    if (!isFuncBlock) {
+    if (!deparseGlobalVal.isFuncBlock) {
         return
     }
 
@@ -1918,7 +1469,7 @@ function deparse_operator(node: any) {
         }
     }
 
-    if (isLeftSet && callTree.length > 1) {
+    if (deparseGlobalVal.isLeftSet && callTree.length > 1) {
         // 查找父节点类型
         let parentType: string | undefined = undefined
         for (let index = callTree.length - 1; index >= 1; index--) {
@@ -1967,7 +1518,7 @@ function deparse_operator(node: any) {
 }
 
 function deparse_group(node: any) {
-    if (!isFuncBlock) {
+    if (!deparseGlobalVal.isFuncBlock) {
         return
     }
     outputPush("(")
@@ -1977,7 +1528,7 @@ function deparse_group(node: any) {
 }
 
 function deparse_suffix(node: any) {
-    if (!isFuncBlock) {
+    if (!deparseGlobalVal.isFuncBlock) {
         return
     }
 
@@ -1997,14 +1548,14 @@ function deparse_suffix(node: any) {
         outputInsert(beginIndex, glOperation + "(")
         // // 因为左边插入了
         outputPush(")")
-        useBuiltinOperators.add(glOperation)
+        deparseGlobalVal.useBuiltinOperators.add(glOperation)
     } else {
         outputPush(node.data)
     }
 }
 
 function deparse_quantifier(node: any) {
-    if (!isFuncBlock) {
+    if (!deparseGlobalVal.isFuncBlock) {
         return
     }
     debugger
@@ -2014,7 +1565,7 @@ function deparse_quantifier(node: any) {
 }
 
 function deparse_ternary(node: any) {
-    if (!isFuncBlock) {
+    if (!deparseGlobalVal.isFuncBlock) {
         return
     }
     deparse(node.children[0])
@@ -2035,269 +1586,4 @@ function deparse(ast: any) {
         debugger
     }
     return func(ast)
-}
-
-function splitArrData(str: string) {
-    let data: any = {}
-    let arrIndex = str.indexOf("[")
-    data.factObjName = ""
-    let arrNum: number = 0
-    if (arrIndex !== -1) {
-        data.factObjName = str.substring(0, arrIndex)
-        let numOrDefineStr = str.substring(arrIndex + 1, str.indexOf("]"))
-        arrNum = parseInt(numOrDefineStr)
-        if (isNaN(arrNum)) {
-            arrNum = <number>defines.get(numOrDefineStr)
-        }
-    } else {
-        data.factObjName = str
-    }
-    data.arrNum = arrNum
-    return data
-}
-
-function customGetTypeNumStr(convertType: string) {
-    let typeNumStr
-    if (convertType == "IntData") {
-        typeNumStr = "INT"
-    } else if (convertType == "FloatData") {
-        typeNumStr = "FLOAT"
-    } else if (convertType == "Vec4Data") {
-        typeNumStr = "FLOAT_VEC4"
-    } else if (convertType == "Vec3Data") {
-        typeNumStr = "FLOAT_VEC3"
-    } else if (convertType == "Vec2Data") {
-        typeNumStr = "FLOAT_VEC2"
-    } else if (convertType == "Mat3Data") {
-        typeNumStr = "FLOAT_MAT3"
-    } else if (convertType == "Mat4Data") {
-        typeNumStr = "FLOAT_MAT4"
-    } else if (convertType == "Sampler2D") {
-        typeNumStr = "SAMPLER_2D"
-    } else if (convertType == "SamplerCube") {
-        typeNumStr = "SAMPLER_CUBE"
-    } else {
-        debugger
-        console.error("无法识别的类型转换 in uniform")
-    }
-    return typeNumStr
-}
-
-export function deparseToTs(
-    ast: any,
-    whitespace_enabled: boolean = false,
-    indent_text: string = "  ",
-    ud: Map<string, string>,
-    vd: Map<string, string>,
-    ad: Map<string, string>,
-    sdm: Map<string, Map<string, string>>,
-    d: Map<string, number | string>,
-    isVert: boolean = false,
-    hash: string
-) {
-    output.length = 0
-    ws = new WsManager(whitespace_enabled, indent_text)
-    nowFuncTypeCach = ""
-    waitPushDecVal = new Map()
-    nowTypeCach = ""
-    declArrNum = []
-    isLeftSet = false
-    inFunc = false
-    isFuncArgs = false
-    inForDefine = false
-    uniformData = ud
-    varyingData = vd
-    attributeData = ad
-    structDataMap = sdm
-    defines = d
-    nowFucObj = new Map()
-    useBuiltinFuncs = new Set()
-    useBuiltinOperators = new Set()
-    customFuns = new Map()
-    customFunsInOutType = new Map()
-
-    let attributeStr = "class AttributeDataImpl implements AttributeData {\n"
-    let attributerDataKeysStr = "    dataKeys: Map<string, any> = new Map([\n"
-    let attributerDataSizeStr = "    dataSize: Map<string, number> = new Map([\n"
-    attributeData.forEach((value, key: string) => {
-        let convertType: string = (<any>convertToTsType)[value]
-        if (convertType) {
-            let arrData = splitArrData(key)
-            let factObjName = arrData.factObjName
-
-            if (arrData && arrData.arrNum > 0) {
-                console.error("attribute 变量暂不支持数组")
-            }
-            let typeNumStr = customGetTypeNumStr(convertType)
-            attributerDataKeysStr += `        ["${key}", cpuRenderingContext.cachGameGl.${typeNumStr}],\n`
-            attributerDataSizeStr += `        ["${key}", 1],\n`
-            attributeStr += `    ${key}: ${convertType} = new ${convertType}()\n`
-        } else {
-            console.error("不识别的shader 数据结构: " + value)
-        }
-    })
-    attributerDataKeysStr += `    ])\n`
-    attributerDataSizeStr += `    ])\n`
-    attributeStr += attributerDataKeysStr + attributerDataSizeStr
-    attributeStr += "}\n"
-
-    let varyingStr = "class VaryingDataImpl extends VaryingData {\n"
-    let dataKeysStr = "    dataKeys: Map<string, any> = new Map([\n"
-    let copyFuncStr = `    copy(varying: VaryingDataImpl) {\n`
-    varyingData.forEach((value, key: string) => {
-        let convertType: string = (<any>convertToTsType)[value]
-        if (convertType) {
-            let arrData = splitArrData(key)
-            if (arrData && arrData.arrNum > 0) {
-                console.error("varying 变量暂不支持数组")
-            }
-            varyingStr += `    ${key}: ${convertType} = new ${convertType}()\n`
-            let typeNumStr = customGetTypeNumStr(convertType)
-            dataKeysStr += `        ["${key}", cpuRenderingContext.cachGameGl.${typeNumStr}],\n`
-
-            let abbreviation = convertToAbbreviation(convertType)
-            let setFunc = `glSet_${abbreviation}_${abbreviation}`
-            copyFuncStr += `        ${setFunc}(varying.${key}, this.${key})\n`
-            useBuiltinOperators.add(setFunc)
-        } else {
-            console.error("不识别的shader 数据结构: " + value)
-        }
-    })
-    dataKeysStr += `    ])\n`
-
-    varyingStr += `
-    factoryCreate() {
-        return new VaryingDataImpl()
-    }\n`
-
-    varyingStr += dataKeysStr + copyFuncStr + `    }\n`
-    varyingStr += "}\n"
-
-    // 对uniform和struct中的数组对象进行处理
-    let tmpUniformData: Map<string, string> = new Map()
-    let uniformStr = `class UniformDataImpl implements UniformData {\n`
-    let uniformDataKeysStr = "    dataKeys: Map<string, any> = new Map([\n"
-    let uniformDataSizeStr = "    dataSize: Map<string, number> = new Map([\n"
-    uniformData.forEach((value, key: string) => {
-        let convertType: string = (<any>convertToTsType)[value]
-        if (convertType) {
-            let arrData = splitArrData(key)
-            let factObjName = arrData.factObjName
-
-            let typeNumStr = customGetTypeNumStr(convertType)
-            uniformDataKeysStr += `        ["${factObjName}", cpuRenderingContext.cachGameGl.${typeNumStr}],\n`
-            uniformDataSizeStr += `        ["${factObjName}", ${arrData.arrNum || 1}],\n`
-            tmpUniformData.set(factObjName, `${convertType}${arrData.arrNum > 0 ? "[]" : ""}`)
-
-            if (arrData.arrNum > 0) {
-                uniformStr += `    ${factObjName}: ${convertType}${arrData.arrNum > 0 ? "[]" : ""} = [`
-                let lastIndex = arrData.arrNum - 1
-                for (let index = 0; index < arrData.arrNum; index++) {
-                    uniformStr += `new ${convertType}()`
-                    if (index != lastIndex) {
-                        uniformStr += `, `
-                    }
-                }
-                uniformStr += `]\n`
-            } else {
-                uniformStr += `    ${factObjName}: ${convertType}${arrData.arrNum > 0 ? "[]" : ""} = new ${convertType}()\n`
-            }
-        } else {
-            console.error("不识别的shader 数据结构: " + value)
-        }
-    })
-    uniformDataKeysStr += `    ])\n`
-    uniformDataSizeStr += `    ])\n`
-    uniformStr += uniformDataKeysStr + uniformDataSizeStr + "}\n"
-    uniformData = tmpUniformData
-
-    let structStr = ""
-    let tmpStructDataMap: Map<string, Map<string, string>> = new Map()
-    structDataMap.forEach((value: Map<string, string>, key: string) => {
-        structStr += `class ${key} implements StructData {\n`
-
-        let tmpStructValue: Map<string, string> = new Map()
-        tmpStructDataMap.set(key, tmpStructValue)
-        value.forEach((objType: string, objName: string) => {
-            let arrData = splitArrData(objName)
-            let factObjName = arrData.factObjName
-
-            let convertType: string = (<any>convertToTsType)[objType]
-            let builtinFuncCall = (<any>convertToBuiltinCall)[convertType]
-            let createStr = ""
-            if (builtinFuncCall) {
-                createStr = `${builtinFuncCall}()`
-            } else {
-                createStr = ` new ${convertType}()`
-            }
-            if (arrData.arrNum > 0) {
-                tmpStructValue.set(factObjName, `${convertType}[]`)
-                structStr += `    ${factObjName}: ${convertType}[] = [`
-
-                for (let index = 0; index < arrData.arrNum; index++) {
-                    if (index !== arrData.arrNum - 1) {
-                        structStr += `${createStr},`
-                    } else {
-                        structStr += `${createStr}]\n`
-                    }
-                }
-            } else {
-                tmpStructValue.set(factObjName, `${convertType}`)
-                structStr += `    ${factObjName}: ${convertType} = ${createStr}\n`
-            }
-        })
-        structStr += `}\n`
-    })
-    structDataMap = tmpStructDataMap
-
-    deparse(ast)
-    let tsScript = output.join("")
-    tsScript = tsScript.replace(/\n/g, "\n    ") + "\n"
-    if (isVert) {
-        tsScript = `    attributeData: AttributeDataImpl = new AttributeDataImpl()\n` + tsScript
-        tsScript = `    uniformData: UniformDataImpl = new UniformDataImpl()\n` + tsScript
-        tsScript = `    varyingData: VaryingDataImpl = new VaryingDataImpl()\n` + tsScript
-    } else {
-        tsScript = `    uniformData: UniformDataImpl = new UniformDataImpl()\n` + tsScript
-        tsScript = `    varyingData: VaryingDataImpl = new VaryingDataImpl()\n` + tsScript
-    }
-    tsScript = `export class Impl_${hash} extends ${isVert ? "VertShaderHandle" : "FragShaderHandle"}{\n` + tsScript + "}\n"
-    // console.log(hash)
-
-    let defineStr = ""
-    defines.forEach((value: string | number, key: string) => {
-        if (!isNaN(parseFloat(<string>value))) {
-            defineStr += `let ${key} = new FloatData(${value})\n`
-        } else {
-            defineStr += `let ${key} = "${value}"\n`
-        }
-    })
-    tsScript = defineStr + structStr + attributeStr + varyingStr + uniformStr + tsScript
-
-    let importStr = "import {\n"
-    useBuiltinFuncs.add("float")
-    useBuiltinFuncs.add("float_N")
-    useBuiltinFuncs.add("bool")
-    useBuiltinFuncs.add("bool_N")
-    useBuiltinFuncs.add("int_N")
-    useBuiltinFuncs.add("int")
-    useBuiltinFuncs.add("vec4")
-    useBuiltinFuncs.add("vec3")
-    useBuiltinFuncs.add("vec2")
-    useBuiltinFuncs.add("mat3")
-    useBuiltinFuncs.add("mat4")
-    useBuiltinFuncs.forEach((funNames: string) => {
-        importStr += `    ${funNames},\n`
-    })
-    importStr += `} from "../builtin/BuiltinFunc"\n`
-    importStr += "import {\n"
-    useBuiltinOperators.add("getValueKeyByIndex")
-    useBuiltinOperators.add("getOutValueKeyByIndex")
-    useBuiltinOperators.forEach((funNames: string) => {
-        importStr += `    ${funNames},\n`
-    })
-    importStr += `} from "../builtin/BuiltinOperator"\n`
-    importStr += `import { gl_FragData, gl_FragColor, gl_Position, gl_FragCoord, gl_FragDepth, gl_FrontFacing, custom_isDiscard} from "../builtin/BuiltinVar"\n`
-    importStr += `import { cpuRenderingContext } from "../../CpuRenderingContext"\n`
-    return [importStr, tsScript]
 }

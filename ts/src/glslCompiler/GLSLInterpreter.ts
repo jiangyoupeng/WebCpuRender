@@ -1,7 +1,4 @@
-import { deparseToTs } from "./glslCompiler/deparserToTs"
-// import { parseArray } from "./glslCompiler/parser/parser"
-// import { tokenizeString } from "./glslCompiler/tokenizer/GlslTokenizer"
-// import { SparkMD5 } from "./Spark-md5"
+import { deparseToTs } from "./deparserToTs"
 let tokenizeString = require("glsl-tokenizer")
 let parseArray = require("glsl-parser/direct")
 let SparkMD5 = require("Spark-md5")
