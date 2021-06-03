@@ -2,7 +2,7 @@ let fs = require("fs")
 console.log(__dirname)
 let rootPath = __dirname.substr(0, __dirname.lastIndexOf("\\"))
 console.log(rootPath)
-let str = fs.readFileSync(rootPath + "/assets/script/rasterDebugCom/shader/builtin/BuiltinOperator.ts").toString()
+let str = fs.readFileSync(rootPath + "/ts/src/webglImpl/shader/builtin/BuiltinOperator.ts").toString()
 
 // console.log(str)
 let lineStr = str.split("\n")
