@@ -65,6 +65,15 @@ vec4 frag () {
   forFragTest[0].xyz = vec3(2);
   mat4 eqwsd[4];
   eqwsd[0][0][0] = 1.;
+  mat4 qweqeasd;
+  qweqeasd = 1. - qweqeasd;
+  qweqeasd = 1. + qweqeasd;
+  qweqeasd = 1. / qweqeasd;
+  qweqeasd = 1. * qweqeasd;
+  qweqeasd /= 1. / qweqeasd;
+  qweqeasd *= 1. + qweqeasd;
+  qweqeasd += 1. / qweqeasd;
+  qweqeasd -= 1. * qweqeasd;
   float a = 1.;
   a++;
   a--;
@@ -226,6 +235,15 @@ vec4 frag () {
   forFragTest[0].xyz = vec3(2);
   mat4 eqwsd[4];
   eqwsd[0][0][0] = 1.;
+  mat4 qweqeasd;
+  qweqeasd = 1. - qweqeasd;
+  qweqeasd = 1. + qweqeasd;
+  qweqeasd = 1. / qweqeasd;
+  qweqeasd = 1. * qweqeasd;
+  qweqeasd /= 1. / qweqeasd;
+  qweqeasd *= 1. + qweqeasd;
+  qweqeasd += 1. / qweqeasd;
+  qweqeasd -= 1. * qweqeasd;
   float a = 1.;
   a++;
   a--;
@@ -369,6 +387,15 @@ import {
     glSet_V2_V2,
     glSet_V4_V4,
     glSet_V3_V3,
+    glSub_N_M4,
+    glSet_M4_M4,
+    glAdd_N_M4,
+    glDiv_N_M4,
+    glMul_N_M4,
+    glDivSet_M4_M4,
+    glMulSet_M4_M4,
+    glAddSet_M4_M4,
+    glSubSet_M4_M4,
     glAfterAddSelf_N,
     glFrontSubSelf_N,
     glFrontAddSelf_N,
@@ -392,7 +419,6 @@ import {
     glMul_N_N,
     glAdd_V2_N,
     glDiv_V4_N,
-    glSet_M4_M4,
     glMul_V4_M4,
     glMul_V4_V4,
     glSet_B_B,
@@ -485,7 +511,7 @@ class UniformDataImpl implements UniformData {
         ["mainColor", 1],
     ])
 }
-export class Impl_e08b7ae173fcccde7845c0867bc28632 extends FragShaderHandle {
+export class Impl_4c4448386ab0873f869226cbe3d785b6 extends FragShaderHandle {
     varyingData: VaryingDataImpl = new VaryingDataImpl()
     uniformData: UniformDataImpl = new UniformDataImpl()
 
@@ -501,6 +527,15 @@ export class Impl_e08b7ae173fcccde7845c0867bc28632 extends FragShaderHandle {
         glSet_V3_V3((<any>forFragTest)[int_N(0).v].out_xyz, vec3_N(int_N(2)))
         let eqwsd: Mat4Data[] = [mat4(), mat4(), mat4(), mat4()]
         ;(<any>eqwsd)[int_N(0).v][getValueKeyByIndex(int_N(0))][getValueKeyByIndex(int_N(0))] = float_N(1).v
+        let qweqeasd: Mat4Data = mat4()
+        glSet_M4_M4(qweqeasd, glSub_N_M4(float_N(1), qweqeasd))
+        glSet_M4_M4(qweqeasd, glAdd_N_M4(float_N(1), qweqeasd))
+        glSet_M4_M4(qweqeasd, glDiv_N_M4(float_N(1), qweqeasd))
+        glSet_M4_M4(qweqeasd, glMul_N_M4(float_N(1), qweqeasd))
+        glDivSet_M4_M4(qweqeasd, glDiv_N_M4(float_N(1), qweqeasd))
+        glMulSet_M4_M4(qweqeasd, glAdd_N_M4(float_N(1), qweqeasd))
+        glAddSet_M4_M4(qweqeasd, glDiv_N_M4(float_N(1), qweqeasd))
+        glSubSet_M4_M4(qweqeasd, glMul_N_M4(float_N(1), qweqeasd))
         let a: FloatData = float()
         glSet_N_N(a, float_N(1))
         glAfterAddSelf_N(a)

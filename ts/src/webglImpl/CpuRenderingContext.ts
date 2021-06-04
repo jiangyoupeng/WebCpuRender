@@ -19,6 +19,7 @@ import {
     TexelsData,
     CPUWebGLRenderbuffer,
     WebGLRenderbufferObject,
+    TexBufferData,
 } from "./PipelineData"
 import { AttributeReadInfo, CachWriteData } from "./RenderModel"
 import {
@@ -41,6 +42,8 @@ import { custom_isDiscard, gl_FragColor, gl_FragData, gl_Position } from "./shad
 import { Rect } from "./shader/builtin/Rect"
 import { FragShaderHandle, VaryingData } from "./ShaderDefine"
 
+let abs = Math.abs
+let max = Math.max
 let cpuCachData = new BuiltinDataCach()
 let renderVertxPipeCachData = new BuiltinDataCach()
 let renderFragPipeCachData = new BuiltinDataCach()
@@ -64,7 +67,14 @@ class CachGlData {
 // 用cpu实现的webgl 1接口
 export class CpuRenderingContext {
     constructor() {
-        let canvas = <HTMLCanvasElement>document.getElementById("GameCanvas")
+        let win: any = window
+
+        if (!win.gameCanvas) {
+            console.error("没有指明gameCanvars")
+            return
+        }
+
+        let canvas = <HTMLCanvasElement>document.getElementById(win.gameCanvas)
         let gl: WebGLRenderingContext = canvas.getContext("webgl")!
         this._gameGl = gl
         /**默认裁剪背面 */
@@ -103,7 +113,6 @@ export class CpuRenderingContext {
         this._attributeLocalEnable.fill(false)
 
         replaceWebglFunc(gl)
-        this.customContextInit(<HTMLCanvasElement>document.getElementById("viewCanvas"))
     }
 
     private _canvars2D: CanvasRenderingContext2D = null!
@@ -1487,7 +1496,7 @@ export class CpuRenderingContext {
                             glPos.x *= wFactor
                             glPos.y *= wFactor
                             glPos.z *= wFactor
-                            glPos.w *= wFactor
+                            // glPos.w *= wFactor
 
                             //视口变化
                             glPos.x = 0.5 * this._viewPort.width * (glPos.x + 1)
@@ -1599,6 +1608,155 @@ export class CpuRenderingContext {
 
                 let wrapS = textureData.parameter.get(this._gameGl.TEXTURE_WRAP_S)
                 let wrapT = textureData.parameter.get(this._gameGl.TEXTURE_WRAP_T)
+                let magFilter = textureData.parameter.get(this._gameGl.TEXTURE_MAG_FILTER)
+                let minFilter = textureData.parameter.get(this._gameGl.TEXTURE_MIN_FILTER)
+
+                let sampleX = uv.x
+                if (sampleX < 0 || sampleX >= 1) {
+                    if (wrapS === this._gameGl.REPEAT) {
+                        if (sampleX < 0) {
+                            sampleX += Math.ceil(-sampleX)
+                        } else {
+                            sampleX -= Math.floor(sampleX)
+                        }
+                    } else if (wrapS === this._gameGl.CLAMP_TO_EDGE) {
+                        sampleX = clamp(sampleX, 0, 1)
+                    } else if (wrapS === this._gameGl.MIRRORED_REPEAT) {
+                        console.error("MIRRORED_REPEAT 暂未实现")
+                    }
+                }
+                let sampleY = uv.y
+                if (sampleY < 0 || sampleY >= 1) {
+                    if (wrapT === this._gameGl.REPEAT) {
+                        if (sampleY < 0) {
+                            sampleY += Math.ceil(-sampleY)
+                        } else {
+                            sampleY -= Math.floor(sampleY)
+                        }
+                    } else if (wrapT === this._gameGl.CLAMP_TO_EDGE) {
+                        sampleY = clamp(sampleY, 0, 1)
+                    } else if (wrapT === this._gameGl.MIRRORED_REPEAT) {
+                        console.error("MIRRORED_REPEAT 暂未实现")
+                    }
+                }
+
+                // 有可能将动作数据存入纹理中 此时应该配合使用
+                // 用nearst读取
+                if (magFilter === this._gameGl.NEAREST && minFilter === this._gameGl.NEAREST) {
+                    let texWidth = texBufferData.width
+                    let texHeight = texBufferData.height
+
+                    let uImg = Math.floor(sampleX * texWidth + 0.5)
+                    let vImg = Math.floor(sampleY * texHeight + 0.5)
+                    let index = (uImg + vImg * texWidth) * 4
+                    color.x = buffer[index] / 255
+                    color.y = buffer[index + 1] / 255
+                    color.z = buffer[index + 2] / 255
+                    color.w = buffer[index + 3] / 255
+                    return color
+                } else {
+                    let texWidth = texBufferData.width
+                    let texHeight = texBufferData.height
+                    let factSampleX = sampleX * texWidth
+                    let factSampleY = sampleY * texHeight
+
+                    let uImg: number
+                    let vImg: number
+                    let searchX = Math.floor(factSampleX + 0.5)
+                    let searchY = Math.floor(factSampleY + 0.5)
+                    for (let x = 0; x < 2; x++) {
+                        uImg = clamp(searchX - x, 0, texWidth - 1)
+                        for (let y = 0; y < 2; y++) {
+                            vImg = clamp(searchY - y, 0, texHeight - 1)
+                            let index = (uImg + vImg * texWidth) * 4
+
+                            color.x += buffer[index] / 1020
+                            color.y += buffer[index + 1] / 1020
+                            color.z += buffer[index + 2] / 1020
+                            color.w += buffer[index + 3] / 1020
+                        }
+                    }
+                    return color
+                }
+            }
+        }
+        color.set_Vn(1, 1, 1, 1)
+        return color
+    }
+
+    /**和gl的实现还是不一样 不清楚哪里出问题了 */
+    /*立方体纹理采样*/
+    customSamplerCube(texIndex: number, uv3D: Vec3Data): Vec4Data {
+        // texIndex应该是对应的纹理单元
+        let textureUnit = this._textureUnit.get(texIndex)
+        let color = builtinCachData.vec4Data.getData()
+        color.set_Vn(0, 0, 0, 0)
+        if (textureUnit) {
+            let textureData = textureUnit.get(this._gameGl.TEXTURE_CUBE_MAP)
+            if (textureData) {
+                // 怎么判断纹理大还是还是小呢
+                // 先不管图片大小 统一用LINEAR
+
+                // this._cubeTexIndex.set(this._gameGl.TEXTURE_CUBE_MAP_POSITIVE_X, 0)
+                // this._cubeTexIndex.set(this._gameGl.TEXTURE_CUBE_MAP_NEGATIVE_X, 1)
+                // this._cubeTexIndex.set(this._gameGl.TEXTURE_CUBE_MAP_POSITIVE_Y, 2)
+                // this._cubeTexIndex.set(this._gameGl.TEXTURE_CUBE_MAP_NEGATIVE_Y, 3)
+                // this._cubeTexIndex.set(this._gameGl.TEXTURE_CUBE_MAP_POSITIVE_Z, 4)
+                // this._cubeTexIndex.set(this._gameGl.TEXTURE_CUBE_MAP_NEGATIVE_Z, 5)
+
+                let factx = uv3D.x
+                let facty = uv3D.y
+                let factz = uv3D.z
+                let absX = abs(factx)
+                let absY = abs(facty)
+                let absZ = abs(factz)
+                let mag = max(max(absX, absY), absZ)
+                // 相交的时间
+                let exitT = 1 / mag
+                // 交点x,y,z坐标
+                let enterX = factx * exitT
+                let enterY = facty * exitT
+                let enterZ = factz * exitT
+                let texelMipmapData: Map<number, TexBufferData> = null!
+                let uv = builtinCachData.vec2Data.getData()
+                if (mag === absX) {
+                    if (factx > 0) {
+                        // TEXTURE_CUBE_MAP_POSITIVE_X
+                        texelMipmapData = textureData.texelsDatas![0].texelMipmapData
+                        uv.set_Vn(1 - (enterZ + 1) / 2, (enterY + 1) / 2)
+                    } else {
+                        // TEXTURE_CUBE_MAP_NEGATIVE_X
+                        texelMipmapData = textureData.texelsDatas![1].texelMipmapData
+                        uv.set_Vn((enterZ + 1) / 2, (enterY + 1) / 2)
+                    }
+                } else if (mag === absY) {
+                    if (facty > 0) {
+                        // TEXTURE_CUBE_MAP_POSITIVE_Y
+                        texelMipmapData = textureData.texelsDatas![2].texelMipmapData
+                        uv.set_Vn((enterX + 1) / 2, 1 - (enterZ + 1) / 2)
+                    } else {
+                        // TEXTURE_CUBE_MAP_NEGATIVE_Y
+                        texelMipmapData = textureData.texelsDatas![3].texelMipmapData
+                        uv.set_Vn((enterX + 1) / 2, (enterZ + 1) / 2)
+                    }
+                } else {
+                    if (factz > 0) {
+                        // TEXTURE_CUBE_MAP_POSITIVE_Z
+                        texelMipmapData = textureData.texelsDatas![4].texelMipmapData
+                        uv.set_Vn((enterX + 1) / 2, (enterY + 1) / 2)
+                    } else {
+                        // TEXTURE_CUBE_MAP_NEGATIVE_Z
+                        texelMipmapData = textureData.texelsDatas![5].texelMipmapData
+                        uv.set_Vn(1 - (enterX + 1) / 2, (enterY + 1) / 2)
+                    }
+                }
+
+                // let texelMipmapData = textureData.texelsDatas![0].texelMipmapData
+                let texBufferData = texelMipmapData.get(0)!
+                let buffer = texBufferData.bufferData!
+
+                let wrapS = textureData.parameter.get(this._gameGl.TEXTURE_WRAP_S)
+                let wrapT = textureData.parameter.get(this._gameGl.TEXTURE_WRAP_T)
 
                 let sampleX = uv.x
                 if (sampleX < 0 || sampleX >= 1) {
@@ -1693,6 +1851,13 @@ export class CpuRenderingContext {
         let x2 = triangleVec[2].x
         let y2 = triangleVec[2].y
 
+        let z0 = triangleVec[0].z
+        let z1 = triangleVec[1].z
+        let z2 = triangleVec[0].z
+
+        let w0 = triangleVec[0].w
+        let w1 = triangleVec[1].w
+        let w2 = triangleVec[0].w
         // todo
         // 可用于优化的逻辑
         // 线段的表示 pBegin(xB,yB) pEnd(xE,yE) 线段上的任意一点 p(xB + t(xE - xB),yB + t(yE - yB)) t在0到1之间
@@ -1745,8 +1910,8 @@ export class CpuRenderingContext {
                     let canWrite = true
                     let index = this._customGetIndex(x, y)
                     if (this._openDepthTest) {
-                        let w_reciprocal = 1.0 / (alpha + beta + gamma)
-                        let z_interpolated = alpha * triangleVec[0].z + beta * triangleVec[1].z + gamma * triangleVec[2].z
+                        let w_reciprocal = 1.0 / (alpha / w0 + beta / w1 + gamma / w2)
+                        let z_interpolated = (alpha * z0) / w0 + (beta * z1) / w1 + (gamma * z2) / w2
                         z_interpolated *= w_reciprocal
 
                         let depth = this._depthBuffer[index]
@@ -1769,7 +1934,6 @@ export class CpuRenderingContext {
                         } else {
                             console.error("error depthJudgeFunc ")
                         }
-
                         if (canWrite && this._depthWriteEnable) {
                             this._depthBuffer[index] = z_interpolated
                         }
@@ -2918,6 +3082,7 @@ export class CpuRenderingContext {
                 let textureData: WebGLTextureData | undefined = activeTextureData.get(target)
                 if (textureData) {
                     if (pname == this._gameGl.TEXTURE_MIN_FILTER) {
+                        console.log("TEXTURE_MIN_FILTER " + param)
                         if (param == this._gameGl.NEAREST) {
                             textureData.parameter.set(this._gameGl.TEXTURE_MIN_FILTER, param)
                         } else if (param == this._gameGl.LINEAR) {
@@ -2926,6 +3091,7 @@ export class CpuRenderingContext {
                             console.error("mipmap类型的采样暂未实现")
                         }
                     } else if (pname == this._gameGl.TEXTURE_MAG_FILTER) {
+                        console.log("TEXTURE_MAG_FILTER " + param)
                         if (param == this._gameGl.NEAREST) {
                             textureData.parameter.set(this._gameGl.TEXTURE_MAG_FILTER, param)
                         } else if (param == this._gameGl.LINEAR) {
@@ -2939,6 +3105,9 @@ export class CpuRenderingContext {
                         if (param == this._gameGl.REPEAT || param == this._gameGl.CLAMP_TO_EDGE || param == this._gameGl.MIRRORED_REPEAT) {
                             textureData.parameter.set(this._gameGl.TEXTURE_WRAP_T, param)
                         }
+                    } else {
+                        console.error("无法识别的 texParameterf")
+                        debugger
                     }
                 } else {
                     renderError("this._gameGl.INVALID_OPERATION " + this._gameGl.INVALID_OPERATION + " in texParameterf")

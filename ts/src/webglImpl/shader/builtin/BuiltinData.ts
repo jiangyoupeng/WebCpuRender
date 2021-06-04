@@ -4689,13 +4689,7 @@ export class IntData extends NumData {
 }
 
 export class Sampler2D extends IntData {}
-
-export class SamplerCube extends ValueType {
-    constructor() {
-        super()
-        console.error("SamplerCube 内置类型还未实现")
-    }
-}
+export class SamplerCube extends IntData {}
 
 export class Mat3Data extends ValueType {
     out_m00: FloatData = new FloatData()

@@ -525,7 +525,7 @@ export function glSubSet_M3_M3(left: Mat3Data, right: Mat3Data): void {
     Mat3Data.subtract(left, left, right)
 }
 
-export function gSubSet_M4_M4(left: Mat4Data, right: Mat4Data): void {
+export function glSubSet_M4_M4(left: Mat4Data, right: Mat4Data): void {
     Mat4Data.subtract(left, left, right)
 }
 
@@ -722,7 +722,7 @@ export function glMulSet_M3_M3(left: Mat3Data, right: Mat3Data): void {
     Mat3Data.multiply(left, left, right)
 }
 
-export function gMulSet_M4_M4(left: Mat4Data, right: Mat4Data): void {
+export function glMulSet_M4_M4(left: Mat4Data, right: Mat4Data): void {
     Mat4Data.multiply(left, left, right)
 }
 

@@ -1219,9 +1219,9 @@ function deparse_call(node: any) {
     }
 
     let funIndex = output.length
-    if (funIndex === 710) {
-        debugger
-    }
+    // if (funIndex === 710) {
+    //     debugger
+    // }
     deparse(firstChildData)
     outputPush("(")
     let callParamsType: string[] = []

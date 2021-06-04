@@ -453,7 +453,7 @@ export let tsbuiltinFunsWithReturn = {
     mat4_V4_V4_V4_V4: "Mat4Data",
     mat4_N_N_N_N_N_N_N_N_N_N_N_N_N_N_N_N: "Mat4Data",
     texture2D_N_V2: "Vec4Data",
-    textureCube_NA_V3: "Vec4Data",
+    textureCube_N_V3: "Vec4Data",
 }
 
 export let builtinFuns = {
@@ -537,7 +537,7 @@ export const builtinAbbreviation = {
     boolean: "b",
     "boolean[]": "bA",
     Sampler2D: "N",
-    SamplerCube: "NA",
+    SamplerCube: "N",
 }
 
 export function convertToAbbreviation(str: string) {

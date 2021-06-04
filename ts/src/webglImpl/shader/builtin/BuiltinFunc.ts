@@ -9,6 +9,7 @@ import {
     Mat3Data,
     Mat4Data,
     NumData,
+    Sampler2D,
     SamplerCube,
     Vec2Data,
     Vec3Data,
@@ -1872,15 +1873,12 @@ export function mat4_N_N_N_N_N_N_N_N_N_N_N_N_N_N_N_N(
     return out
 }
 
-export function texture2D_N_V2(texIndex: IntData, uv: Vec2Data) {
+export function texture2D_N_V2(texIndex: Sampler2D, uv: Vec2Data) {
     return cpuRenderingContext.customSampler2D(texIndex.v, uv)
 }
 
-export function textureCube_NA_V3(texIndex: SamplerCube, uv: Vec3Data) {
-    // return cpuRenderingContext.customSampler2D(texIndex.v, uv)
-    debugger
-    console.error("textureCube_IA_V3 还未实现")
-    return new Vec4Data()
+export function textureCube_N_V3(texIndex: SamplerCube, uv: Vec3Data) {
+    return cpuRenderingContext.customSamplerCube(texIndex.v, uv)
 }
 
 export function bool(): BoolData {

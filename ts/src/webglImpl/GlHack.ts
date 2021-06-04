@@ -168,23 +168,23 @@ function testTmpFunc() {
 function GlDebugLog(funcKey: string, info: any) {
     if (showGlDebugLog) {
         // 测试走自己的内部实现gl接口
-        if (funcKey == "bindBuffer") {
-            console.log(count + " bindBuffer => ")
-            console.log(info)
-            count++
-        }
+        // if (funcKey == "bindBuffer") {
+        //     console.log(count + " bindBuffer => ")
+        //     console.log(info)
+        //     count++
+        // }
 
-        if (funcKey == "bufferData") {
-            console.log(count + " bufferData =>")
-            console.log(info)
-            count++
-        }
+        // if (funcKey == "bufferData") {
+        //     console.log(count + " bufferData =>")
+        //     console.log(info)
+        //     count++
+        // }
 
-        if (funcKey == "bufferSubData") {
-            console.log(count + " bufferSubData =>")
-            console.log(info)
-            count++
-        }
+        // if (funcKey == "bufferSubData") {
+        //     console.log(count + " bufferSubData =>")
+        //     console.log(info)
+        //     count++
+        // }
 
         if (funcKey == "drawElements") {
             console.log(count + " drawElements =>")
@@ -240,7 +240,7 @@ export function replaceWebglFunc(gl: any) {
                                 let interpreterData = GLSLInterpreter.interpreter(shaderSource)
                                 compilerTsFiles.set(interpreterData[0], interpreterData[1])
                             }
-                        } else if (funcKey === "drawElements") {
+                        } else if (funcKey === "drawElements" && compilerTsFiles.size > 0) {
                             // 直接判断输出drawElements之前的转译脚本
                             var zip = new win.JSZip()
                             let readonlyStr = ""
@@ -261,6 +261,7 @@ export function replaceWebglFunc(gl: any) {
                             zip.generateAsync({ type: "blob" }).then((content: any) => {
                                 fileSaveAs(content, `tsScript.zip`)
                             })
+                            compilerTsFiles.clear()
                         }
                     } else if (replaceShaderSource) {
                         if (funcKey == "shaderSource") {

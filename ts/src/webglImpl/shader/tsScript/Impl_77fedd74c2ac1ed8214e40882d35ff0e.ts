@@ -89,7 +89,7 @@ import {
     vec3_N,
     min_V3_V3,
     sqrt_V3,
-    textureCube_NA_V3,
+    textureCube_N_V3,
     vec4_V3_N,
     float,
     float_N,
@@ -212,7 +212,7 @@ export class Impl_77fedd74c2ac1ed8214e40882d35ff0e extends FragShaderHandle {
     }
     frag(): Vec4Data {
         let c: Vec3Data = vec3()
-        glSet_V3_V3(c, this.SRGBToLinear_V3(textureCube_NA_V3(this.uniformData.cc_environment, this.varyingData.viewDir.xyz).out_xyz))
+        glSet_V3_V3(c, this.SRGBToLinear_V3(textureCube_N_V3(this.uniformData.cc_environment, this.varyingData.viewDir.xyz).out_xyz))
         return this.CCFragOutput_V4(vec4_V3_N(glMul_V3_N(c, float_N(this.uniformData.cc_ambientSky.w)), float_N(1.0)))
     }
     main(): void {

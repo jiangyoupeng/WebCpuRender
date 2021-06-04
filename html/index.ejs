@@ -51,10 +51,10 @@
         // 0 不做任何操作(不会启动glhack)
         // 一旦启用glhack 只会支持webgl1 且对于extension属性不会生效
         // 1 使用软渲染替代webgl的渲染
-        // 2,3 都是使用的原生的webgl调试 
+        // 2,3 都是使用的原生的webgl渲染 
         // 2 将glsl shader代码转换为ts的代码
         // 3 替换原本的glsl代码
-        window.glDebugMode = 0
+        window.glDebugMode = 1
         // 原本游戏渲染的canvas
         window.gameCanvas = 'GameCanvas'
         // 软渲染使用的canvas
