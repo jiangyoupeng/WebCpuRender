@@ -194,6 +194,7 @@ function GlDebugLog(funcKey: string, info: any) {
     }
 }
 
+let glCallCount = 0
 let count = 0
 export function replaceWebglFunc(gl: any) {
     if (win.glDebugMode == GlDebugMode.none) {
@@ -207,6 +208,10 @@ export function replaceWebglFunc(gl: any) {
             gl[funcKey] = (...info: any) => {
                 let applyReturn: any
 
+                if (glCallCount === 0) {
+                    cpuRenderingContext.customGlInitBeforeCall()
+                }
+                glCallCount++
                 GlDebugLog(funcKey, info)
 
                 // 对于getextension的方法没有实现 所以同一返回空

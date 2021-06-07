@@ -76,6 +76,7 @@ export class CpuRenderingContext {
 
         let canvas = <HTMLCanvasElement>document.getElementById(win.gameCanvas)
         let gl: WebGLRenderingContext = canvas.getContext("webgl")!
+        this._gameCanvas = canvas
         this._gameGl = gl
         /**默认裁剪背面 */
         this._nowCullFaceType = this._gameGl.BACK
@@ -122,13 +123,19 @@ export class CpuRenderingContext {
     /**缓存的实际RenderingContext */
     private _gameGl: WebGLRenderingContext = null!
 
+    // 实际游戏使用的canvas
+    private _gameCanvas: HTMLCanvasElement = null!
+
     get cachGameGl() {
         return this._gameGl
     }
 
-    /**视窗大小 */
+    // 实际显示canvas的大小
+    private _canvasSize: Vec2Data = null!
+    /**当前设定视窗的大小 */
     private _viewPort: Rect = null!
     /**帧数据 */
+    /**大小是实际显示的大小 */
     private _frameBuffer: Uint8ClampedArray = null!
 
     /**深度数据 */
@@ -292,11 +299,14 @@ export class CpuRenderingContext {
         //考虑下要不要换成动态的方式创建 会不会影响性能
         this._viewSp = sp
         this._canvars2D = this._viewSp.getContext("2d")!
+    }
 
-        if (this._viewPort) {
-            this._viewSp.width = this._viewPort.width
-            this._viewSp.height = this._viewPort.height
-        }
+    customGlInitBeforeCall() {
+        this._canvasSize = new Vec2Data(this._gameCanvas.width, this._gameCanvas.height)
+        this._frameBuffer = new Uint8ClampedArray(this._gameCanvas.width * this._gameCanvas.height * 4)
+        this._depthBuffer = new Array(this._gameCanvas.width * this._gameCanvas.height).fill(Number.MIN_SAFE_INTEGER)
+        this._viewSp.width = this._canvasSize.x
+        this._viewSp.height = this._canvasSize.y
     }
 
     private _customJudgeDeleteShader(shaderIndex: CPUWebGLShader, shader: CPUShader): void {
@@ -1147,14 +1157,6 @@ export class CpuRenderingContext {
         this._scissorRect = new Rect(x, y, width, height)
         let frameLength = width * height * 4
         console.log("width:" + width + " height" + height + " frameLength " + frameLength)
-        this._frameBuffer = new Uint8ClampedArray(width * height * 4)
-        this._depthBuffer = new Array(width * height).fill(Number.MIN_SAFE_INTEGER)
-
-        this._viewSp.width = this._viewPort.width
-        this._viewSp.height = this._viewPort.height
-        // todo
-        // let uiTransform = this._viewSp.getComponent(UITransform)
-        // uiTransform?.setContentSize(width, height)
     }
 
     clearColor(red: GLclampf, green: GLclampf, blue: GLclampf, alpha: GLclampf): void {
@@ -1585,7 +1587,7 @@ export class CpuRenderingContext {
 
     render() {
         if (this._canvars2D) {
-            let imageData = new ImageData(this._frameBuffer, this._viewPort.width, this._viewPort.height)
+            let imageData = new ImageData(this._frameBuffer, this._canvasSize.x, this._canvasSize.y)
             this._canvars2D.putImageData(imageData, 0, 0)
         }
     }
@@ -2299,7 +2301,10 @@ export class CpuRenderingContext {
     _customGetIndex(x: number, y: number): number {
         x = Math.floor(x)
         y = Math.floor(y)
-        let index = this._viewPort.width * (this._viewPort.height - y) + x
+
+        let factX = this._viewPort.x + x
+        let factY = this._viewPort.y + y
+        let index = this._canvasSize.x * (this._canvasSize.y - factY) + factX
         return index
     }
 
@@ -2843,11 +2848,14 @@ export class CpuRenderingContext {
                         let destData = new Uint8Array(width * height * 4)
 
                         let copyData = this._frameBuffer
-                        let frameWidth = this._viewPort.width
+                        let frameWidth = this._canvasSize.x
                         let copyIndex = 0
                         for (let y = 0; y < height; y++) {
                             for (let x = 0; x < width; x++) {
-                                let bufferIndex = ((bufferYoffset + y) * frameWidth + (bufferXoffset + x)) * 4
+                                let factX = this._viewPort.x + bufferXoffset + x
+                                let factY = this._viewPort.y + bufferYoffset + y
+                                // let index = this._canvasSize.x * (this._viewPort.y - factY) + factX
+                                let bufferIndex = (factY * frameWidth + factX) * 4
                                 destData[copyIndex++] = copyData[bufferIndex++]
                                 destData[copyIndex++] = copyData[bufferIndex++]
                                 destData[copyIndex++] = copyData[bufferIndex++]
@@ -2939,12 +2947,14 @@ export class CpuRenderingContext {
                     if (texBufferData) {
                         let destData = texBufferData.bufferData!
                         let copyData = this._frameBuffer
-                        let frameWidth = this._viewPort.width
+                        let frameWidth = this._canvasSize.x
                         let texWidth = texBufferData.width
                         for (let y = 0; y < height; y++) {
                             for (let x = 0; x < width; x++) {
                                 let texIndex = ((yoffset + y) * texWidth + (xoffset + x)) * 4
-                                let bufferIndex = ((bufferYoffset + y) * frameWidth + (bufferXoffset + x)) * 4
+                                let factX = this._viewPort.x + bufferXoffset + x
+                                let factY = this._viewPort.y + bufferYoffset + y
+                                let bufferIndex = (factY * frameWidth + factX) * 4
                                 destData[texIndex++] = copyData[bufferIndex++]
                                 destData[texIndex++] = copyData[bufferIndex++]
                                 destData[texIndex++] = copyData[bufferIndex++]
