@@ -186,8 +186,30 @@ function GlDebugLog(funcKey: string, info: any) {
         //     count++
         // }
 
-        if (funcKey == "drawElements") {
-            console.log(count + " drawElements =>")
+        // if (funcKey == "drawElements") {
+        //     console.log(count + " drawElements =>")
+        //     console.log(info)
+        //     count++
+        // }
+
+        // if (funcKey == "clearColor") {
+        //     console.log(count + " clearColor =>")
+        //     console.log(info)
+        //     count++
+        // }
+
+        // if (funcKey == "clear") {
+        //     console.log(count + " clear =>")
+        //     console.log(info)
+        //     count++
+        // }
+
+        if (count === 0 && funcKey == "drawElements") {
+            count++
+        }
+
+        if (count > 0) {
+            console.log(count + " " + funcKey + " =>")
             console.log(info)
             count++
         }
@@ -197,7 +219,7 @@ function GlDebugLog(funcKey: string, info: any) {
 let glCallCount = 0
 let count = 0
 export function replaceWebglFunc(gl: any) {
-    if (win.glDebugMode == GlDebugMode.none) {
+    if (win.glDebugMode == GlDebugMode.none && !win.showGlDebugLog) {
         return
     }
     let noFuncs: Set<string> = new Set()
@@ -219,6 +241,10 @@ export function replaceWebglFunc(gl: any) {
                     return null
                 } else if (funcKey == "getSupportedExtensions") {
                     return []
+                }
+
+                if (funcKey == "clear") {
+                    console.log(gl.getParameter(gl.COLOR_CLEAR_VALUE))
                 }
 
                 if (debugCpuRender) {
