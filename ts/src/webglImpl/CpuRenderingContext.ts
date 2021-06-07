@@ -3387,7 +3387,7 @@ export class CpuRenderingContext {
                 }
                 this._nowUseRenderbufferObject = renderbufferObj
             } else {
-                // 重置为系统默认的fbo
+                // 重置为系统默认的rbo
                 let renderbufferObj = this._renderbufferObjectMap.get(0)!
                 this._nowUseRenderbufferObject = renderbufferObj
             }
