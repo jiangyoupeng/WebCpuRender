@@ -517,9 +517,22 @@ export class WebGLFramebufferObject {
     constructor(bufferIndex: CPUWebGLFramebuffer) {
         this.bufferIndex = bufferIndex
     }
+
+    // 如果attach的是图片的话对应的target
+    colorTextureTarget: number = 0
+    depthTextureTarget: number = 0
+    stencilTextureTarget: number = 0
+
     colorAttachPoint: WebGLRenderbufferObject | WebGLTextureData | null = null
     depthAttachPoint: WebGLRenderbufferObject | WebGLTextureData | null = null
     stencilAttachPoint: WebGLRenderbufferObject | WebGLTextureData | null = null
+
+    setColorAttachByTex(tex: WebGLTextureData) {
+        this.colorAttachPoint = tex
+    }
+    setColorAttachByRender(render: WebGLRenderbufferObject) {
+        this.colorAttachPoint = render
+    }
 
     deAttachRenderBufferPoint(cachIndex: number) {
         if (

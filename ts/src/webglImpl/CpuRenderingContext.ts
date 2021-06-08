@@ -1708,7 +1708,7 @@ export class CpuRenderingContext {
             return <Uint32Array>colorAttachPoint.bufferData
         } else {
             let colorAttachPoint: WebGLTextureData = <WebGLTextureData>this._systemFrameBuffer.colorAttachPoint
-            colorAttachPoint.
+            // colorAttachPoint.
         }
     }
 
