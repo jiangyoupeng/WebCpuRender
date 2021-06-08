@@ -1703,8 +1703,13 @@ export class CpuRenderingContext {
     }
 
     customGetNowColorBuffer(): Uint32Array {
-        let colorAttachPoint: WebGLRenderbufferObject = <WebGLRenderbufferObject>this._systemFrameBuffer.colorAttachPoint
-        return <Uint32Array>colorAttachPoint.bufferData
+        if (this._systemFrameBuffer.colorAttachPoint instanceof WebGLRenderbufferObject) {
+            let colorAttachPoint: WebGLRenderbufferObject = <WebGLRenderbufferObject>this._systemFrameBuffer.colorAttachPoint
+            return <Uint32Array>colorAttachPoint.bufferData
+        } else {
+            let colorAttachPoint: WebGLTextureData = <WebGLTextureData>this._systemFrameBuffer.colorAttachPoint
+            colorAttachPoint.
+        }
     }
 
     customGetNowDepthBuffer(): Float32Array {
