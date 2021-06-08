@@ -173,46 +173,39 @@ function GlDebugLog(funcKey: string, info: any) {
         //     console.log(info)
         //     count++
         // }
-
         // if (funcKey == "bufferData") {
         //     console.log(count + " bufferData =>")
         //     console.log(info)
         //     count++
         // }
-
         // if (funcKey == "bufferSubData") {
         //     console.log(count + " bufferSubData =>")
         //     console.log(info)
         //     count++
         // }
-
         // if (funcKey == "drawElements") {
         //     console.log(count + " drawElements =>")
         //     console.log(info)
         //     count++
         // }
-
         // if (funcKey == "clearColor") {
         //     console.log(count + " clearColor =>")
         //     console.log(info)
         //     count++
         // }
-
         // if (funcKey == "clear") {
         //     console.log(count + " clear =>")
         //     console.log(info)
         //     count++
         // }
-
-        if (count === 0 && funcKey == "drawElements") {
-            count++
-        }
-
-        if (count > 0) {
-            console.log(count + " " + funcKey + " =>")
-            console.log(info)
-            count++
-        }
+        // if (count === 0 && funcKey == "drawElements") {
+        //     count++
+        // }
+        // if (count > 0) {
+        //     console.log(count + " " + funcKey + " =>")
+        //     console.log(info)
+        //     count++
+        // }
     }
 }
 
@@ -243,9 +236,9 @@ export function replaceWebglFunc(gl: any) {
                     return []
                 }
 
-                if (funcKey == "clear") {
-                    console.log(gl.getParameter(gl.COLOR_CLEAR_VALUE))
-                }
+                // if (funcKey == "clear") {
+                //     console.log(gl.getParameter(gl.COLOR_CLEAR_VALUE))
+                // }
 
                 if (debugCpuRender) {
                     if (funcKey == "getParameter") {

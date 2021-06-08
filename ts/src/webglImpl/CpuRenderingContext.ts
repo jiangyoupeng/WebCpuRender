@@ -102,16 +102,17 @@ export class CpuRenderingContext {
         this._rgbComputerBlendFunc = this._gameGl.FUNC_ADD
         this._alphaComputerBlendFunc = this._gameGl.FUNC_ADD
         this._depthJudgeFunc = this._gameGl.LESS
-        this._nowUseFramebufferObject = new WebGLFramebufferObject(new CPUWebGLFramebuffer(0))
-        this._framebufferObjectMap.set(0, this._nowUseFramebufferObject)
 
-        this._nowUseRenderbufferObject = new WebGLRenderbufferObject(new CPUWebGLRenderbuffer(0))
-        this._renderbufferObjectMap.set(0, this._nowUseRenderbufferObject)
         let maxVertexAttribs = gl.getParameter(gl.MAX_VERTEX_ATTRIBS)
         this._parameter.set(gl.MAX_VERTEX_ATTRIBS, maxVertexAttribs)
         /**默认是不生效的 */
         this._attributeLocalEnable.length = maxVertexAttribs
         this._attributeLocalEnable.fill(false)
+
+        this._systemFrameBuffer = new WebGLFramebufferObject(new CPUWebGLFramebuffer(0))
+        this._systemFrameBuffer.colorAttachPoint = new WebGLRenderbufferObject(new CPUWebGLRenderbuffer(0))
+        this._systemFrameBuffer.depthAttachPoint = new WebGLRenderbufferObject(new CPUWebGLRenderbuffer(0))
+        this._systemFrameBuffer.stencilAttachPoint = new WebGLRenderbufferObject(new CPUWebGLRenderbuffer(0))
 
         replaceWebglFunc(gl)
     }
@@ -136,10 +137,12 @@ export class CpuRenderingContext {
     private _viewPort: Rect = null!
     /**帧数据 */
     /**大小是实际显示的大小 */
-    private _frameBuffer: Uint8ClampedArray = null!
-
+    // private _frameBuffer: Uint8ClampedArray = null!
     /**深度数据 */
-    private _depthBuffer: number[] = null!
+    // private _depthBuffer: number[] = null!
+
+    // 系统内置使用的framebuffer
+    private _systemFrameBuffer: WebGLFramebufferObject = null!
 
     /*红色通道是否可以写 */
     private _colorRWriteEnable: boolean = true
@@ -149,6 +152,9 @@ export class CpuRenderingContext {
     private _colorBWriteEnable: boolean = true
     /*透明通道是否可以写 */
     private _colorAWriteEnable: boolean = true
+
+    /*颜色写入码是否可以写 */
+    private _colorMask: number = 0xffffffff
 
     /**背景色 清空时会用改颜色清理屏幕 */
     private _backgroundColor: Vec4Data = new Vec4Data(0, 0, 0, 0)
@@ -222,10 +228,10 @@ export class CpuRenderingContext {
     private _cubeTexIndex: Map<number, number> = new Map()
 
     private _framebufferObjectMap: Map<number, WebGLFramebufferObject> = new Map()
-    private _nowUseFramebufferObject: WebGLFramebufferObject = null!
+    private _nowUseFramebufferObject: WebGLFramebufferObject | null = null!
 
     private _renderbufferObjectMap: Map<number, WebGLRenderbufferObject> = new Map()
-    private _nowUseRenderbufferObject: WebGLRenderbufferObject = null!
+    private _nowUseRenderbufferObject: WebGLRenderbufferObject | null = null!
 
     /**视窗大小 */
     private _scissorRect: Rect = null!
@@ -252,6 +258,8 @@ export class CpuRenderingContext {
     /**打开混合 */
     private _openBlend: boolean = false
 
+    private _parameter: Map<number, number> = new Map()
+
     /**渲染时间 毫秒 */
     private _customRenderTime: number = -1
     set customRenderTime(value: number) {
@@ -265,29 +273,29 @@ export class CpuRenderingContext {
         let g = this._backgroundColor.y
         let b = this._backgroundColor.z
         let a = this._backgroundColor.w
-        for (let i = 0; i < this._frameBuffer.length; i += 4) {
-            if (this._colorRWriteEnable) {
-                this._frameBuffer[i] = r
-            }
-            if (this._colorGWriteEnable) {
-                this._frameBuffer[i + 1] = g
-            }
-            if (this._colorBWriteEnable) {
-                this._frameBuffer[i + 2] = b
-            }
-            if (this._colorAWriteEnable) {
-                this._frameBuffer[i + 3] = a
-            }
+        let val = 0x00000000
+        if (this._colorRWriteEnable) {
+            val = ((val & 0xffffff00) | r) >>> 0
         }
+        if (this._colorGWriteEnable) {
+            val = ((val & 0xffff00ff) | (g << 8)) >>> 0
+        }
+        if (this._colorBWriteEnable) {
+            val = ((val & 0xff00ffff) | (b << 16)) >>> 0
+        }
+        if (this._colorAWriteEnable) {
+            val = ((val & 0x00ffffff) | (a << 24)) >>> 0
+        }
+        // let writeFramebuffer = new Uint32Array(this._frameBuffer.buffer, this._frameBuffer.byteOffset, this._frameBuffer.byteLength)
+        // writeFramebuffer.fill(val, 0)
+
+        let systemWriteFramebuffer = this.customGetNowColorBuffer()
+        systemWriteFramebuffer.fill(val, 0)
     }
 
     private _clearDeputhBuffer() {
-        this._depthBuffer.fill(this._defaultDepth)
-    }
-
-    private _parameter: Map<number, number> = new Map()
-    get frameBuffer() {
-        return this._frameBuffer
+        let systemWriteFramebuffer: Float32Array = this.customGetNowDepthBuffer()
+        systemWriteFramebuffer.fill(this._defaultDepth, 0)
     }
 
     customSaveGlData() {
@@ -303,10 +311,15 @@ export class CpuRenderingContext {
 
     customGlInitBeforeCall() {
         this._canvasSize = new Vec2Data(this._gameCanvas.width, this._gameCanvas.height)
-        this._frameBuffer = new Uint8ClampedArray(this._gameCanvas.width * this._gameCanvas.height * 4)
-        this._depthBuffer = new Array(this._gameCanvas.width * this._gameCanvas.height).fill(Number.MIN_SAFE_INTEGER)
         this._viewSp.width = this._canvasSize.x
         this._viewSp.height = this._canvasSize.y
+
+        let colorAttachPoint: WebGLRenderbufferObject = <WebGLRenderbufferObject>this._systemFrameBuffer.colorAttachPoint!
+        colorAttachPoint.initBufferData(this._gameCanvas.width, this._gameCanvas.height, this._gameGl.RGBA4)
+        let depthAttachPoint: WebGLRenderbufferObject = <WebGLRenderbufferObject>this._systemFrameBuffer.depthAttachPoint!
+        depthAttachPoint.initBufferData(this._gameCanvas.width, this._gameCanvas.height, this._gameGl.DEPTH_COMPONENT16)
+        let stencilAttachPoint: WebGLRenderbufferObject = <WebGLRenderbufferObject>this._systemFrameBuffer.stencilAttachPoint!
+        stencilAttachPoint.initBufferData(this._gameCanvas.width, this._gameCanvas.height, this._gameGl.STENCIL_INDEX8)
     }
 
     private _customJudgeDeleteShader(shaderIndex: CPUWebGLShader, shader: CPUShader): void {
@@ -1177,6 +1190,19 @@ export class CpuRenderingContext {
     }
 
     colorMask(red: GLboolean, green: GLboolean, blue: GLboolean, alpha: GLboolean): void {
+        this._colorMask = 0xffffffff
+        if (!red) {
+            this._colorMask &= 0xffffff00
+        }
+        if (!green) {
+            this._colorMask &= 0xffff00ff
+        }
+        if (!blue) {
+            this._colorMask &= 0xff00ffff
+        }
+        if (!alpha) {
+            this._colorMask &= 0x00ffffff
+        }
         this._colorRWriteEnable = red
         this._colorGWriteEnable = green
         this._colorBWriteEnable = blue
@@ -1587,7 +1613,13 @@ export class CpuRenderingContext {
 
     render() {
         if (this._canvars2D) {
-            let imageData = new ImageData(this._frameBuffer, this._canvasSize.x, this._canvasSize.y)
+            let systemWriteFramebuffer = this.customGetNowColorBuffer()
+            let imageBuffer = new Uint8ClampedArray(
+                systemWriteFramebuffer.buffer,
+                systemWriteFramebuffer.byteOffset,
+                systemWriteFramebuffer.byteLength
+            )
+            let imageData = new ImageData(imageBuffer, this._canvasSize.x, this._canvasSize.y)
             this._canvars2D.putImageData(imageData, 0, 0)
         }
     }
@@ -1684,6 +1716,21 @@ export class CpuRenderingContext {
         }
         color.set_Vn(1, 1, 1, 1)
         return color
+    }
+
+    customGetNowColorBuffer(): Uint32Array {
+        let colorAttachPoint: WebGLRenderbufferObject = <WebGLRenderbufferObject>this._systemFrameBuffer.colorAttachPoint
+        return <Uint32Array>colorAttachPoint.bufferData
+    }
+
+    customGetNowDepthBuffer(): Float32Array {
+        let colorAttachPoint: WebGLRenderbufferObject = <WebGLRenderbufferObject>this._systemFrameBuffer.depthAttachPoint
+        return <Float32Array>colorAttachPoint.bufferData
+    }
+
+    customGetNowStencilBuffer(): Uint8Array {
+        let colorAttachPoint: WebGLRenderbufferObject = <WebGLRenderbufferObject>this._systemFrameBuffer.stencilAttachPoint
+        return <Uint8Array>colorAttachPoint.bufferData
     }
 
     /**和gl的实现还是不一样 不清楚哪里出问题了 */
@@ -1871,6 +1918,15 @@ export class CpuRenderingContext {
         let preData = GeometricOperations.preComputeBarycentric2DFactor(x0, x1, x2, y0, y1, y2)
         let varyingData = fragShader.varyingData
         let debugPos: Vec2Data | null = null
+
+        let writeColorFramebuffer = this.customGetNowColorBuffer()
+        let frameBuffer = new Uint8ClampedArray(
+            writeColorFramebuffer.buffer,
+            writeColorFramebuffer.byteOffset,
+            writeColorFramebuffer.byteLength
+        )
+        let writeDepthBuffer = this.customGetNowDepthBuffer()
+
         for (let x = minX; x <= maxX; x++) {
             let triangleBeginY = -1
             let triangleEndY = -1
@@ -1916,7 +1972,7 @@ export class CpuRenderingContext {
                         let z_interpolated = (alpha * z0) / w0 + (beta * z1) / w1 + (gamma * z2) / w2
                         z_interpolated *= w_reciprocal
 
-                        let depth = this._depthBuffer[index]
+                        let depth = writeDepthBuffer[index]
 
                         let depthJudgeFunc = this._depthJudgeFunc
                         if (depthJudgeFunc == this._gameGl.NEVER) {
@@ -1937,7 +1993,7 @@ export class CpuRenderingContext {
                             console.error("error depthJudgeFunc ")
                         }
                         if (canWrite && this._depthWriteEnable) {
-                            this._depthBuffer[index] = z_interpolated
+                            writeDepthBuffer[index] = z_interpolated
                         }
                     }
                     if (canWrite) {
@@ -1970,12 +2026,7 @@ export class CpuRenderingContext {
                             color.w = clamp(color.w, 0, 1)
                             if (this._openBlend) {
                                 let destColor = renderFragPipeCachData.vec4Data.getData()
-                                destColor.set_Vn(
-                                    this._frameBuffer[index],
-                                    this._frameBuffer[index + 1],
-                                    this._frameBuffer[index + 2],
-                                    this._frameBuffer[index + 3]
-                                )
+                                destColor.set_Vn(frameBuffer[index], frameBuffer[index + 1], frameBuffer[index + 2], frameBuffer[index + 3])
                                 Vec4Data.multiplyScalar(destColor, destColor, 1 / 255)
                                 let srcComputerColor: Vec4Data = renderFragPipeCachData.vec4Data.getData()
                                 let destComputerColor: Vec4Data = renderFragPipeCachData.vec4Data.getData()
@@ -2216,23 +2267,16 @@ export class CpuRenderingContext {
                             //     debugger
                             // }
                             if (this._colorRWriteEnable) {
-                                this._frameBuffer[index] = color.x * 255
+                                frameBuffer[index] = color.x * 255
                             }
                             if (this._colorGWriteEnable) {
-                                this._frameBuffer[index + 1] = color.y * 255
+                                frameBuffer[index + 1] = color.y * 255
                             }
                             if (this._colorBWriteEnable) {
-                                this._frameBuffer[index + 2] = color.z * 255
+                                frameBuffer[index + 2] = color.z * 255
                             }
                             if (this._colorAWriteEnable) {
-                                this._frameBuffer[index + 3] = color.w * 255
-                            }
-                            if (
-                                this._frameBuffer[index] === 125 &&
-                                this._frameBuffer[index + 1] == 150 &&
-                                this._frameBuffer[index + 2] == 170
-                            ) {
-                                debugger
+                                frameBuffer[index + 3] = color.w * 255
                             }
                         }
                     }
@@ -2411,7 +2455,7 @@ export class CpuRenderingContext {
         if (target === this._gameGl.TEXTURE_2D || target === this._gameGl.TEXTURE_CUBE_MAP) {
             let textureData = this._textureDataMap.get((<CPUWebGLTexture>texture).cachIndex)
             if (!textureData) {
-                textureData = new WebGLTextureData(<CPUWebGLTexture>texture, target, this._gameGl)
+                textureData = new WebGLTextureData(<CPUWebGLTexture>texture, target, this._gameGl, (<CPUWebGLTexture>texture).cachIndex)
                 this._textureDataMap.set((<CPUWebGLTexture>texture).cachIndex, textureData)
             }
             // 纹理创建后target 不能被修改
@@ -2847,7 +2891,13 @@ export class CpuRenderingContext {
                     if (internalformat == this._gameGl.ALPHA || internalformat == this._gameGl.RGB || internalformat == this._gameGl.RGBA) {
                         let destData = new Uint8Array(width * height * 4)
 
-                        let copyData = this._frameBuffer
+                        let writeColorFramebuffer = this.customGetNowColorBuffer()
+                        let frameBuffer = new Uint8ClampedArray(
+                            writeColorFramebuffer.buffer,
+                            writeColorFramebuffer.byteOffset,
+                            writeColorFramebuffer.byteLength
+                        )
+                        let copyData = frameBuffer
                         let frameWidth = this._canvasSize.x
                         let copyIndex = 0
                         for (let y = 0; y < height; y++) {
@@ -2946,7 +2996,13 @@ export class CpuRenderingContext {
                     let texBufferData = texelsData.texelMipmapData.get(level)
                     if (texBufferData) {
                         let destData = texBufferData.bufferData!
-                        let copyData = this._frameBuffer
+                        let writeColorFramebuffer = this.customGetNowColorBuffer()
+                        let frameBuffer = new Uint8ClampedArray(
+                            writeColorFramebuffer.buffer,
+                            writeColorFramebuffer.byteOffset,
+                            writeColorFramebuffer.byteLength
+                        )
+                        let copyData = frameBuffer
                         let frameWidth = this._canvasSize.x
                         let texWidth = texBufferData.width
                         for (let y = 0; y < height; y++) {
@@ -3234,6 +3290,10 @@ export class CpuRenderingContext {
             })
             set.clear()
             this._textureDataMap.delete((<CPUWebGLTexture>texture).cachIndex)
+            let frameBufferObj = this._nowUseFramebufferObject
+            if (frameBufferObj) {
+                frameBufferObj.deAttachTexture((<CPUWebGLTexture>texture).cachIndex)
+            }
         }
     }
 
@@ -3327,8 +3387,7 @@ export class CpuRenderingContext {
                 this._nowUseFramebufferObject = framebufferObj
             } else {
                 // 重置为系统默认的fbo
-                let framebufferObj = this._framebufferObjectMap.get(0)!
-                this._nowUseFramebufferObject = framebufferObj
+                this._nowUseFramebufferObject = null
             }
         } else {
             renderError("this._gameGl.INVALID_ENUM " + this._gameGl.INVALID_ENUM + " in bindFramebuffer")
@@ -3388,8 +3447,7 @@ export class CpuRenderingContext {
                 this._nowUseRenderbufferObject = renderbufferObj
             } else {
                 // 重置为系统默认的rbo
-                let renderbufferObj = this._renderbufferObjectMap.get(0)!
-                this._nowUseRenderbufferObject = renderbufferObj
+                this._nowUseRenderbufferObject = null
             }
         } else {
             renderError("this._gameGl.INVALID_ENUM " + this._gameGl.INVALID_ENUM + " in bindRenderbuffer")
@@ -3413,10 +3471,8 @@ export class CpuRenderingContext {
         if (target == this._gameGl.RENDERBUFFER) {
             let renderbufferObj = this._nowUseRenderbufferObject
             // 不能使用系统的
-            if (renderbufferObj.bufferIndex.cachIndex !== 0) {
-                renderbufferObj.width = width
-                renderbufferObj.height = height
-                renderbufferObj.internalformat = internalformat
+            if (renderbufferObj) {
+                renderbufferObj.initBufferData(width, height, internalformat)
             } else {
                 renderError("this._gameGl.INVALID_OPERATION " + this._gameGl.INVALID_OPERATION + " in renderbufferStorage")
             }
@@ -3447,7 +3503,7 @@ export class CpuRenderingContext {
     framebufferRenderbuffer(target: GLenum, attachment: GLenum, renderbuffertarget: GLenum, renderbuffer: WebGLRenderbuffer | null): void {
         if (target == this._gameGl.FRAMEBUFFER) {
             let frameBufferObj = this._nowUseFramebufferObject
-            if (frameBufferObj.bufferIndex.cachIndex !== 0) {
+            if (frameBufferObj) {
                 if (!renderbuffer || (<CPUWebGLRenderbuffer>renderbuffer).cachIndex === 0) {
                     if (attachment == this._gameGl.COLOR_ATTACHMENT0) {
                         frameBufferObj.colorAttachPoint = null
@@ -3519,7 +3575,7 @@ export class CpuRenderingContext {
     framebufferTexture2D(target: GLenum, attachment: GLenum, textarget: GLenum, texture: WebGLTexture | null, level: GLint): void {
         if (target == this._gameGl.FRAMEBUFFER) {
             let frameBufferObj = this._nowUseFramebufferObject
-            if (frameBufferObj.bufferIndex.cachIndex !== 0) {
+            if (frameBufferObj) {
                 if (!texture) {
                     if (attachment == this._gameGl.COLOR_ATTACHMENT0) {
                         frameBufferObj.colorAttachPoint = null
@@ -3595,6 +3651,7 @@ export class CpuRenderingContext {
         和写操作（glClear, glDrawArrays, glDrawElements），就会出现GL_INVALID_FRAMEBUFFER_OPERATION 的错误。 */
     checkFramebufferStatus(target: GLenum): GLenum {
         console.error("FramebufferStatus的设置未实现")
+        debugger
         return 0
     }
 
@@ -3611,7 +3668,7 @@ export class CpuRenderingContext {
             if (cachIndex !== 0 && frameBufferObj) {
                 this._framebufferObjectMap.delete(cachIndex)
                 if (this._nowUseFramebufferObject === frameBufferObj) {
-                    this._nowUseFramebufferObject = this._framebufferObjectMap.get(0)!
+                    this._nowUseFramebufferObject = null
                 }
             }
         }
@@ -3633,9 +3690,11 @@ export class CpuRenderingContext {
             if (cachIndex !== 0 && renderbufferObj) {
                 this._renderbufferObjectMap.delete(cachIndex)
                 if (this._nowUseRenderbufferObject === renderbufferObj) {
-                    this._nowUseRenderbufferObject = this._renderbufferObjectMap.get(0)!
+                    this._nowUseRenderbufferObject = null
                 }
-                this._nowUseFramebufferObject.deAttachRenderBufferPoint(cachIndex)
+                if (this._nowUseFramebufferObject) {
+                    this._nowUseFramebufferObject.deAttachRenderBufferPoint(cachIndex)
+                }
             }
         }
     }

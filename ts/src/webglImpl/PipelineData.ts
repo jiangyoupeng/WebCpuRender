@@ -1,3 +1,4 @@
+import { cpuRenderingContext } from "./CpuRenderingContext"
 import { ShaderManager } from "./shader/tsScript/ShaderManager"
 import { BaseShaderHandle, FragShaderHandle, VertShaderHandle } from "./ShaderDefine"
 let SparkMD5 = require("Spark-md5")
@@ -456,7 +457,7 @@ export class TexelsData {
 }
 
 export class WebGLTextureData {
-    constructor(glTexture: CPUWebGLTexture, glTarget: GLenum, gl: WebGLRenderingContext) {
+    constructor(glTexture: CPUWebGLTexture, glTarget: GLenum, gl: WebGLRenderingContext, cachIndex: number) {
         this.glTexture = glTexture
         this.glTarget = glTarget
         let texelsNum = glTarget === gl.TEXTURE_2D ? 1 : 6
@@ -466,8 +467,13 @@ export class WebGLTextureData {
         this.parameter.set(gl.TEXTURE_MAG_FILTER, gl.LINEAR)
         this.parameter.set(gl.TEXTURE_WRAP_S, gl.REPEAT)
         this.parameter.set(gl.TEXTURE_WRAP_T, gl.REPEAT)
+        this._cachIndex = cachIndex
     }
 
+    get cachIndex() {
+        return this._cachIndex
+    }
+    _cachIndex: number = null!
     /**纹理数据 对应cube类型的话 纹理数据是6张 */
     texelsDatas: TexelsData[] | null = null
     glTarget: GLenum | null = null
@@ -516,13 +522,49 @@ export class WebGLFramebufferObject {
     stencilAttachPoint: WebGLRenderbufferObject | WebGLTextureData | null = null
 
     deAttachRenderBufferPoint(cachIndex: number) {
-        if (this.colorAttachPoint && (<WebGLRenderbufferObject>this.colorAttachPoint).bufferIndex.cachIndex === cachIndex) {
+        if (
+            this.colorAttachPoint &&
+            this.colorAttachPoint instanceof WebGLRenderbufferObject &&
+            (<WebGLRenderbufferObject>this.colorAttachPoint).bufferIndex.cachIndex === cachIndex
+        ) {
             this.colorAttachPoint = null
         }
-        if (this.depthAttachPoint && (<WebGLRenderbufferObject>this.depthAttachPoint).bufferIndex.cachIndex === cachIndex) {
+        if (
+            this.depthAttachPoint &&
+            this.depthAttachPoint instanceof WebGLRenderbufferObject &&
+            (<WebGLRenderbufferObject>this.depthAttachPoint).bufferIndex.cachIndex === cachIndex
+        ) {
             this.depthAttachPoint = null
         }
-        if (this.stencilAttachPoint && (<WebGLRenderbufferObject>this.stencilAttachPoint).bufferIndex.cachIndex === cachIndex) {
+        if (
+            this.stencilAttachPoint &&
+            this.stencilAttachPoint instanceof WebGLRenderbufferObject &&
+            (<WebGLRenderbufferObject>this.stencilAttachPoint).bufferIndex.cachIndex === cachIndex
+        ) {
+            this.stencilAttachPoint = null
+        }
+    }
+
+    deAttachTexture(cachIndex: number) {
+        if (
+            this.colorAttachPoint &&
+            this.colorAttachPoint instanceof WebGLTextureData &&
+            (<WebGLTextureData>this.colorAttachPoint).cachIndex === cachIndex
+        ) {
+            this.colorAttachPoint = null
+        }
+        if (
+            this.depthAttachPoint &&
+            this.depthAttachPoint instanceof WebGLTextureData &&
+            (<WebGLTextureData>this.depthAttachPoint).cachIndex === cachIndex
+        ) {
+            this.depthAttachPoint = null
+        }
+        if (
+            this.stencilAttachPoint &&
+            this.stencilAttachPoint instanceof WebGLTextureData &&
+            (<WebGLTextureData>this.stencilAttachPoint).cachIndex === cachIndex
+        ) {
             this.stencilAttachPoint = null
         }
     }
@@ -543,6 +585,51 @@ export class WebGLRenderbufferObject {
     constructor(bufferIndex: CPUWebGLRenderbuffer) {
         this.bufferIndex = bufferIndex
     }
+
+    // 由于RBO是将作为FBO的color/depth/stencil attachment，所以第二个输入参数internalformat必须为color/depth/stencil相关的格式。
+    // 其中，如果该RBO将作为color attachment，那么internalformat必须为GL_RGBA4/GL_RGB5_A1/GL_RGB565，如果该RBO将作为depth attachment，
+    // 那么internalformat必须为GL_DEPTH_COMPONENT16，如果该RBO将作为stencil attachment，那么internalformat必须为GL_STENCIL_INDEX8。
+    // 否则，则会出现GL_INVALID_ENUM的错误。第三个和第四个参数width、height为RBO的尺寸，如果width或者height超过GL_MAX_RENDERBUFFER_S
+    initBufferData(width: number, height: number, internalformat: number) {
+        this.width = width
+        this.height = height
+        this.internalformat = internalformat
+        // 不管是啥 都是用rgba 每个通道占一字节表示
+        // 内存不是考虑的瓶颈
+        if (internalformat === cpuRenderingContext.cachGameGl.RGBA4) {
+            this.bufferData = new Uint32Array(width * height)
+        } else if (internalformat === cpuRenderingContext.cachGameGl.RGB565) {
+            this.bufferData = new Uint32Array(width * height)
+        } else if (internalformat === cpuRenderingContext.cachGameGl.RGB5_A1) {
+            this.bufferData = new Uint32Array(width * height)
+        } else if (internalformat === cpuRenderingContext.cachGameGl.DEPTH_COMPONENT16) {
+            // 没有16位的浮点数 就用32位的表示吧
+            this.bufferData = new Float32Array(width * height)
+        } else if (internalformat === cpuRenderingContext.cachGameGl.STENCIL_INDEX8) {
+            this.bufferData = new Uint8Array(width * height)
+        } else if (internalformat === cpuRenderingContext.cachGameGl.DEPTH_STENCIL) {
+            console.error("不识别DEPTH_STENCIL")
+            debugger
+        } else {
+            console.error("无法识别的 internalformat")
+            debugger
+        }
+    }
+
+    /**
+     * 因为viewport设置的尺寸可以大于实际可渲染区域 所以要做判断不可设置
+     * @param x 设定的x坐标
+     * @param y 设定的y坐标
+     * @param val 设定的数据 如果是color的 外部设置应该自行判断rgba 4个通道是否可以写入 还有当前的写入格式
+     */
+    setBufferData(x: number, y: number, val: number) {
+        let index = y * this.width + x
+        if (x < this.width && y < this.height) {
+            this.bufferData[index] = val
+        }
+    }
+
+    bufferData: Uint8Array | Uint8ClampedArray | Float32Array | Uint32Array = null!
     internalformat: GLenum = null!
     width: GLsizei = null!
     height: GLsizei = null!
