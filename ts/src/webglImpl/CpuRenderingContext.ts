@@ -153,9 +153,6 @@ export class CpuRenderingContext {
     /*透明通道是否可以写 */
     private _colorAWriteEnable: boolean = true
 
-    /*颜色写入码是否可以写 */
-    private _colorMask: number = 0xffffffff
-
     /**背景色 清空时会用改颜色清理屏幕 */
     private _backgroundColor: Vec4Data = new Vec4Data(0, 0, 0, 0)
 
@@ -1190,19 +1187,6 @@ export class CpuRenderingContext {
     }
 
     colorMask(red: GLboolean, green: GLboolean, blue: GLboolean, alpha: GLboolean): void {
-        this._colorMask = 0xffffffff
-        if (!red) {
-            this._colorMask &= 0xffffff00
-        }
-        if (!green) {
-            this._colorMask &= 0xffff00ff
-        }
-        if (!blue) {
-            this._colorMask &= 0xff00ffff
-        }
-        if (!alpha) {
-            this._colorMask &= 0x00ffffff
-        }
         this._colorRWriteEnable = red
         this._colorGWriteEnable = green
         this._colorBWriteEnable = blue
