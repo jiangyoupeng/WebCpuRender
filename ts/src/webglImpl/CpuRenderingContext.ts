@@ -1702,24 +1702,71 @@ export class CpuRenderingContext {
         return color
     }
 
+    customGetRenderTexBuf(colorAttachPoint: WebGLTextureData, target: number, typeArray: any): any {
+        let texelData: TexelsData = null!
+        if (target === 0) {
+            texelData = colorAttachPoint.texelsDatas![0]
+        } else {
+            texelData = colorAttachPoint.texelsDatas![this._cubeTexIndex.get(target)!]
+        }
+        let texBufferData = texelData.texelMipmapData.get(0)
+        return new typeArray(
+            texBufferData!.bufferData!.buffer,
+            texBufferData!.bufferData!.byteOffset,
+            texBufferData!.bufferData!.byteLength
+        )
+    }
+
     customGetNowColorBuffer(): Uint32Array {
-        if (this._systemFrameBuffer.colorAttachPoint instanceof WebGLRenderbufferObject) {
-            let colorAttachPoint: WebGLRenderbufferObject = <WebGLRenderbufferObject>this._systemFrameBuffer.colorAttachPoint
+        let nowFrameBuffer = this._nowUseFramebufferObject
+        if (!nowFrameBuffer) {
+            nowFrameBuffer = this._systemFrameBuffer
+        }
+
+        if (nowFrameBuffer.colorAttachPoint instanceof WebGLRenderbufferObject) {
+            let colorAttachPoint: WebGLRenderbufferObject = <WebGLRenderbufferObject>nowFrameBuffer.colorAttachPoint
             return <Uint32Array>colorAttachPoint.bufferData
         } else {
-            let colorAttachPoint: WebGLTextureData = <WebGLTextureData>this._systemFrameBuffer.colorAttachPoint
-            // colorAttachPoint.
+            return this.customGetRenderTexBuf(
+                <WebGLTextureData>nowFrameBuffer.colorAttachPoint,
+                nowFrameBuffer.colorTextureTarget,
+                Uint32Array
+            )
         }
     }
 
     customGetNowDepthBuffer(): Float32Array {
-        let colorAttachPoint: WebGLRenderbufferObject = <WebGLRenderbufferObject>this._systemFrameBuffer.depthAttachPoint
-        return <Float32Array>colorAttachPoint.bufferData
+        let nowFrameBuffer = this._nowUseFramebufferObject
+        if (!nowFrameBuffer) {
+            nowFrameBuffer = this._systemFrameBuffer
+        }
+        if (nowFrameBuffer.depthAttachPoint instanceof WebGLRenderbufferObject) {
+            let depthAttachPoint: WebGLRenderbufferObject = <WebGLRenderbufferObject>nowFrameBuffer.depthAttachPoint
+            return <Float32Array>depthAttachPoint.bufferData
+        } else {
+            return this.customGetRenderTexBuf(
+                <WebGLTextureData>nowFrameBuffer.depthAttachPoint,
+                nowFrameBuffer.depthTextureTarget,
+                Float32Array
+            )
+        }
     }
 
     customGetNowStencilBuffer(): Uint8Array {
-        let colorAttachPoint: WebGLRenderbufferObject = <WebGLRenderbufferObject>this._systemFrameBuffer.stencilAttachPoint
-        return <Uint8Array>colorAttachPoint.bufferData
+        let nowFrameBuffer = this._nowUseFramebufferObject
+        if (!nowFrameBuffer) {
+            nowFrameBuffer = this._systemFrameBuffer
+        }
+        if (nowFrameBuffer.stencilAttachPoint instanceof WebGLRenderbufferObject) {
+            let stencilAttachPoint: WebGLRenderbufferObject = <WebGLRenderbufferObject>nowFrameBuffer.stencilAttachPoint
+            return <Uint8Array>stencilAttachPoint.bufferData
+        } else {
+            return this.customGetRenderTexBuf(
+                <WebGLTextureData>nowFrameBuffer.stencilAttachPoint,
+                nowFrameBuffer.stencilTextureTarget,
+                Uint8Array
+            )
+        }
     }
 
     /**和gl的实现还是不一样 不清楚哪里出问题了 */

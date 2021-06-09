@@ -527,11 +527,28 @@ export class WebGLFramebufferObject {
     depthAttachPoint: WebGLRenderbufferObject | WebGLTextureData | null = null
     stencilAttachPoint: WebGLRenderbufferObject | WebGLTextureData | null = null
 
-    setColorAttachByTex(tex: WebGLTextureData) {
+    setColorAttachByTex(tex: WebGLTextureData, target: number) {
+        this.colorTextureTarget = target
         this.colorAttachPoint = tex
     }
     setColorAttachByRender(render: WebGLRenderbufferObject) {
         this.colorAttachPoint = render
+    }
+
+    setDepthAttachByTex(tex: WebGLTextureData, target: number) {
+        this.depthTextureTarget = target
+        this.depthAttachPoint = tex
+    }
+    setDepthAttachByRender(render: WebGLRenderbufferObject) {
+        this.depthAttachPoint = render
+    }
+
+    setStencilAttachByTex(tex: WebGLTextureData, target: number) {
+        this.stencilTextureTarget = target
+        this.stencilAttachPoint = tex
+    }
+    setStencilAttachByRender(render: WebGLRenderbufferObject) {
+        this.stencilAttachPoint = render
     }
 
     deAttachRenderBufferPoint(cachIndex: number) {
