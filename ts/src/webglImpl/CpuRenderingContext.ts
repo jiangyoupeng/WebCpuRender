@@ -1752,14 +1752,28 @@ export class CpuRenderingContext {
 
     render() {
         if (this._canvars2D) {
-            let systemWriteFramebuffer = this.customGetNowColorBuffer()
-            let imageBuffer = new Uint8ClampedArray(
-                systemWriteFramebuffer.buffer,
-                systemWriteFramebuffer.byteOffset,
-                systemWriteFramebuffer.byteLength
-            )
-            let imageData = new ImageData(imageBuffer, this._canvasSize.x, this._canvasSize.y)
-            this._canvars2D.putImageData(imageData, 0, 0)
+            let nowFrameBuffer = this.customGetNowFramebuffer()
+            // 非系统framebuffer是离屏渲染
+            if (nowFrameBuffer === this._systemFrameBuffer) {
+                let systemWriteFramebuffer = this.customGetNowColorBuffer()
+                let renderSize = this.customGetNowRenderSize()
+
+                let height = renderSize.y
+                let width = renderSize.x
+                let imageBuffer = new Uint32Array(systemWriteFramebuffer)
+                let index = Math.floor(height / 2)
+                for (let x = 0; x < width; x++) {
+                    for (let i = 0; i < index; i++) {
+                        let swapIndex1 = x + (height - i - 1) * width
+                        let swapIndex2 = x + i * width
+                        let tmp = imageBuffer[swapIndex1]
+                        imageBuffer[swapIndex1] = imageBuffer[swapIndex2]
+                        imageBuffer[swapIndex2] = tmp
+                    }
+                }
+                let imageData = new ImageData(new Uint8ClampedArray(imageBuffer.buffer), renderSize.x, renderSize.y)
+                this._canvars2D.putImageData(imageData, 0, 0)
+            }
         }
     }
 
@@ -1857,6 +1871,14 @@ export class CpuRenderingContext {
         return color
     }
 
+    customGetNowFramebuffer() {
+        let nowFrameBuffer = this._nowUseFramebufferObject
+        if (!nowFrameBuffer) {
+            nowFrameBuffer = this._systemFrameBuffer
+        }
+        return nowFrameBuffer
+    }
+
     customGetRenderTexBuf(attachPoint: WebGLTextureData, target: number, typeArray: any): any {
         let texelData: TexelsData = null!
         if (target === this._gameGl.TEXTURE_2D) {
@@ -1872,11 +1894,34 @@ export class CpuRenderingContext {
         )
     }
 
-    customGetNowColorBuffer(): Uint32Array {
-        let nowFrameBuffer = this._nowUseFramebufferObject
-        if (!nowFrameBuffer) {
-            nowFrameBuffer = this._systemFrameBuffer
+    customGetNowRenderSize() {
+        let nowFrameBuffer = this.customGetNowFramebuffer()
+
+        if (nowFrameBuffer.colorAttachPoint instanceof WebGLRenderbufferObject) {
+            let colorAttachPoint: WebGLRenderbufferObject = <WebGLRenderbufferObject>nowFrameBuffer.colorAttachPoint
+            let size = cpuCachData.vec2Data.getData()
+            size.x = colorAttachPoint.width
+            size.y = colorAttachPoint.height!
+            return size
+        } else {
+            let attachPoint = <WebGLTextureData>nowFrameBuffer.colorAttachPoint
+            let target = nowFrameBuffer.colorTextureTarget
+            let texelData: TexelsData = null!
+            if (target === this._gameGl.TEXTURE_2D) {
+                texelData = attachPoint.texelsDatas![0]
+            } else {
+                texelData = attachPoint.texelsDatas![this._cubeTexIndex.get(target)!]
+            }
+            let texBufferData = texelData.texelMipmapData.get(0)
+            let size = cpuCachData.vec2Data.getData()
+            size.x = texBufferData?.width!
+            size.y = texBufferData?.height!
+            return size
         }
+    }
+
+    customGetNowColorBuffer(): Uint32Array {
+        let nowFrameBuffer = this.customGetNowFramebuffer()
 
         if (nowFrameBuffer.colorAttachPoint instanceof WebGLRenderbufferObject) {
             let colorAttachPoint: WebGLRenderbufferObject = <WebGLRenderbufferObject>nowFrameBuffer.colorAttachPoint
@@ -1890,12 +1935,21 @@ export class CpuRenderingContext {
         }
     }
 
+    customGetNowColorIsTex(): boolean {
+        let nowFrameBuffer = this.customGetNowFramebuffer()
+        if (nowFrameBuffer.colorAttachPoint) {
+            if (nowFrameBuffer.colorAttachPoint instanceof WebGLRenderbufferObject) {
+                return false
+            } else {
+                return true
+            }
+        }
+        return false
+    }
+
     // 除了颜色 其它附加render都可能是空的
     customGetNowDepthBuffer(): Float32Array | null {
-        let nowFrameBuffer = this._nowUseFramebufferObject
-        if (!nowFrameBuffer) {
-            nowFrameBuffer = this._systemFrameBuffer
-        }
+        let nowFrameBuffer = this.customGetNowFramebuffer()
         if (nowFrameBuffer.depthAttachPoint) {
             if (nowFrameBuffer.depthAttachPoint instanceof WebGLRenderbufferObject) {
                 let depthAttachPoint: WebGLRenderbufferObject = <WebGLRenderbufferObject>nowFrameBuffer.depthAttachPoint
@@ -1911,12 +1965,21 @@ export class CpuRenderingContext {
         return null
     }
 
+    customGetNowDepthIsTex(): boolean {
+        let nowFrameBuffer = this.customGetNowFramebuffer()
+        if (nowFrameBuffer.depthAttachPoint) {
+            if (nowFrameBuffer.depthAttachPoint instanceof WebGLRenderbufferObject) {
+                return false
+            } else {
+                return true
+            }
+        }
+        return false
+    }
+
     // 除了颜色 其它附加render都可能是空的
     customGetNowStencilBuffer(): Uint8Array | null {
-        let nowFrameBuffer = this._nowUseFramebufferObject
-        if (!nowFrameBuffer) {
-            nowFrameBuffer = this._systemFrameBuffer
-        }
+        let nowFrameBuffer = this.customGetNowFramebuffer()
         if (nowFrameBuffer.stencilAttachPoint) {
             if (nowFrameBuffer.stencilAttachPoint instanceof WebGLRenderbufferObject) {
                 let stencilAttachPoint: WebGLRenderbufferObject = <WebGLRenderbufferObject>nowFrameBuffer.stencilAttachPoint
@@ -1933,6 +1996,18 @@ export class CpuRenderingContext {
         } else {
             return null
         }
+    }
+
+    customGetNowStencilIsTex(): boolean {
+        let nowFrameBuffer = this.customGetNowFramebuffer()
+        if (nowFrameBuffer.stencilAttachPoint) {
+            if (nowFrameBuffer.stencilAttachPoint instanceof WebGLRenderbufferObject) {
+                return false
+            } else {
+                return true
+            }
+        }
+        return false
     }
 
     /**和gl的实现还是不一样 不清楚哪里出问题了 */
@@ -2089,9 +2164,13 @@ export class CpuRenderingContext {
         minX = Math.floor(minX)
         minY = Math.floor(minY)
 
-        let viewMaxWidth = Math.min(this._viewPort.x + this._viewPort.width - 1, this._canvasSize.x - 1)
+        let writeColorFramebuffer = this.customGetNowColorBuffer()
+        let colorSize = this.customGetNowRenderSize()
+        let writeDepthBuffer = this.customGetNowDepthBuffer()
+
+        let viewMaxWidth = Math.min(this._viewPort.x + this._viewPort.width - 1, colorSize.x - 1)
         let viewMinWidth = this._viewPort.x
-        let viewMaxHeight = Math.min(this._viewPort.y + this._viewPort.height - 1, this._canvasSize.y - 1)
+        let viewMaxHeight = Math.min(this._viewPort.y + this._viewPort.height - 1, colorSize.y - 1)
         let viewMinHeight = this._viewPort.y
 
         minX = Math.max(viewMinWidth, minX)
@@ -2126,13 +2205,11 @@ export class CpuRenderingContext {
         let varyingData = fragShader.varyingData
         let debugPos: Vec2Data | null = null
 
-        let writeColorFramebuffer = this.customGetNowColorBuffer()
         let frameBuffer = new Uint8ClampedArray(
             writeColorFramebuffer.buffer,
             writeColorFramebuffer.byteOffset,
             writeColorFramebuffer.byteLength
         )
-        let writeDepthBuffer = this.customGetNowDepthBuffer()
 
         for (let x = minX; x <= maxX; x++) {
             let triangleBeginY = -1
@@ -2173,7 +2250,12 @@ export class CpuRenderingContext {
                     let [alpha, beta, gamma] = GeometricOperations.computeBarycentric2DByPre(x + 0.5, y + 0.5, preData)
 
                     let canWrite = true
-                    let index = this._customGetIndex(x, y)
+
+                    x = Math.floor(x)
+                    y = Math.floor(y)
+
+                    // 不在反写
+                    let index = colorSize.x * y + x
                     if (writeDepthBuffer && this._openDepthTest) {
                         let w_reciprocal = 1.0 / (alpha / w0 + beta / w1 + gamma / w2)
                         let z_interpolated = (alpha * z0) / w0 + (beta * z1) / w1 + (gamma * z2) / w2
@@ -2547,14 +2629,6 @@ export class CpuRenderingContext {
                 console.error("暂未实现的插值方法")
             }
         }
-    }
-
-    _customGetIndex(x: number, y: number): number {
-        x = Math.floor(x)
-        y = Math.floor(y)
-
-        let index = this._canvasSize.x * (this._canvasSize.y - y) + x
-        return index
     }
 
     // webgl是左手坐标系 z朝向屏幕里 所以如果是顺时针的话叉乘出来的结果应该是负数
@@ -3097,19 +3171,19 @@ export class CpuRenderingContext {
                         let destData = new Uint8Array(width * height * 4)
 
                         let writeColorFramebuffer = this.customGetNowColorBuffer()
+                        let renderSize = this.customGetNowRenderSize()
                         let frameBuffer = new Uint8ClampedArray(
                             writeColorFramebuffer.buffer,
                             writeColorFramebuffer.byteOffset,
                             writeColorFramebuffer.byteLength
                         )
                         let copyData = frameBuffer
-                        let frameWidth = this._canvasSize.x
+                        let frameWidth = renderSize.x
                         let copyIndex = 0
                         for (let y = 0; y < height; y++) {
                             for (let x = 0; x < width; x++) {
                                 let factX = this._viewPort.x + bufferXoffset + x
                                 let factY = this._viewPort.y + bufferYoffset + y
-                                // let index = this._canvasSize.x * (this._viewPort.y - factY) + factX
                                 let bufferIndex = (factY * frameWidth + factX) * 4
                                 destData[copyIndex++] = copyData[bufferIndex++]
                                 destData[copyIndex++] = copyData[bufferIndex++]
@@ -3202,13 +3276,14 @@ export class CpuRenderingContext {
                     if (texBufferData) {
                         let destData = texBufferData.bufferData!
                         let writeColorFramebuffer = this.customGetNowColorBuffer()
+                        let renderSize = this.customGetNowRenderSize()
                         let frameBuffer = new Uint8ClampedArray(
                             writeColorFramebuffer.buffer,
                             writeColorFramebuffer.byteOffset,
                             writeColorFramebuffer.byteLength
                         )
                         let copyData = frameBuffer
-                        let frameWidth = this._canvasSize.x
+                        let frameWidth = renderSize.x
                         let texWidth = texBufferData.width
                         for (let y = 0; y < height; y++) {
                             for (let x = 0; x < width; x++) {
