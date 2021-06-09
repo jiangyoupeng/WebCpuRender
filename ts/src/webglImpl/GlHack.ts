@@ -264,7 +264,7 @@ export function replaceWebglFunc(gl: any) {
                                 let interpreterData = GLSLInterpreter.interpreter(shaderSource)
                                 compilerTsFiles.set(interpreterData[0], interpreterData[1])
                             }
-                        } else if (funcKey === "drawElements" && compilerTsFiles.size > 0) {
+                        } else if ((funcKey === "drawElements" || funcKey === "drawArrays") && compilerTsFiles.size > 0) {
                             // 直接判断输出drawElements之前的转译脚本
                             var zip = new win.JSZip()
                             let readonlyStr = ""

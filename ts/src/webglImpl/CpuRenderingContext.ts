@@ -1,3 +1,4 @@
+import { read } from "fs"
 import { clamp } from "lodash"
 import { GeometricOperations } from "./geometricOperations/GeometricOperations"
 import { replaceWebglFunc } from "./GlHack"
@@ -291,8 +292,10 @@ export class CpuRenderingContext {
     }
 
     private _clearDeputhBuffer() {
-        let systemWriteFramebuffer: Float32Array = this.customGetNowDepthBuffer()
-        systemWriteFramebuffer.fill(this._defaultDepth, 0)
+        let depathFramebuffer: Float32Array | null = this.customGetNowDepthBuffer()
+        if (depathFramebuffer) {
+            depathFramebuffer.fill(this._defaultDepth, 0)
+        }
     }
 
     customSaveGlData() {
@@ -860,10 +863,36 @@ export class CpuRenderingContext {
             return
         }
         if (index >= 0 && index < maxVertexAttribs!) {
-            this._attributeReadInfo.set(
-                index,
-                new AttributeReadInfo(this._gameGl, this._useVboBufferData?.cachIndex.cachIndex!, size, type, normalized, stride, offset)
+            let readInfo = new AttributeReadInfo(
+                this._gameGl,
+                this._useVboBufferData?.cachIndex.cachIndex!,
+                size,
+                type,
+                normalized,
+                stride,
+                offset
             )
+            this._attributeReadInfo.set(index, readInfo)
+            let name = this._useProgram.getNameByAttributeLocal(index)
+            let typeName = this._useProgram.linkVertexShader.attributeData.dataKeys.get(name!)
+            // 暂时不支持ivec 类型
+            if (typeName === this._gameGl.FLOAT || typeName === this._gameGl.INT) {
+                readInfo.factSize = 1
+                if (typeName === this._gameGl.FLOAT) {
+                    readInfo.isFloat = true
+                } else {
+                    readInfo.isFloat = false
+                }
+            } else if (typeName === this._gameGl.FLOAT_VEC2) {
+                readInfo.factSize = 2
+            } else if (typeName === this._gameGl.FLOAT_VEC3) {
+                readInfo.factSize = 3
+            } else if (typeName === this._gameGl.FLOAT_VEC4) {
+                readInfo.factSize = 4
+            } else {
+                debugger
+                console.error("暂未实现的attritube size")
+            }
         } else {
             renderError("this._gameGl.INVALID_VALUE  " + this._gameGl.INVALID_VALUE + " in vertexAttribPointer ")
         }
@@ -1216,6 +1245,7 @@ export class CpuRenderingContext {
                 if (name) {
                     let bytesPerElement = value.byteType.BYTES_PER_ELEMENT
                     let size = value.size
+                    let factSize = value.factSize
                     let stride = value.stride ? value.stride : bytesPerElement * value.size
                     let bufferData = this._vboBufferDataMap.get(value.readBufferIndex)
                     let numCachData = value.isFloat ? cpuCachData.floatData : cpuCachData.intData
@@ -1224,55 +1254,114 @@ export class CpuRenderingContext {
                         let dataTypeArray = new value.byteType(buffer.buffer, buffer.byteOffset, buffer.byteLength / bytesPerElement)
 
                         let num = buffer.byteLength / stride
-
                         let dataArr: Vec2Data[] | Vec3Data[] | Vec4Data[] | IntData[] | FloatData[]
-                        if (size === 1) {
-                            dataArr = new Array<NumData>(num)
-                        } else if (size === 2) {
-                            dataArr = new Array<Vec2Data>(num)
-                        } else if (size === 3) {
-                            dataArr = new Array<Vec3Data>(num)
-                        } else if (size === 4) {
-                            dataArr = new Array<Vec4Data>(num)
-                        }
                         let dataIndex = 0
-                        if (size === 1) {
-                            for (let i = value.offset; i < buffer.length; i += stride) {
-                                let byteIndex = i / bytesPerElement
-                                let data: IntData | FloatData = numCachData.getData()
-                                data.v = dataTypeArray[byteIndex]
-                                dataArr![dataIndex++] = data!
+                        if (factSize === 1) {
+                            dataArr = new Array<NumData>(num)
+                            if (size === 1 || size === 2 || size === 3 || size === 4) {
+                                for (let i = value.offset; i < buffer.length; i += stride) {
+                                    let byteIndex = i / bytesPerElement
+                                    let data: IntData | FloatData = numCachData.getData()
+                                    data.v = dataTypeArray[byteIndex]
+                                    dataArr![dataIndex++] = data!
+                                }
+                            } else {
+                                debugger
+                                console.error("drawArrays 暂时无法识别的数量")
                             }
-                        } else if (size === 2) {
-                            for (let i = value.offset; i < buffer.length; i += stride) {
-                                let byteIndex = i / bytesPerElement
-                                let data: Vec2Data = cpuCachData.vec2Data.getData()
+                        } else if (factSize === 2) {
+                            dataArr = new Array<Vec2Data>(num)
+                            if (size === 1) {
+                                for (let i = value.offset; i < buffer.length; i += stride) {
+                                    let byteIndex = i / bytesPerElement
+                                    let data: Vec2Data = cpuCachData.vec2Data.getData()
+                                    data.set_Vn(dataTypeArray[byteIndex], 0)
+                                    dataArr![dataIndex++] = data!
+                                }
+                            } else if (size === 2 || size === 3 || size === 4) {
+                                for (let i = value.offset; i < buffer.length; i += stride) {
+                                    let byteIndex = i / bytesPerElement
+                                    let data: Vec2Data = cpuCachData.vec2Data.getData()
 
-                                data.set_Vn(dataTypeArray[byteIndex], dataTypeArray[byteIndex + 1])
-                                dataArr![dataIndex++] = data!
+                                    data.set_Vn(dataTypeArray[byteIndex], dataTypeArray[byteIndex + 1])
+                                    dataArr![dataIndex++] = data!
+                                }
+                            } else {
+                                debugger
+                                console.error("drawArrays 暂时无法识别的数量")
                             }
-                        } else if (size === 3) {
-                            for (let i = value.offset; i < buffer.length; i += stride) {
-                                let byteIndex = i / bytesPerElement
-                                let data: Vec3Data = cpuCachData.vec3Data.getData()
-                                data.set_Vn(dataTypeArray[byteIndex], dataTypeArray[byteIndex + 1], dataTypeArray[byteIndex + 2])
-                                dataArr![dataIndex++] = data!
+                        } else if (factSize === 3) {
+                            dataArr = new Array<Vec3Data>(num)
+                            if (size === 1) {
+                                for (let i = value.offset; i < buffer.length; i += stride) {
+                                    let byteIndex = i / bytesPerElement
+                                    let data: Vec3Data = cpuCachData.vec3Data.getData()
+                                    data.set_Vn(dataTypeArray[byteIndex], 0, 0)
+                                    dataArr![dataIndex++] = data!
+                                }
+                            } else if (size === 2) {
+                                for (let i = value.offset; i < buffer.length; i += stride) {
+                                    let byteIndex = i / bytesPerElement
+                                    let data: Vec3Data = cpuCachData.vec3Data.getData()
+
+                                    data.set_Vn(dataTypeArray[byteIndex], dataTypeArray[byteIndex + 1], 0)
+                                    dataArr![dataIndex++] = data!
+                                }
+                            } else if (size === 3 || size === 4) {
+                                for (let i = value.offset; i < buffer.length; i += stride) {
+                                    let byteIndex = i / bytesPerElement
+                                    let data: Vec3Data = cpuCachData.vec3Data.getData()
+
+                                    data.set_Vn(dataTypeArray[byteIndex], dataTypeArray[byteIndex + 1], dataTypeArray[byteIndex + 2])
+                                    dataArr![dataIndex++] = data!
+                                }
+                            } else {
+                                debugger
+                                console.error("drawArrays 暂时无法识别的数量")
                             }
-                        } else if (size === 4) {
-                            for (let i = value.offset; i < buffer.length; i += stride) {
-                                let byteIndex = i / bytesPerElement
-                                let data: Vec4Data = cpuCachData.vec4Data.getData()
-                                data.set_Vn(
-                                    dataTypeArray[byteIndex],
-                                    dataTypeArray[byteIndex + 1],
-                                    dataTypeArray[byteIndex + 2],
-                                    dataTypeArray[byteIndex + 3]
-                                )
-                                dataArr![dataIndex++] = data!
+                        } else if (factSize === 4) {
+                            dataArr = new Array<Vec4Data>(num)
+                            if (size === 1) {
+                                for (let i = value.offset; i < buffer.length; i += stride) {
+                                    let byteIndex = i / bytesPerElement
+                                    let data: Vec4Data = cpuCachData.vec4Data.getData()
+                                    data.set_Vn(dataTypeArray[byteIndex], 0, 0, 1)
+                                    dataArr![dataIndex++] = data!
+                                }
+                            } else if (size === 2) {
+                                for (let i = value.offset; i < buffer.length; i += stride) {
+                                    let byteIndex = i / bytesPerElement
+                                    let data: Vec4Data = cpuCachData.vec4Data.getData()
+
+                                    data.set_Vn(dataTypeArray[byteIndex], dataTypeArray[byteIndex + 1], 0, 1)
+                                    dataArr![dataIndex++] = data!
+                                }
+                            } else if (size === 3) {
+                                for (let i = value.offset; i < buffer.length; i += stride) {
+                                    let byteIndex = i / bytesPerElement
+                                    let data: Vec4Data = cpuCachData.vec4Data.getData()
+                                    data.set_Vn(dataTypeArray[byteIndex], dataTypeArray[byteIndex + 1], dataTypeArray[byteIndex + 2], 1)
+                                    dataArr![dataIndex++] = data!
+                                }
+                            } else if (size === 4) {
+                                for (let i = value.offset; i < buffer.length; i += stride) {
+                                    let byteIndex = i / bytesPerElement
+                                    let data: Vec4Data = cpuCachData.vec4Data.getData()
+                                    data.set_Vn(
+                                        dataTypeArray[byteIndex],
+                                        dataTypeArray[byteIndex + 1],
+                                        dataTypeArray[byteIndex + 2],
+                                        dataTypeArray[byteIndex + 3]
+                                    )
+                                    dataArr![dataIndex++] = data!
+                                }
+                            } else {
+                                debugger
+                                console.error("drawArrays 暂时无法识别的数量")
                             }
                         } else {
                             debugger
-                            console.error("drawElements 暂时无法识别的数量")
+                            console.error("drawArrays 暂时无法识别的数量")
                         }
                         attributeCount = Math.min(dataArr!.length, attributeCount)
                         cachVboAttributeDatas.set(name, dataArr!)
@@ -1332,6 +1421,7 @@ export class CpuRenderingContext {
                 if (name) {
                     let bytesPerElement = value.byteType.BYTES_PER_ELEMENT
                     let size = value.size
+                    let factSize = value.factSize
                     let stride = value.stride ? value.stride : bytesPerElement * value.size
                     let bufferData = this._vboBufferDataMap.get(value.readBufferIndex)
                     let numCachData = value.isFloat ? cpuCachData.floatData : cpuCachData.intData
@@ -1349,61 +1439,126 @@ export class CpuRenderingContext {
 
                         let num = buffer.byteLength / stride
 
-                        let dataArr: IntData[] | FloatData[] | Vec2Data[] | Vec3Data[] | Vec4Data[]
-                        if (size === 1) {
-                            dataArr = new Array<NumData>(num)
-                        } else if (size === 2) {
-                            dataArr = new Array<Vec2Data>(num)
-                        } else if (size === 3) {
-                            dataArr = new Array<Vec3Data>(num)
-                        } else if (size === 4) {
-                            dataArr = new Array<Vec4Data>(num)
-                        } else {
-                            debugger
-                            console.error("drawElements 暂时无法识别的数量")
-                        }
-
+                        let dataArr: Vec2Data[] | Vec3Data[] | Vec4Data[] | IntData[] | FloatData[]
                         let dataIndex = 0
-                        if (size === 1) {
-                            for (let i = offsetCount; i < eboBufferData.length; i++) {
-                                let element = eboBufferData[i]
-                                let elementIndex = value.offset + element * stride
-                                let byteIndex = elementIndex / bytesPerElement
-                                let data: IntData | FloatData = numCachData.getData()
-                                data.v = dataTypeArray[byteIndex]
-                                dataArr![dataIndex++] = data!
+                        if (factSize === 1) {
+                            dataArr = new Array<NumData>(num)
+                            if (size === 1 || size === 2 || size === 3 || size === 4) {
+                                for (let i = offsetCount; i < eboBufferData.length; i++) {
+                                    let element = eboBufferData[i]
+                                    let elementIndex = value.offset + element * stride
+                                    let byteIndex = elementIndex / bytesPerElement
+                                    let data: IntData | FloatData = numCachData.getData()
+                                    data.v = dataTypeArray[byteIndex]
+                                    dataArr![dataIndex++] = data!
+                                }
+                            } else {
+                                debugger
+                                console.error("drawArrays 暂时无法识别的数量")
                             }
-                        } else if (size === 2) {
-                            for (let i = offsetCount; i < eboBufferData.length; i++) {
-                                let element = eboBufferData[i]
-                                let elementIndex = value.offset + element * stride
-                                let byteIndex = elementIndex / bytesPerElement
-                                let data: Vec2Data = cpuCachData.vec2Data.getData()
-                                data.set_Vn(dataTypeArray[byteIndex], dataTypeArray[byteIndex + 1])
-                                dataArr![dataIndex++] = data!
+                        } else if (factSize === 2) {
+                            dataArr = new Array<Vec2Data>(num)
+                            if (size === 1) {
+                                for (let i = offsetCount; i < eboBufferData.length; i++) {
+                                    let element = eboBufferData[i]
+                                    let elementIndex = value.offset + element * stride
+                                    let byteIndex = elementIndex / bytesPerElement
+                                    let data: Vec2Data = cpuCachData.vec2Data.getData()
+                                    data.set_Vn(dataTypeArray[byteIndex], 0)
+                                    dataArr![dataIndex++] = data!
+                                }
+                            } else if (size === 2 || size === 3 || size === 4) {
+                                for (let i = offsetCount; i < eboBufferData.length; i++) {
+                                    let element = eboBufferData[i]
+                                    let elementIndex = value.offset + element * stride
+                                    let byteIndex = elementIndex / bytesPerElement
+                                    let data: Vec2Data = cpuCachData.vec2Data.getData()
+                                    data.set_Vn(dataTypeArray[byteIndex], dataTypeArray[byteIndex + 1])
+                                    dataArr![dataIndex++] = data!
+                                }
+                            } else {
+                                debugger
+                                console.error("drawElements 暂时无法识别的数量")
                             }
-                        } else if (size === 3) {
-                            for (let i = offsetCount; i < eboBufferData.length; i++) {
-                                let element = eboBufferData[i]
-                                let elementIndex = value.offset + element * stride
-                                let byteIndex = elementIndex / bytesPerElement
-                                let data: Vec3Data = cpuCachData.vec3Data.getData()
-                                data.set_Vn(dataTypeArray[byteIndex], dataTypeArray[byteIndex + 1], dataTypeArray[byteIndex + 2])
-                                dataArr![dataIndex++] = data!
+                        } else if (factSize === 3) {
+                            dataArr = new Array<Vec3Data>(num)
+                            if (size === 1) {
+                                for (let i = offsetCount; i < eboBufferData.length; i++) {
+                                    let element = eboBufferData[i]
+                                    let elementIndex = value.offset + element * stride
+                                    let byteIndex = elementIndex / bytesPerElement
+                                    let data: Vec3Data = cpuCachData.vec3Data.getData()
+                                    data.set_Vn(dataTypeArray[byteIndex], 0, 0)
+                                    dataArr![dataIndex++] = data!
+                                }
+                            } else if (size === 2) {
+                                for (let i = offsetCount; i < eboBufferData.length; i++) {
+                                    let element = eboBufferData[i]
+                                    let elementIndex = value.offset + element * stride
+                                    let byteIndex = elementIndex / bytesPerElement
+                                    let data: Vec3Data = cpuCachData.vec3Data.getData()
+                                    data.set_Vn(dataTypeArray[byteIndex], dataTypeArray[byteIndex + 1], 0)
+                                    dataArr![dataIndex++] = data!
+                                }
+                            } else if (size === 3 || size === 4) {
+                                for (let i = offsetCount; i < eboBufferData.length; i++) {
+                                    let element = eboBufferData[i]
+                                    let elementIndex = value.offset + element * stride
+                                    let byteIndex = elementIndex / bytesPerElement
+                                    let data: Vec3Data = cpuCachData.vec3Data.getData()
+                                    data.set_Vn(dataTypeArray[byteIndex], dataTypeArray[byteIndex + 1], dataTypeArray[byteIndex + 2])
+                                    dataArr![dataIndex++] = data!
+                                }
+                            } else {
+                                debugger
+                                console.error("drawElements 暂时无法识别的数量")
                             }
-                        } else if (size === 4) {
-                            for (let i = offsetCount; i < eboBufferData.length; i++) {
-                                let element = eboBufferData[i]
-                                let elementIndex = value.offset + element * stride
-                                let byteIndex = elementIndex / bytesPerElement
-                                let data: Vec4Data = cpuCachData.vec4Data.getData()
-                                data.set_Vn(
-                                    dataTypeArray[byteIndex],
-                                    dataTypeArray[byteIndex + 1],
-                                    dataTypeArray[byteIndex + 2],
-                                    dataTypeArray[byteIndex + 3]
-                                )
-                                dataArr![dataIndex++] = data!
+                        } else if (factSize === 4) {
+                            dataArr = new Array<Vec4Data>(num)
+                            if (size === 1) {
+                                for (let i = offsetCount; i < eboBufferData.length; i++) {
+                                    let element = eboBufferData[i]
+                                    let elementIndex = value.offset + element * stride
+                                    let byteIndex = elementIndex / bytesPerElement
+                                    let data: Vec4Data = cpuCachData.vec4Data.getData()
+                                    data.set_Vn(dataTypeArray[byteIndex], 0, 0, 1)
+                                    dataArr![dataIndex++] = data!
+                                }
+                            } else if (size === 2) {
+                                for (let i = offsetCount; i < eboBufferData.length; i++) {
+                                    let element = eboBufferData[i]
+                                    let elementIndex = value.offset + element * stride
+                                    let byteIndex = elementIndex / bytesPerElement
+                                    let data: Vec4Data = cpuCachData.vec4Data.getData()
+                                    data.set_Vn(dataTypeArray[byteIndex], dataTypeArray[byteIndex + 1], 0, 1)
+                                    dataArr![dataIndex++] = data!
+                                }
+                            } else if (size === 3) {
+                                for (let i = offsetCount; i < eboBufferData.length; i++) {
+                                    let element = eboBufferData[i]
+                                    let elementIndex = value.offset + element * stride
+                                    let byteIndex = elementIndex / bytesPerElement
+                                    let data: Vec4Data = cpuCachData.vec4Data.getData()
+                                    data.set_Vn(dataTypeArray[byteIndex], dataTypeArray[byteIndex + 1], dataTypeArray[byteIndex + 2], 1)
+                                    dataArr![dataIndex++] = data!
+                                }
+                            } else if (size === 4) {
+                                for (let i = offsetCount; i < eboBufferData.length; i++) {
+                                    let element = eboBufferData[i]
+                                    let elementIndex = value.offset + element * stride
+                                    let byteIndex = elementIndex / bytesPerElement
+                                    let data: Vec4Data = cpuCachData.vec4Data.getData()
+                                    data.set_Vn(
+                                        dataTypeArray[byteIndex],
+                                        dataTypeArray[byteIndex + 1],
+                                        dataTypeArray[byteIndex + 2],
+                                        dataTypeArray[byteIndex + 3]
+                                    )
+                                    dataArr![dataIndex++] = data!
+                                }
+                            } else {
+                                debugger
+                                console.error("drawElements 暂时无法识别的数量")
                             }
                         } else {
                             debugger
@@ -1412,7 +1567,7 @@ export class CpuRenderingContext {
                         attributeCount = Math.min(dataArr!.length, attributeCount)
                         cachVboAttributeDatas.set(name, dataArr!)
                     } else {
-                        renderError("this._gameGl.INVALID_OPERATION  " + this._gameGl.INVALID_VALUE + " in drawArrays ")
+                        renderError("this._gameGl.INVALID_OPERATION  " + this._gameGl.INVALID_VALUE + " in drawElements ")
                     }
                 }
             }
@@ -1511,8 +1666,8 @@ export class CpuRenderingContext {
                             // glPos.w *= wFactor
 
                             //视口变化
-                            glPos.x = 0.5 * this._viewPort.width * (glPos.x + 1)
-                            glPos.y = 0.5 * this._viewPort.height * (glPos.y + 1)
+                            glPos.x = 0.5 * this._viewPort.width * (glPos.x + 1) + this._viewPort.x
+                            glPos.y = 0.5 * this._viewPort.height * (glPos.y + 1) + this._viewPort.y
 
                             // 计算公式为Zw = (f-n)*Zd/2+(n+f)/2。
                             glPos.z = glPos.z * f1 + f2
@@ -1702,18 +1857,18 @@ export class CpuRenderingContext {
         return color
     }
 
-    customGetRenderTexBuf(colorAttachPoint: WebGLTextureData, target: number, typeArray: any): any {
+    customGetRenderTexBuf(attachPoint: WebGLTextureData, target: number, typeArray: any): any {
         let texelData: TexelsData = null!
-        if (target === 0) {
-            texelData = colorAttachPoint.texelsDatas![0]
+        if (target === this._gameGl.TEXTURE_2D) {
+            texelData = attachPoint.texelsDatas![0]
         } else {
-            texelData = colorAttachPoint.texelsDatas![this._cubeTexIndex.get(target)!]
+            texelData = attachPoint.texelsDatas![this._cubeTexIndex.get(target)!]
         }
         let texBufferData = texelData.texelMipmapData.get(0)
         return new typeArray(
             texBufferData!.bufferData!.buffer,
             texBufferData!.bufferData!.byteOffset,
-            texBufferData!.bufferData!.byteLength
+            texBufferData!.bufferData!.byteLength / typeArray.BYTES_PER_ELEMENT
         )
     }
 
@@ -1735,37 +1890,48 @@ export class CpuRenderingContext {
         }
     }
 
-    customGetNowDepthBuffer(): Float32Array {
+    // 除了颜色 其它附加render都可能是空的
+    customGetNowDepthBuffer(): Float32Array | null {
         let nowFrameBuffer = this._nowUseFramebufferObject
         if (!nowFrameBuffer) {
             nowFrameBuffer = this._systemFrameBuffer
         }
-        if (nowFrameBuffer.depthAttachPoint instanceof WebGLRenderbufferObject) {
-            let depthAttachPoint: WebGLRenderbufferObject = <WebGLRenderbufferObject>nowFrameBuffer.depthAttachPoint
-            return <Float32Array>depthAttachPoint.bufferData
-        } else {
-            return this.customGetRenderTexBuf(
-                <WebGLTextureData>nowFrameBuffer.depthAttachPoint,
-                nowFrameBuffer.depthTextureTarget,
-                Float32Array
-            )
+        if (nowFrameBuffer.depthAttachPoint) {
+            if (nowFrameBuffer.depthAttachPoint instanceof WebGLRenderbufferObject) {
+                let depthAttachPoint: WebGLRenderbufferObject = <WebGLRenderbufferObject>nowFrameBuffer.depthAttachPoint
+                return <Float32Array>depthAttachPoint.bufferData
+            } else {
+                return this.customGetRenderTexBuf(
+                    <WebGLTextureData>nowFrameBuffer.depthAttachPoint,
+                    nowFrameBuffer.depthTextureTarget,
+                    Float32Array
+                )
+            }
         }
+        return null
     }
 
-    customGetNowStencilBuffer(): Uint8Array {
+    // 除了颜色 其它附加render都可能是空的
+    customGetNowStencilBuffer(): Uint8Array | null {
         let nowFrameBuffer = this._nowUseFramebufferObject
         if (!nowFrameBuffer) {
             nowFrameBuffer = this._systemFrameBuffer
         }
-        if (nowFrameBuffer.stencilAttachPoint instanceof WebGLRenderbufferObject) {
-            let stencilAttachPoint: WebGLRenderbufferObject = <WebGLRenderbufferObject>nowFrameBuffer.stencilAttachPoint
-            return <Uint8Array>stencilAttachPoint.bufferData
+        if (nowFrameBuffer.stencilAttachPoint) {
+            if (nowFrameBuffer.stencilAttachPoint instanceof WebGLRenderbufferObject) {
+                let stencilAttachPoint: WebGLRenderbufferObject = <WebGLRenderbufferObject>nowFrameBuffer.stencilAttachPoint
+                return <Uint8Array>stencilAttachPoint.bufferData
+            } else {
+                // 如果是图的话不知道对于rgba占1个字节会不会有问题
+                debugger
+                return this.customGetRenderTexBuf(
+                    <WebGLTextureData>nowFrameBuffer.stencilAttachPoint,
+                    nowFrameBuffer.stencilTextureTarget,
+                    Uint8Array
+                )
+            }
         } else {
-            return this.customGetRenderTexBuf(
-                <WebGLTextureData>nowFrameBuffer.stencilAttachPoint,
-                nowFrameBuffer.stencilTextureTarget,
-                Uint8Array
-            )
+            return null
         }
     }
 
@@ -1788,7 +1954,6 @@ export class CpuRenderingContext {
                 // this._cubeTexIndex.set(this._gameGl.TEXTURE_CUBE_MAP_NEGATIVE_Y, 3)
                 // this._cubeTexIndex.set(this._gameGl.TEXTURE_CUBE_MAP_POSITIVE_Z, 4)
                 // this._cubeTexIndex.set(this._gameGl.TEXTURE_CUBE_MAP_NEGATIVE_Z, 5)
-
                 let factx = uv3D.x
                 let facty = uv3D.y
                 let factz = uv3D.z
@@ -1924,10 +2089,16 @@ export class CpuRenderingContext {
         minX = Math.floor(minX)
         minY = Math.floor(minY)
 
-        minX = Math.max(0, minX)
-        minY = Math.max(0, minY)
-        maxX = Math.min(this._viewPort.width - 1, maxX)
-        maxY = Math.min(this._viewPort.height - 1, maxY)
+        let viewMaxWidth = Math.min(this._viewPort.x + this._viewPort.width - 1, this._canvasSize.x - 1)
+        let viewMinWidth = this._viewPort.x
+        let viewMaxHeight = Math.min(this._viewPort.y + this._viewPort.height - 1, this._canvasSize.y - 1)
+        let viewMinHeight = this._viewPort.y
+
+        minX = Math.max(viewMinWidth, minX)
+        minY = Math.max(viewMinHeight, minY)
+
+        maxX = Math.min(viewMaxWidth, maxX)
+        maxY = Math.min(viewMaxHeight, maxY)
 
         let x0 = triangleVec[0].x
         let y0 = triangleVec[0].y
@@ -2003,7 +2174,7 @@ export class CpuRenderingContext {
 
                     let canWrite = true
                     let index = this._customGetIndex(x, y)
-                    if (this._openDepthTest) {
+                    if (writeDepthBuffer && this._openDepthTest) {
                         let w_reciprocal = 1.0 / (alpha / w0 + beta / w1 + gamma / w2)
                         let z_interpolated = (alpha * z0) / w0 + (beta * z1) / w1 + (gamma * z2) / w2
                         z_interpolated *= w_reciprocal
@@ -2382,9 +2553,7 @@ export class CpuRenderingContext {
         x = Math.floor(x)
         y = Math.floor(y)
 
-        let factX = this._viewPort.x + x
-        let factY = this._viewPort.y + y
-        let index = this._canvasSize.x * (this._canvasSize.y - factY) + factX
+        let index = this._canvasSize.x * (this._canvasSize.y - y) + x
         return index
     }
 
@@ -3376,7 +3545,7 @@ export class CpuRenderingContext {
          所以回忆一下,这一步其实只是创建了一些 framebuffer object name,而没有真正的创建 framebuffer object。
          而只有在这些 framebuffer object name 被 glBindFramebuffer 进行 bind 之后, 才会真正的创建对应的 framebuffer object。 */
     createFramebuffer(): WebGLFramebuffer | null {
-        return new CPUWebGLFramebuffer(globalFramebufferIndex)
+        return new CPUWebGLFramebuffer(globalFramebufferIndex++)
     }
 
     /**上一个 API glGenFramebuffers 只创建了一些 framebuffer object 的 name,glBindFramebuffer 这个 API 再创建一个 framebuffer object。
@@ -3542,11 +3711,11 @@ export class CpuRenderingContext {
             if (frameBufferObj) {
                 if (!renderbuffer || (<CPUWebGLRenderbuffer>renderbuffer).cachIndex === 0) {
                     if (attachment == this._gameGl.COLOR_ATTACHMENT0) {
-                        frameBufferObj.colorAttachPoint = null
+                        frameBufferObj.clearColorAttach()
                     } else if (attachment == this._gameGl.DEPTH_ATTACHMENT) {
-                        frameBufferObj.depthAttachPoint = null
+                        frameBufferObj.clearDepthAttach()
                     } else if (attachment == this._gameGl.STENCIL_ATTACHMENT) {
-                        frameBufferObj.stencilAttachPoint = null
+                        frameBufferObj.clearStencilAttach()
                     } else {
                         renderError("this._gameGl.INVALID_ENUM " + this._gameGl.INVALID_ENUM + " in renderbufferStorage")
                     }
@@ -3555,11 +3724,11 @@ export class CpuRenderingContext {
                         let renderbufferObj = this._renderbufferObjectMap.get((<CPUWebGLRenderbuffer>renderbuffer).cachIndex)
                         if (renderbufferObj) {
                             if (attachment == this._gameGl.COLOR_ATTACHMENT0) {
-                                frameBufferObj.colorAttachPoint = renderbufferObj
+                                frameBufferObj.setColorAttachByRender(renderbufferObj)
                             } else if (attachment == this._gameGl.DEPTH_ATTACHMENT) {
-                                frameBufferObj.depthAttachPoint = renderbufferObj
+                                frameBufferObj.setDepthAttachByRender(renderbufferObj)
                             } else if (attachment == this._gameGl.STENCIL_ATTACHMENT) {
-                                frameBufferObj.stencilAttachPoint = renderbufferObj
+                                frameBufferObj.setStencilAttachByRender(renderbufferObj)
                             } else {
                                 renderError("this._gameGl.INVALID_ENUM " + this._gameGl.INVALID_ENUM + " in renderbufferStorage")
                             }
@@ -3614,11 +3783,11 @@ export class CpuRenderingContext {
             if (frameBufferObj) {
                 if (!texture) {
                     if (attachment == this._gameGl.COLOR_ATTACHMENT0) {
-                        frameBufferObj.colorAttachPoint = null
+                        frameBufferObj.clearColorAttach()
                     } else if (attachment == this._gameGl.DEPTH_ATTACHMENT) {
-                        frameBufferObj.depthAttachPoint = null
+                        frameBufferObj.clearDepthAttach()
                     } else if (attachment == this._gameGl.STENCIL_ATTACHMENT) {
-                        frameBufferObj.stencilAttachPoint = null
+                        frameBufferObj.clearStencilAttach()
                     } else {
                         renderError("this._gameGl.INVALID_ENUM " + this._gameGl.INVALID_ENUM + " in framebufferTexture2D")
                     }
@@ -3642,11 +3811,11 @@ export class CpuRenderingContext {
                             renderError("this._gameGl.INVALID_VALUE " + this._gameGl.INVALID_VALUE + " in framebufferTexture2D")
                         } else {
                             if (attachment == this._gameGl.COLOR_ATTACHMENT0) {
-                                frameBufferObj.colorAttachPoint = textureData
+                                frameBufferObj.setColorAttachByTex(textureData, textarget)
                             } else if (attachment == this._gameGl.DEPTH_ATTACHMENT) {
-                                frameBufferObj.depthAttachPoint = textureData
+                                frameBufferObj.setDepthAttachByTex(textureData, textarget)
                             } else if (attachment == this._gameGl.STENCIL_ATTACHMENT) {
-                                frameBufferObj.stencilAttachPoint = textureData
+                                frameBufferObj.setStencilAttachByTex(textureData, textarget)
                             } else {
                                 renderError("this._gameGl.INVALID_ENUM " + this._gameGl.INVALID_ENUM + " in framebufferTexture2D")
                             }
@@ -3686,9 +3855,24 @@ export class CpuRenderingContext {
         如果framebuffer不complete，那么使用当前FBO去读操作（glReadPixels, glCopyTexImage2D, glCopyTexSubImage2D）
         和写操作（glClear, glDrawArrays, glDrawElements），就会出现GL_INVALID_FRAMEBUFFER_OPERATION 的错误。 */
     checkFramebufferStatus(target: GLenum): GLenum {
-        console.error("FramebufferStatus的设置未实现")
-        debugger
-        return 0
+        let status = this._gameGl.INVALID_ENUM
+        if (target == this._gameGl.FRAMEBUFFER) {
+            if (this._nowUseFramebufferObject) {
+                // 判断至少应该有颜色attach
+                if (this._nowUseFramebufferObject.colorAttachPoint) {
+                    // 自身不做尺寸 FRAMEBUFFER_UNSUPPORTED的校验了
+                    status = this._gameGl.FRAMEBUFFER_COMPLETE
+                } else {
+                    status = this._gameGl.FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT
+                }
+            } else {
+                // 系统的应该是默认成功
+                status = this._gameGl.FRAMEBUFFER_COMPLETE
+            }
+        } else {
+            renderError("this._gameGl.INVALID_ENUM " + this._gameGl.INVALID_ENUM + " in framebufferTexture2D")
+        }
+        return status
     }
 
     /**当某个 FBO 不再被需要的时候,则可以通过 glDeleteFramebuffers 这个 API 把 framebuffer object name 删除。

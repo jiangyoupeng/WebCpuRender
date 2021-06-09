@@ -1,6 +1,8 @@
 import { FloatData, IntData, Vec2Data, Vec3Data, Vec4Data } from "./shader/builtin/BuiltinData"
 
 export class AttributeReadInfo {
+    // 实际在glsl中的size. size可以小于实际的size 然后如果是vec4的话 w会被填充为1
+    factSize: GLint = 0
     size: GLint = 0
     type: GLenum = 0
     normalized: GLboolean = false
@@ -32,16 +34,12 @@ export class AttributeReadInfo {
         switch (type) {
             case gl.BYTE:
                 this.byteType = Int8Array
-                this.isFloat = false
             case gl.SHORT:
                 this.byteType = Int16Array
-                this.isFloat = false
             case gl.UNSIGNED_BYTE:
                 this.byteType = Uint8Array
-                this.isFloat = false
             case gl.UNSIGNED_SHORT:
                 this.byteType = Uint16Array
-                this.isFloat = false
             case gl.FLOAT:
                 this.byteType = Float32Array
         }

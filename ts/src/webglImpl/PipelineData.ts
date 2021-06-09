@@ -527,6 +527,11 @@ export class WebGLFramebufferObject {
     depthAttachPoint: WebGLRenderbufferObject | WebGLTextureData | null = null
     stencilAttachPoint: WebGLRenderbufferObject | WebGLTextureData | null = null
 
+    clearColorAttach() {
+        this.colorTextureTarget = 0
+        this.colorAttachPoint = null
+    }
+
     setColorAttachByTex(tex: WebGLTextureData, target: number) {
         this.colorTextureTarget = target
         this.colorAttachPoint = tex
@@ -535,12 +540,22 @@ export class WebGLFramebufferObject {
         this.colorAttachPoint = render
     }
 
+    clearDepthAttach() {
+        this.depthTextureTarget = 0
+        this.depthAttachPoint = null
+    }
+
     setDepthAttachByTex(tex: WebGLTextureData, target: number) {
         this.depthTextureTarget = target
         this.depthAttachPoint = tex
     }
     setDepthAttachByRender(render: WebGLRenderbufferObject) {
         this.depthAttachPoint = render
+    }
+
+    clearStencilAttach() {
+        this.stencilTextureTarget = 0
+        this.stencilAttachPoint = null
     }
 
     setStencilAttachByTex(tex: WebGLTextureData, target: number) {
@@ -557,21 +572,21 @@ export class WebGLFramebufferObject {
             this.colorAttachPoint instanceof WebGLRenderbufferObject &&
             (<WebGLRenderbufferObject>this.colorAttachPoint).bufferIndex.cachIndex === cachIndex
         ) {
-            this.colorAttachPoint = null
+            this.clearColorAttach()
         }
         if (
             this.depthAttachPoint &&
             this.depthAttachPoint instanceof WebGLRenderbufferObject &&
             (<WebGLRenderbufferObject>this.depthAttachPoint).bufferIndex.cachIndex === cachIndex
         ) {
-            this.depthAttachPoint = null
+            this.clearDepthAttach()
         }
         if (
             this.stencilAttachPoint &&
             this.stencilAttachPoint instanceof WebGLRenderbufferObject &&
             (<WebGLRenderbufferObject>this.stencilAttachPoint).bufferIndex.cachIndex === cachIndex
         ) {
-            this.stencilAttachPoint = null
+            this.clearStencilAttach()
         }
     }
 
@@ -581,21 +596,21 @@ export class WebGLFramebufferObject {
             this.colorAttachPoint instanceof WebGLTextureData &&
             (<WebGLTextureData>this.colorAttachPoint).cachIndex === cachIndex
         ) {
-            this.colorAttachPoint = null
+            this.clearColorAttach()
         }
         if (
             this.depthAttachPoint &&
             this.depthAttachPoint instanceof WebGLTextureData &&
             (<WebGLTextureData>this.depthAttachPoint).cachIndex === cachIndex
         ) {
-            this.depthAttachPoint = null
+            this.clearDepthAttach()
         }
         if (
             this.stencilAttachPoint &&
             this.stencilAttachPoint instanceof WebGLTextureData &&
             (<WebGLTextureData>this.stencilAttachPoint).cachIndex === cachIndex
         ) {
-            this.stencilAttachPoint = null
+            this.clearStencilAttach()
         }
     }
 }
@@ -643,19 +658,6 @@ export class WebGLRenderbufferObject {
         } else {
             console.error("无法识别的 internalformat")
             debugger
-        }
-    }
-
-    /**
-     * 因为viewport设置的尺寸可以大于实际可渲染区域 所以要做判断不可设置
-     * @param x 设定的x坐标
-     * @param y 设定的y坐标
-     * @param val 设定的数据 如果是color的 外部设置应该自行判断rgba 4个通道是否可以写入 还有当前的写入格式
-     */
-    setBufferData(x: number, y: number, val: number) {
-        let index = y * this.width + x
-        if (x < this.width && y < this.height) {
-            this.bufferData[index] = val
         }
     }
 
