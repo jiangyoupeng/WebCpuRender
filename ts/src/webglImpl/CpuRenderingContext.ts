@@ -1829,12 +1829,13 @@ export class CpuRenderingContext {
 
                 // 有可能将动作数据存入纹理中 此时应该配合使用
                 // 用nearst读取
+                // 验证测试过 webgl的nearst算法是不会加上0.5中心点来算的,同理liner是不是还需要这么做呢
                 if (magFilter === this._gameGl.NEAREST && minFilter === this._gameGl.NEAREST) {
                     let texWidth = texBufferData.width
                     let texHeight = texBufferData.height
 
-                    let uImg = Math.floor(sampleX * texWidth + 0.5)
-                    let vImg = Math.floor(sampleY * texHeight + 0.5)
+                    let uImg = Math.floor(sampleX * texWidth)
+                    let vImg = Math.floor(sampleY * texHeight)
                     let index = (uImg + vImg * texWidth) * 4
                     color.x = buffer[index] / 255
                     color.y = buffer[index + 1] / 255
@@ -2732,27 +2733,29 @@ export class CpuRenderingContext {
 
     bindTexture(target: GLenum, texture: WebGLTexture | null): void {
         if (target === this._gameGl.TEXTURE_2D || target === this._gameGl.TEXTURE_CUBE_MAP) {
-            let textureData = this._textureDataMap.get((<CPUWebGLTexture>texture).cachIndex)
-            if (!textureData) {
-                textureData = new WebGLTextureData(<CPUWebGLTexture>texture, target, this._gameGl, (<CPUWebGLTexture>texture).cachIndex)
-                this._textureDataMap.set((<CPUWebGLTexture>texture).cachIndex, textureData)
-            }
-            // 纹理创建后target 不能被修改
-            if (textureData.glTarget !== target) {
-                renderError("this._gameGl.GL_INVALID_OPERATION " + this._gameGl.INVALID_OPERATION + " in bindTexture")
-            }
-
             let activeTextureData = this._textureUnit.get(this._nowActiveTextureUnit)
             if (activeTextureData) {
                 let oldTextureData = activeTextureData.get(target)
                 if (oldTextureData) {
                     oldTextureData.unBindTexUnit(this._nowActiveTextureUnit)
                 }
-                textureData.bindTexUnit(this._nowActiveTextureUnit)
-                activeTextureData.set(target, textureData)
             } else {
                 debugger
                 renderError("bindTexture 无法找对应单元的数据")
+            }
+            if (texture) {
+                let textureData = this._textureDataMap.get((<CPUWebGLTexture>texture).cachIndex)
+                if (!textureData) {
+                    textureData = new WebGLTextureData(<CPUWebGLTexture>texture, target, this._gameGl, (<CPUWebGLTexture>texture).cachIndex)
+                    this._textureDataMap.set((<CPUWebGLTexture>texture).cachIndex, textureData)
+                }
+                // 纹理创建后target 不能被修改
+                if (textureData.glTarget !== target) {
+                    renderError("this._gameGl.GL_INVALID_OPERATION " + this._gameGl.INVALID_OPERATION + " in bindTexture")
+                }
+
+                textureData.bindTexUnit(this._nowActiveTextureUnit)
+                activeTextureData?.set(target, textureData)
             }
         } else {
             renderError("其它类型暂未实现 in bindTexture")
@@ -3045,6 +3048,7 @@ export class CpuRenderingContext {
                                     for (let y = 0; y < height; y++) {
                                         for (let x = 0; x < width; x++) {
                                             let texIndex = ((yoffset + y) * texBufferData.width + (xoffset + x)) * 4
+                                            let t = texIndex
                                             bufferData[texIndex++] = copyData[copyIndex++]
                                             bufferData[texIndex++] = copyData[copyIndex++]
                                             bufferData[texIndex++] = copyData[copyIndex++]

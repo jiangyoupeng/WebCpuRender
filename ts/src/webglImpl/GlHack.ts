@@ -297,7 +297,7 @@ export function replaceWebglFunc(gl: any) {
                                 console.log("old shaderSource:")
                                 console.log(shaderSource)
                                 // 使用替换的glsl代码
-                                info[1] = shaderSource
+                                info[1] = replaceScript
                             }
                         }
                     }
