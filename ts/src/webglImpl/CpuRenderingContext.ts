@@ -65,6 +65,39 @@ class CachGlData {
     glParasm: any
 }
 
+// let textureUnit = this._textureUnit.get(texIndex)
+// let color = builtinCachData.vec4Data.getData()
+// color.set_Vn(0, 0, 0, 0)
+// if (textureUnit) {
+//     let textureData = textureUnit.get(this._gameGl.TEXTURE_2D)
+//     if (textureData) {
+//         // 怎么判断纹理大还是还是小呢
+//         // 先不管图片大小 统一用LINEAR
+
+//         let texelMipmapData = textureData.texelsDatas![0].texelMipmapData
+//         let texBufferData = texelMipmapData.get(0)!
+//         let buffer = texBufferData.bufferData!
+
+//         let wrapS = textureData.parameter.get(this._gameGl.TEXTURE_WRAP_S)
+//         let wrapT = textureData.parameter.get(this._gameGl.TEXTURE_WRAP_T)
+//         let magFilter = textureData.parameter.get(this._gameGl.TEXTURE_MAG_FILTER)
+//         let minFilter = textureData.parameter.get(this._gameGl.TEXTURE_MIN_FILTER)
+// 预缓存的图片使用数据
+class PreCachTexUseData {
+    texBufferData: TexBufferData = null!
+    bufferData: Uint8Array = null!
+
+    wrapS: number = 0
+    wrapT: number = 0
+    magFilter: number = 0
+    minFilter: number = 0
+}
+
+class PreCachShaderUseData {
+    // 预存2维使用的图 对应纹理单元使用的图
+    texel2dMipmapData: Map<number, PreCachTexUseData> = new Map()
+}
+
 // 用cpu实现的webgl 1接口
 export class CpuRenderingContext {
     constructor() {
@@ -263,6 +296,9 @@ export class CpuRenderingContext {
     set customRenderTime(value: number) {
         this._customRenderTime = value
     }
+
+    // 预计算的shader需要使用到的数据
+    private _preCachShaderUseData: PreCachShaderUseData = new PreCachShaderUseData()
 
     /**当前缓存的待渲染的数据 */
     private _cachWriteData: CachWriteData | null = null
@@ -1234,7 +1270,6 @@ export class CpuRenderingContext {
         if (this._cachWriteData) {
             console.error("has cachWriteData not can draw")
         }
-        debugger
         cpuCachData.clear()
         let cachVboAttributeDatas: Map<string, Vec2Data[] | Vec3Data[] | Vec4Data[] | IntData[] | FloatData[]> = new Map()
         let attributeCount = Number.MAX_SAFE_INTEGER
