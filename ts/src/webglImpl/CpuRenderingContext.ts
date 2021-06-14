@@ -53,6 +53,7 @@ function renderError(message?: any, ...optionalParams: any[]) {
     console.error(message, ...optionalParams)
 }
 
+let calculateUseShaderHash: Set<string> = new Set()
 let globalShaderIndex = 1
 let globalProgramIndex = 1
 let globalBufferIndex = 1
@@ -1413,6 +1414,10 @@ export class CpuRenderingContext {
         this._customDraw(mode, beginIndex, endIndex, cachVboAttributeDatas)
     }
 
+    customLogUseShaderHash() {
+        this._useProgram.logShaderHash(calculateUseShaderHash)
+    }
+
     /**offset是字节为单位的 */
     drawElements(mode: GLenum, count: GLsizei, type: GLenum, offset: GLintptr): void {
         if (!(this._useProgram && this._useProgram.linkStatus)) {
@@ -1638,6 +1643,7 @@ export class CpuRenderingContext {
     ) {
         let beginDrawTime = performance.now()
         let drawOver = false
+        this.customLogUseShaderHash()
         switch (mode) {
             case this._gameGl.POINTS:
                 console.error("POINTS 类型未实现")

@@ -294,6 +294,7 @@ export function replaceWebglFunc(gl: any) {
 
                             let replaceScript = glslShaderHackScript.get(hash)
                             if (replaceScript && replaceScript !== "") {
+                                console.log("replace hash: " + hash)
                                 console.log("old shaderSource:")
                                 console.log(shaderSource)
                                 // 使用替换的glsl代码

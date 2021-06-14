@@ -1,3 +1,4 @@
+import { has } from "lodash"
 import { cpuRenderingContext } from "./CpuRenderingContext"
 import { ShaderManager } from "./shader/tsScript/ShaderManager"
 import { BaseShaderHandle, FragShaderHandle, VertShaderHandle } from "./ShaderDefine"
@@ -34,6 +35,7 @@ export class CPUWebGLUniformLocation implements WebGLUniformLocation {
 
 export class CPUShader {
     construct: any
+    hash: string = ""
     shaderIndex: CPUWebGLShader
     constructor(shaderIndex: CPUWebGLShader) {
         this.shaderIndex = shaderIndex
@@ -68,6 +70,7 @@ export class CPUShader {
 
         let construct = ShaderManager.getConstruct("Impl_" + hash)
         if (construct) {
+            this.hash = hash
             this.construct = construct
             this._compileStatus = true
         } else {
@@ -133,6 +136,9 @@ export class CPUShaderProgram {
     private _linkFragmentShader: FragShaderHandle | null = null
     private _linkVertexShader: VertShaderHandle | null = null
 
+    private _linkVertHash: string = ""
+    private _linkFragHash: string = ""
+
     get linkFragmentShader(): FragShaderHandle {
         return this._linkFragmentShader!
     }
@@ -171,6 +177,8 @@ export class CPUShaderProgram {
             if (this.attachFragmentShader && this.attachVertexShader) {
                 this._linkFragmentShader = new this.attachFragmentShader!.construct()
                 this._linkVertexShader = new this.attachVertexShader!.construct()
+                this._linkVertHash = this.attachVertexShader.hash
+                this._linkFragHash = this.attachFragmentShader.hash
                 this._attributeLocationInfo.clear()
                 let attributeData = this._linkVertexShader!.attributeData
                 let i = 0
@@ -341,6 +349,22 @@ export class CPUShaderProgram {
     private _uniformLocationInfo: Map<string, CPUWebGLUniformLocation> = new Map()
     /**是否数组 */
     private _uniformIsArray: Map<string, boolean> = new Map()
+
+    logShaderHash(set: Set<string>) {
+        if (set) {
+            if (!set.has(this._linkVertHash)) {
+                set.add(this._linkVertHash)
+                console.log("use hash vert: " + this._linkVertHash)
+            }
+            if (!set.has(this._linkFragHash)) {
+                set.add(this._linkFragHash)
+                console.log("use hash frag: " + this._linkFragHash)
+            }
+        } else {
+            console.log("use hash vert: " + this._linkVertHash)
+            console.log("use hash frag: " + this._linkFragHash)
+        }
+    }
 
     use() {
         this._isUsing = true
