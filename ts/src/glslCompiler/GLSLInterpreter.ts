@@ -187,7 +187,6 @@ export class GLSLInterpreter {
         let excludeUnuseLine: string[] = []
 
         let remainContent = ""
-        let bloackStack: any[] = []
         for (let i = 0; i < lines.length; i++) {
             const lineStr = lines[i]
             let strArr = lineStr.split(" ")
@@ -254,11 +253,8 @@ export class GLSLInterpreter {
                     // if下的语句可以编译
                     if (defines.get(analysisStr[1])) {
                         nowLevelBlockData.canCompile = true
-                        // bloackStack.push({ type: BlockType.defineIfBlock, value: true, canBuild: true })
                     } else {
                         nowLevelBlockData.canCompile = false
-                        // 不可编译
-                        // bloackStack.push({ type: BlockType.defineIfBlock, value: false, canBuild: false })
                     }
                     levelBlockDefinesJudge.set(nowLevelBlock, [nowLevelBlockData])
                 } else if (lineStr.indexOf("#if") !== -1 || lineStr.indexOf("# if") !== -1) {
@@ -276,13 +272,6 @@ export class GLSLInterpreter {
                     let canCompiler = interpreterDefine(lineStr, defines, "if")
                     nowLevelBlockData.canCompile = canCompiler
                     levelBlockDefinesJudge.set(nowLevelBlock, [nowLevelBlockData])
-
-                    // if (canCompiler) {
-                    //     bloackStack.push({ type: BlockType.defineIfBlock, value: true, canBuild: true, nowLevel: 0, buildLevel: 0 })
-                    // } else {
-                    //     // 不可编译
-                    //     bloackStack.push({ type: BlockType.defineIfBlock, value: false, canBuild: false })
-                    // }
                 } else if (lineStr.indexOf("#elif") !== -1 || lineStr.indexOf("# elif") !== -1) {
                     let levelBlockData = levelBlockDefinesJudge.get(nowLevelBlock)!
                     if (!levelBlockData) {
@@ -470,7 +459,7 @@ export class GLSLInterpreter {
         originSource += source + "\n*/\n"
         // console.log(originSource + tsScript)
 
-        originSource += `/*\nfact do glsl source: \n` + factDoGlsl + `*/\n`
+        originSource += `export let glsl_${hash} = \`${factDoGlsl}\`` + `\n`
 
         let outStr = originSource + importStr + shaderBeginContent + tsScript
 
@@ -484,6 +473,6 @@ export class GLSLInterpreter {
             printWidth: 140,
         })
         // console.log(outStr)
-        return [hash, outStr]
+        return [hash, outStr, factDoGlsl]
     }
 }

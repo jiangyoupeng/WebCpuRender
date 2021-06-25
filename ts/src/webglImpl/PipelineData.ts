@@ -139,6 +139,14 @@ export class CPUShaderProgram {
     private _linkVertHash: string = ""
     private _linkFragHash: string = ""
 
+    get linkVertHash() {
+        return this._linkVertHash
+    }
+
+    get linkFragHash() {
+        return this._linkFragHash
+    }
+
     get linkFragmentShader(): FragShaderHandle {
         return this._linkFragmentShader!
     }
@@ -350,14 +358,14 @@ export class CPUShaderProgram {
     /**是否数组 */
     private _uniformIsArray: Map<string, boolean> = new Map()
 
-    logShaderHash(set: Set<string>) {
-        if (set) {
-            if (!set.has(this._linkVertHash)) {
-                set.add(this._linkVertHash)
+    logShaderHash(map: Map<string, string>) {
+        if (map) {
+            if (!map.has(this._linkVertHash)) {
+                map.set(this._linkVertHash, ShaderManager.getConstruct("glsl_" + this._linkVertHash))
                 console.log("use hash vert: " + this._linkVertHash)
             }
-            if (!set.has(this._linkFragHash)) {
-                set.add(this._linkFragHash)
+            if (!map.has(this._linkFragHash)) {
+                map.set(this._linkFragHash, ShaderManager.getConstruct("glsl_" + this._linkFragHash))
                 console.log("use hash frag: " + this._linkFragHash)
             }
         } else {

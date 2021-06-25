@@ -38,10 +38,11 @@ import {
     IVec3Data,
     IVec2Data,
     clearShaderCachData,
+    Sampler2D,
 } from "./shader/builtin/BuiltinData"
 import { custom_isDiscard, gl_FragColor, gl_FragData, gl_Position } from "./shader/builtin/BuiltinVar"
 import { Rect } from "./shader/builtin/Rect"
-import { FragShaderHandle, VaryingData } from "./ShaderDefine"
+import { FragShaderHandle, UniformData, VaryingData } from "./ShaderDefine"
 
 let abs = Math.abs
 let max = Math.max
@@ -53,7 +54,7 @@ function renderError(message?: any, ...optionalParams: any[]) {
     console.error(message, ...optionalParams)
 }
 
-let calculateUseShaderHash: Set<string> = new Set()
+let calculateUseShaderHash: Map<string, string> = new Map()
 let globalShaderIndex = 1
 let globalProgramIndex = 1
 let globalBufferIndex = 1
@@ -61,28 +62,7 @@ let globalTextureIndex = 1
 let globalFramebufferIndex = 1
 let globalRenderbufferIndex = 1
 
-class CachGlData {
-    glCall: string = ""
-    glParasm: any
-}
-
-// let textureUnit = this._textureUnit.get(texIndex)
-// let color = builtinCachData.vec4Data.getData()
-// color.set_Vn(0, 0, 0, 0)
-// if (textureUnit) {
-//     let textureData = textureUnit.get(this._gameGl.TEXTURE_2D)
-//     if (textureData) {
-//         // 怎么判断纹理大还是还是小呢
-//         // 先不管图片大小 统一用LINEAR
-
-//         let texelMipmapData = textureData.texelsDatas![0].texelMipmapData
-//         let texBufferData = texelMipmapData.get(0)!
-//         let buffer = texBufferData.bufferData!
-
-//         let wrapS = textureData.parameter.get(this._gameGl.TEXTURE_WRAP_S)
-//         let wrapT = textureData.parameter.get(this._gameGl.TEXTURE_WRAP_T)
-//         let magFilter = textureData.parameter.get(this._gameGl.TEXTURE_MAG_FILTER)
-//         let minFilter = textureData.parameter.get(this._gameGl.TEXTURE_MIN_FILTER)
+let vec4Data = builtinCachData.vec4Data
 // 预缓存的图片使用数据
 class PreCachTexUseData {
     texBufferData: TexBufferData = null!
@@ -1418,6 +1398,18 @@ export class CpuRenderingContext {
         this._useProgram.logShaderHash(calculateUseShaderHash)
     }
 
+    customLogReplaceMap() {
+        let beginStr = `export let glslShaderHackScript: Map<string, string> = new Map([\n`
+        calculateUseShaderHash.forEach((value: string, key: string) => {
+            beginStr += `    [\n`
+            beginStr += `        \`${key}\`,\n`
+            beginStr += `        \`${value}\`\n`
+            beginStr += `    ],\n`
+        })
+        beginStr += `])\n`
+        console.log(beginStr)
+    }
+
     /**offset是字节为单位的 */
     drawElements(mode: GLenum, count: GLsizei, type: GLenum, offset: GLintptr): void {
         if (!(this._useProgram && this._useProgram.linkStatus)) {
@@ -1635,6 +1627,49 @@ export class CpuRenderingContext {
         return !this._cachWriteData
     }
 
+    customPreSetTexData(uniformData: UniformData) {
+        let texel2dMipmapData = this._preCachShaderUseData.texel2dMipmapData
+        let dataKeys = uniformData.dataKeys
+
+        let sampler2D = this._gameGl.SAMPLER_2D
+        // 暂时只支持2维的纹理
+        for (const iterator of dataKeys.entries()) {
+            let dataName = iterator[0]
+            let typeName = iterator[1]
+            if (typeName === sampler2D) {
+                let sample2dData: Sampler2D = (<any>uniformData)[dataName]
+
+                let v = sample2dData.v
+                let textureUnit = this._textureUnit.get(v)
+
+                if (textureUnit) {
+                    let textureData = textureUnit.get(this._gameGl.TEXTURE_2D)
+                    if (textureData) {
+                        // 怎么判断纹理大还是还是小呢
+                        // 先不管图片大小 统一用LINEAR
+                        let texelMipmapData = textureData.texelsDatas![0].texelMipmapData
+                        let texBufferData = texelMipmapData.get(0)!
+                        let buffer = texBufferData.bufferData!
+                        let preCachTexUseData = new PreCachTexUseData()
+                        preCachTexUseData.bufferData = buffer
+                        preCachTexUseData.magFilter = textureData.parameter.get(this._gameGl.TEXTURE_MAG_FILTER)!
+                        preCachTexUseData.minFilter = textureData.parameter.get(this._gameGl.TEXTURE_MIN_FILTER)!
+                        preCachTexUseData.wrapT = textureData.parameter.get(this._gameGl.TEXTURE_WRAP_T)!
+                        preCachTexUseData.wrapS = textureData.parameter.get(this._gameGl.TEXTURE_WRAP_S)!
+                        preCachTexUseData.texBufferData = texBufferData
+                        texel2dMipmapData.set(v, preCachTexUseData)
+                    }
+                }
+            }
+        }
+    }
+
+    customPreCalBeforeDraw() {
+        this._preCachShaderUseData.texel2dMipmapData.clear()
+        this.customPreSetTexData(this._useProgram.linkVertexShader.uniformData)
+        this.customPreSetTexData(this._useProgram.linkFragmentShader.uniformData)
+    }
+
     _customDraw(
         mode: GLenum,
         beginIndex: number,
@@ -1644,6 +1679,9 @@ export class CpuRenderingContext {
         let beginDrawTime = performance.now()
         let drawOver = false
         this.customLogUseShaderHash()
+        this.customPreCalBeforeDraw()
+
+        let linkVertexShader = this._useProgram.linkVertexShader
         switch (mode) {
             case this._gameGl.POINTS:
                 console.error("POINTS 类型未实现")
@@ -1660,7 +1698,6 @@ export class CpuRenderingContext {
             case this._gameGl.TRIANGLE_STRIP:
             case this._gameGl.TRIANGLE_FAN:
             case this._gameGl.TRIANGLES:
-                let linkVertexShader = this._useProgram.linkVertexShader
                 let attributeData: any = linkVertexShader.attributeData
 
                 let cachGlPositions: Vec4Data[] = new Array<Vec4Data>()
@@ -1795,7 +1832,8 @@ export class CpuRenderingContext {
         if (this._canvars2D) {
             let nowFrameBuffer = this.customGetNowFramebuffer()
             // 非系统framebuffer是离屏渲染
-            if (nowFrameBuffer === this._systemFrameBuffer) {
+            // 实验离屏渲染的结果
+            if (nowFrameBuffer !== this._systemFrameBuffer) {
                 let systemWriteFramebuffer = this.customGetNowColorBuffer()
                 let renderSize = this.customGetNowRenderSize()
 
@@ -1821,92 +1859,83 @@ export class CpuRenderingContext {
     /**采样 */
     customSampler2D(texIndex: number, uv: Vec2Data): Vec4Data {
         // texIndex应该是对应的纹理单元
-        let textureUnit = this._textureUnit.get(texIndex)
-        let color = builtinCachData.vec4Data.getData()
+        let color = vec4Data.getData()
         color.set_Vn(0, 0, 0, 0)
-        if (textureUnit) {
-            let textureData = textureUnit.get(this._gameGl.TEXTURE_2D)
-            if (textureData) {
-                // 怎么判断纹理大还是还是小呢
-                // 先不管图片大小 统一用LINEAR
+        let preCach = this._preCachShaderUseData.texel2dMipmapData.get(texIndex)
+        if (preCach) {
+            // 怎么判断纹理大还是还是小呢
+            // 先不管图片大小 统一用LINEAR
 
-                let texelMipmapData = textureData.texelsDatas![0].texelMipmapData
-                let texBufferData = texelMipmapData.get(0)!
-                let buffer = texBufferData.bufferData!
+            let texBufferData = preCach.texBufferData
+            let buffer = preCach.bufferData
+            let wrapS = preCach.wrapS
+            let wrapT = preCach.wrapT
+            let magFilter = preCach.magFilter
+            let minFilter = preCach.minFilter
+            let texWidth = texBufferData.width
+            let texHeight = texBufferData.height
 
-                let wrapS = textureData.parameter.get(this._gameGl.TEXTURE_WRAP_S)
-                let wrapT = textureData.parameter.get(this._gameGl.TEXTURE_WRAP_T)
-                let magFilter = textureData.parameter.get(this._gameGl.TEXTURE_MAG_FILTER)
-                let minFilter = textureData.parameter.get(this._gameGl.TEXTURE_MIN_FILTER)
+            let sampleX = uv.x
+            if (sampleX < 0 || sampleX >= 1) {
+                if (wrapS === this._gameGl.REPEAT) {
+                    if (sampleX < 0) {
+                        sampleX += Math.ceil(-sampleX)
+                    } else {
+                        sampleX -= Math.floor(sampleX)
+                    }
+                } else if (wrapS === this._gameGl.CLAMP_TO_EDGE) {
+                    sampleX = clamp(sampleX, 0, 1)
+                } else if (wrapS === this._gameGl.MIRRORED_REPEAT) {
+                    console.error("MIRRORED_REPEAT 暂未实现")
+                }
+            }
+            let sampleY = uv.y
+            if (sampleY < 0 || sampleY >= 1) {
+                if (wrapT === this._gameGl.REPEAT) {
+                    if (sampleY < 0) {
+                        sampleY += Math.ceil(-sampleY)
+                    } else {
+                        sampleY -= Math.floor(sampleY)
+                    }
+                } else if (wrapT === this._gameGl.CLAMP_TO_EDGE) {
+                    sampleY = clamp(sampleY, 0, 1)
+                } else if (wrapT === this._gameGl.MIRRORED_REPEAT) {
+                    console.error("MIRRORED_REPEAT 暂未实现")
+                }
+            }
 
-                let sampleX = uv.x
-                if (sampleX < 0 || sampleX >= 1) {
-                    if (wrapS === this._gameGl.REPEAT) {
-                        if (sampleX < 0) {
-                            sampleX += Math.ceil(-sampleX)
-                        } else {
-                            sampleX -= Math.floor(sampleX)
-                        }
-                    } else if (wrapS === this._gameGl.CLAMP_TO_EDGE) {
-                        sampleX = clamp(sampleX, 0, 1)
-                    } else if (wrapS === this._gameGl.MIRRORED_REPEAT) {
-                        console.error("MIRRORED_REPEAT 暂未实现")
+            let factSampleX = sampleX * texWidth
+            let factSampleY = sampleY * texHeight
+            let searchX = Math.floor(factSampleX)
+            let searchY = Math.floor(factSampleY)
+            // 有可能将动作数据存入纹理中 此时应该配合使用
+            // 用nearst读取
+            // 验证测试过 webgl的nearst算法是不会加上0.5中心点来算的,同理liner是不是还需要这么做呢
+            if (magFilter === this._gameGl.NEAREST && minFilter === this._gameGl.NEAREST) {
+                let uImg = Math.floor(sampleX * texWidth)
+                let vImg = Math.floor(sampleY * texHeight)
+                let index = (uImg + vImg * texWidth) * 4
+                color.x = buffer[index] / 255
+                color.y = buffer[index + 1] / 255
+                color.z = buffer[index + 2] / 255
+                color.w = buffer[index + 3] / 255
+                return color
+            } else {
+                let uImg: number
+                let vImg: number
+                for (let x = 0; x < 2; x++) {
+                    uImg = clamp(searchX - x, 0, texWidth - 1)
+                    for (let y = 0; y < 2; y++) {
+                        vImg = clamp(searchY - y, 0, texHeight - 1)
+                        let index = (uImg + vImg * texWidth) * 4
+
+                        color.x += buffer[index] / 1020
+                        color.y += buffer[index + 1] / 1020
+                        color.z += buffer[index + 2] / 1020
+                        color.w += buffer[index + 3] / 1020
                     }
                 }
-                let sampleY = uv.y
-                if (sampleY < 0 || sampleY >= 1) {
-                    if (wrapT === this._gameGl.REPEAT) {
-                        if (sampleY < 0) {
-                            sampleY += Math.ceil(-sampleY)
-                        } else {
-                            sampleY -= Math.floor(sampleY)
-                        }
-                    } else if (wrapT === this._gameGl.CLAMP_TO_EDGE) {
-                        sampleY = clamp(sampleY, 0, 1)
-                    } else if (wrapT === this._gameGl.MIRRORED_REPEAT) {
-                        console.error("MIRRORED_REPEAT 暂未实现")
-                    }
-                }
-
-                // 有可能将动作数据存入纹理中 此时应该配合使用
-                // 用nearst读取
-                // 验证测试过 webgl的nearst算法是不会加上0.5中心点来算的,同理liner是不是还需要这么做呢
-                if (magFilter === this._gameGl.NEAREST && minFilter === this._gameGl.NEAREST) {
-                    let texWidth = texBufferData.width
-                    let texHeight = texBufferData.height
-
-                    let uImg = Math.floor(sampleX * texWidth)
-                    let vImg = Math.floor(sampleY * texHeight)
-                    let index = (uImg + vImg * texWidth) * 4
-                    color.x = buffer[index] / 255
-                    color.y = buffer[index + 1] / 255
-                    color.z = buffer[index + 2] / 255
-                    color.w = buffer[index + 3] / 255
-                    return color
-                } else {
-                    let texWidth = texBufferData.width
-                    let texHeight = texBufferData.height
-                    let factSampleX = sampleX * texWidth
-                    let factSampleY = sampleY * texHeight
-
-                    let uImg: number
-                    let vImg: number
-                    let searchX = Math.floor(factSampleX + 0.5)
-                    let searchY = Math.floor(factSampleY + 0.5)
-                    for (let x = 0; x < 2; x++) {
-                        uImg = clamp(searchX - x, 0, texWidth - 1)
-                        for (let y = 0; y < 2; y++) {
-                            vImg = clamp(searchY - y, 0, texHeight - 1)
-                            let index = (uImg + vImg * texWidth) * 4
-
-                            color.x += buffer[index] / 1020
-                            color.y += buffer[index + 1] / 1020
-                            color.z += buffer[index + 2] / 1020
-                            color.w += buffer[index + 3] / 1020
-                        }
-                    }
-                    return color
-                }
+                return color
             }
         }
         color.set_Vn(1, 1, 1, 1)
@@ -2057,7 +2086,7 @@ export class CpuRenderingContext {
     customSamplerCube(texIndex: number, uv3D: Vec3Data): Vec4Data {
         // texIndex应该是对应的纹理单元
         let textureUnit = this._textureUnit.get(texIndex)
-        let color = builtinCachData.vec4Data.getData()
+        let color = vec4Data.getData()
         color.set_Vn(0, 0, 0, 0)
         if (textureUnit) {
             let textureData = textureUnit.get(this._gameGl.TEXTURE_CUBE_MAP)
@@ -2161,8 +2190,8 @@ export class CpuRenderingContext {
 
                 let uImg: number
                 let vImg: number
-                let searchX = Math.floor(factSampleX + 0.5)
-                let searchY = Math.floor(factSampleY + 0.5)
+                let searchX = Math.floor(factSampleX)
+                let searchY = Math.floor(factSampleY)
                 for (let x = 0; x < 2; x++) {
                     uImg = clamp(searchX - x, 0, texWidth - 1)
                     for (let y = 0; y < 2; y++) {
@@ -2258,7 +2287,8 @@ export class CpuRenderingContext {
             let triangleEndY = -1
             for (let y = minY; y <= maxY; y++) {
                 // let [alpha, beta, gamma] = GeometricOperations.computeBarycentric2D(x + 0.5, y + 0.5, x0, x1, x2, y0, y1, y2)
-                let [alpha, beta, gamma] = GeometricOperations.computeBarycentric2DByPre(x + 0.5, y + 0.5, preData)
+                // let [alpha, beta, gamma] = GeometricOperations.computeBarycentric2DByPre(x + 0.5, y + 0.5, preData)
+                let [alpha, beta, gamma] = GeometricOperations.computeBarycentric2DByPre(x, y, preData)
                 if (Math.abs(alpha + beta + gamma) - 1 < 1e-6) {
                     if (alpha >= 0 && beta >= 0 && gamma >= 0) {
                         triangleBeginY = y
@@ -2269,7 +2299,8 @@ export class CpuRenderingContext {
             if (triangleBeginY >= 0) {
                 for (let y = maxY; y > triangleBeginY; y--) {
                     // let [alpha, beta, gamma] = GeometricOperations.computeBarycentric2D(x + 0.5, y + 0.5, x0, x1, x2, y0, y1, y2)
-                    let [alpha, beta, gamma] = GeometricOperations.computeBarycentric2DByPre(x + 0.5, y + 0.5, preData)
+                    // let [alpha, beta, gamma] = GeometricOperations.computeBarycentric2DByPre(x + 0.5, y + 0.5, preData)
+                    let [alpha, beta, gamma] = GeometricOperations.computeBarycentric2DByPre(x, y, preData)
                     if (Math.abs(alpha + beta + gamma) - 1 < 1e-6) {
                         if (alpha >= 0 && beta >= 0 && gamma >= 0) {
                             triangleEndY = y
@@ -2289,7 +2320,8 @@ export class CpuRenderingContext {
                     }
 
                     // let [alpha, beta, gamma] = GeometricOperations.computeBarycentric2D(x + 0.5, y + 0.5, x0, x1, x2, y0, y1, y2)
-                    let [alpha, beta, gamma] = GeometricOperations.computeBarycentric2DByPre(x + 0.5, y + 0.5, preData)
+                    // let [alpha, beta, gamma] = GeometricOperations.computeBarycentric2DByPre(x + 0.5, y + 0.5, preData)
+                    let [alpha, beta, gamma] = GeometricOperations.computeBarycentric2DByPre(x, y, preData)
 
                     let canWrite = true
 
