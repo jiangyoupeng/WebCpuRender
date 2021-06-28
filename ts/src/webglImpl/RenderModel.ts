@@ -34,14 +34,19 @@ export class AttributeReadInfo {
         switch (type) {
             case gl.BYTE:
                 this.byteType = Int8Array
+                break
             case gl.SHORT:
                 this.byteType = Int16Array
+                break
             case gl.UNSIGNED_BYTE:
                 this.byteType = Uint8Array
+                break
             case gl.UNSIGNED_SHORT:
                 this.byteType = Uint16Array
+                break
             case gl.FLOAT:
                 this.byteType = Float32Array
+                break
         }
     }
 }

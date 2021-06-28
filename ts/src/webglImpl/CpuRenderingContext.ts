@@ -304,7 +304,16 @@ export class CpuRenderingContext {
         // let writeFramebuffer = new Uint32Array(this._frameBuffer.buffer, this._frameBuffer.byteOffset, this._frameBuffer.byteLength)
         // writeFramebuffer.fill(val, 0)
 
-        let systemWriteFramebuffer = this.customGetNowColorBuffer()
+        // 貌似不仅仅是清理当前framebuffer
+        // 现在没有清理framebuffer的tex 不知道对不对
+        this._framebufferObjectMap.forEach((framebuffer) => {
+            if (framebuffer.colorAttachPoint instanceof WebGLRenderbufferObject) {
+                let colorAttachPoint: WebGLRenderbufferObject = <WebGLRenderbufferObject>framebuffer.colorAttachPoint
+                let bufferData = <Uint32Array>colorAttachPoint.bufferData
+                bufferData.fill(val, 0)
+            }
+        })
+        let systemWriteFramebuffer = (<WebGLRenderbufferObject>this._systemFrameBuffer.colorAttachPoint).bufferData
         systemWriteFramebuffer.fill(val, 0)
     }
 
@@ -880,6 +889,13 @@ export class CpuRenderingContext {
             return
         }
         if (index >= 0 && index < maxVertexAttribs!) {
+            if (normalized) {
+                debugger
+            }
+            let name = this._useProgram.getNameByAttributeLocal(index)
+            // if (name == "a_joints") {
+            //     debugger
+            // }
             let readInfo = new AttributeReadInfo(
                 this._gameGl,
                 this._useVboBufferData?.cachIndex.cachIndex!,
@@ -890,7 +906,6 @@ export class CpuRenderingContext {
                 offset
             )
             this._attributeReadInfo.set(index, readInfo)
-            let name = this._useProgram.getNameByAttributeLocal(index)
             let typeName = this._useProgram.linkVertexShader.attributeData.dataKeys.get(name!)
             // 暂时不支持ivec 类型
             if (typeName === this._gameGl.FLOAT || typeName === this._gameGl.INT) {
@@ -1428,6 +1443,14 @@ export class CpuRenderingContext {
             // 当前有正在渲染的数据 无法执行
             console.error("has cachWriteData not can draw")
         }
+
+        // for test
+        // 测试离屏渲染的效果
+        // let nowFrameBuffer = this.customGetNowFramebuffer()
+        // if (nowFrameBuffer === this._systemFrameBuffer) {
+        //     return
+        // }
+
         // 清空数据缓存
         cpuCachData.clear()
         let cachVboAttributeDatas: Map<string, number[] | Vec2Data[] | Vec3Data[] | Vec4Data[] | IntData[] | FloatData[]> = new Map()
@@ -1451,6 +1474,9 @@ export class CpuRenderingContext {
             if (this._attributeLocalEnable[index]) {
                 let name = this._useProgram.getNameByAttributeLocal(index)
                 if (name) {
+                    // if (name == "a_joints") {
+                    //     debugger
+                    // }
                     let bytesPerElement = value.byteType.BYTES_PER_ELEMENT
                     let size = value.size
                     let factSize = value.factSize
@@ -1833,7 +1859,8 @@ export class CpuRenderingContext {
             let nowFrameBuffer = this.customGetNowFramebuffer()
             // 非系统framebuffer是离屏渲染
             // 实验离屏渲染的结果
-            if (nowFrameBuffer !== this._systemFrameBuffer) {
+            // for test
+            if (nowFrameBuffer === this._systemFrameBuffer) {
                 let systemWriteFramebuffer = this.customGetNowColorBuffer()
                 let renderSize = this.customGetNowRenderSize()
 

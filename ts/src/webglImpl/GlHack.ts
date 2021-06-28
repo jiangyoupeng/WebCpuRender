@@ -163,6 +163,15 @@ export function replaceWebglFunc(gl: any) {
                                 info[1] = replaceScript
                             }
                         }
+                        //  else if (
+                        //     funcKey == "bindFramebuffer" ||
+                        //     funcKey == "bindRenderbuffer" ||
+                        //     funcKey == "renderbufferStorage" ||
+                        //     funcKey == "framebufferRenderbuffer" ||
+                        //     funcKey == "framebufferTexture2D"
+                        // ) {
+                        //     return
+                        // }
                     }
                     applyReturn = func.apply(gl, info)
                 }
