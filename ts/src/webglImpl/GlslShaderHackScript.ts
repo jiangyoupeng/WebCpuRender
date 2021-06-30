@@ -72,18 +72,26 @@ vec4 vert () {
 viewDir = vec4(a_position, 1.0);
 mat4 matViewRotOnly = mat4(mat3(cc_matView));
 mat4 matProj = cc_matProj;
-if (matProj[3].w > 0.0) {
-vec2 scale = vec2(48.0, 24.0);
-matProj[0].xy *= scale;
-matProj[1].xy *= scale;
-matProj[2].zw = vec2(-1.0);
-matProj[3].zw = vec2(0.0);
-}
-vec4 pos = matProj * matViewRotOnly * viewDir;
-pos.z = 0.99999 * pos.w;
+// if (matProj[3].w > 0.0) {
+// vec2 scale = vec2(48.0, 24.0);
+// matProj[0].xy *= scale;
+// matProj[1].xy *= scale;
+// matProj[2].zw = vec2(-1.0);
+// matProj[3].zw = vec2(0.0);
+// }
+vec4 pos = matProj * viewDir;
+// vec4 pos = matProj * matViewRotOnly * viewDir;
+// pos.z = 0.99999 * pos.w;
 return pos;
 }
-void main() { gl_Position = vert(); }
+void main() { 
+    viewDir = vec4(a_position, 1.0);
+    viewDir = cc_matProj * viewDir;
+    // gl_Position = vec4(a_position, 1.0);
+    gl_Position = viewDir;
+    // viewDir = vec4(0.5,0.5,0.5,1);
+    // gl_Position = vert(); 
+}
 `,
     ],
 ])

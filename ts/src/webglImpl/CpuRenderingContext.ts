@@ -893,9 +893,6 @@ export class CpuRenderingContext {
                 debugger
             }
             let name = this._useProgram.getNameByAttributeLocal(index)
-            // if (name == "a_joints") {
-            //     debugger
-            // }
             let readInfo = new AttributeReadInfo(
                 this._gameGl,
                 this._useVboBufferData?.cachIndex.cachIndex!,
@@ -1474,9 +1471,6 @@ export class CpuRenderingContext {
             if (this._attributeLocalEnable[index]) {
                 let name = this._useProgram.getNameByAttributeLocal(index)
                 if (name) {
-                    // if (name == "a_joints") {
-                    //     debugger
-                    // }
                     let bytesPerElement = value.byteType.BYTES_PER_ELEMENT
                     let size = value.size
                     let factSize = value.factSize
@@ -1776,7 +1770,8 @@ export class CpuRenderingContext {
                             // 计算公式为Zw = (f-n)*Zd/2+(n+f)/2。
                             glPos.z = glPos.z * f1 + f2
                             triangleVec[t] = glPos
-                            linkVertexShader.varyingData.copy(interpolateData[t])
+                            let interData = interpolateData[t]
+                            linkVertexShader.varyingData.copy(interData)
                         }
                     }
 
@@ -2350,18 +2345,17 @@ export class CpuRenderingContext {
                     // let [alpha, beta, gamma] = GeometricOperations.computeBarycentric2DByPre(x + 0.5, y + 0.5, preData)
                     let [alpha, beta, gamma] = GeometricOperations.computeBarycentric2DByPre(x, y, preData)
 
-                    let canWrite = true
+                    let w_reciprocal = 1.0 / (alpha / w0 + beta / w1 + gamma / w2)
+                    let z_interpolated = (alpha * z0) / w0 + (beta * z1) / w1 + (gamma * z2) / w2
+                    z_interpolated *= w_reciprocal
+                    let canWrite = z_interpolated >= -1 && z_interpolated <= 1
 
                     x = Math.floor(x)
                     y = Math.floor(y)
 
                     // 不在反写
                     let index = colorSize.x * y + x
-                    if (writeDepthBuffer && this._openDepthTest) {
-                        let w_reciprocal = 1.0 / (alpha / w0 + beta / w1 + gamma / w2)
-                        let z_interpolated = (alpha * z0) / w0 + (beta * z1) / w1 + (gamma * z2) / w2
-                        z_interpolated *= w_reciprocal
-
+                    if (canWrite && writeDepthBuffer && this._openDepthTest) {
                         let depth = writeDepthBuffer[index]
 
                         let depthJudgeFunc = this._depthJudgeFunc
@@ -2391,16 +2385,17 @@ export class CpuRenderingContext {
                         //     debugger
                         // }
 
-                        // if (x === 386 && y === 478) {
-                        //     debugger
-                        // }
-
                         index *= 4
                         clearShaderCachData()
-                        this._customInterpolated(varyingData, interpolateData, alpha, beta, gamma)
+                        this._customInterpolated(varyingData, interpolateData, alpha, beta, gamma, w_reciprocal, w0, w1, w2)
                         custom_isDiscard.v = false
                         gl_FragColor.set_Vn(NaN, NaN, NaN, NaN)
                         fragShader.main()
+                        // if (y > 50 && y < 120 && x > 760 && x < 1000) {
+                        //     if (gl_FragColor.y >= 1) {
+                        //         debugger
+                        //     }
+                        // }
                         if (!custom_isDiscard.v) {
                             let color: Vec4Data
                             if (!isNaN(gl_FragColor.x)) {
@@ -2675,7 +2670,17 @@ export class CpuRenderingContext {
         }
     }
 
-    _customInterpolated(outvaryingData: VaryingData, interpolateData: VaryingData[], alpha: number, beta: number, gamma: number) {
+    _customInterpolated(
+        outvaryingData: VaryingData,
+        interpolateData: VaryingData[],
+        alpha: number,
+        beta: number,
+        gamma: number,
+        w_reciprocal: number,
+        w0: number,
+        w1: number,
+        w2: number
+    ) {
         let interpolateData0 = interpolateData[0]
         let interpolateData1 = interpolateData[1]
         let interpolateData2 = interpolateData[2]
@@ -2691,7 +2696,7 @@ export class CpuRenderingContext {
                 if (!interpolated) {
                     continue
                 }
-                interpolated.v = vec0.v * alpha + vec1.v * beta + vec2.v * gamma
+                interpolated.v = ((vec0.v * alpha) / w0 + (vec1.v * beta) / w1 + (vec2.v * gamma) / w2) * w_reciprocal
             } else if (typeName === this._gameGl.FLOAT_VEC2) {
                 let vec0: Vec2Data = (<any>interpolateData0)[dataName]
                 let vec1: Vec2Data = (<any>interpolateData1)[dataName]
@@ -2700,8 +2705,8 @@ export class CpuRenderingContext {
                 if (!interpolated) {
                     continue
                 }
-                interpolated.x = vec0.x * alpha + vec1.x * beta + vec2.x * gamma
-                interpolated.y = vec0.y * alpha + vec1.y * beta + vec2.y * gamma
+                interpolated.x = ((vec0.x * alpha) / w0 + (vec1.x * beta) / w1 + (vec2.x * gamma) / w2) * w_reciprocal
+                interpolated.y = ((vec0.y * alpha) / w0 + (vec1.y * beta) / w1 + (vec2.y * gamma) / w2) * w_reciprocal
             } else if (typeName === this._gameGl.FLOAT_VEC3) {
                 let vec0: Vec3Data = (<any>interpolateData0)[dataName]
                 let vec1: Vec3Data = (<any>interpolateData1)[dataName]
@@ -2710,9 +2715,9 @@ export class CpuRenderingContext {
                 if (!interpolated) {
                     continue
                 }
-                interpolated.x = vec0.x * alpha + vec1.x * beta + vec2.x * gamma
-                interpolated.y = vec0.y * alpha + vec1.y * beta + vec2.y * gamma
-                interpolated.z = vec0.z * alpha + vec1.z * beta + vec2.z * gamma
+                interpolated.x = ((vec0.x * alpha) / w0 + (vec1.x * beta) / w1 + (vec2.x * gamma) / w2) * w_reciprocal
+                interpolated.y = ((vec0.y * alpha) / w0 + (vec1.y * beta) / w1 + (vec2.y * gamma) / w2) * w_reciprocal
+                interpolated.z = ((vec0.z * alpha) / w0 + (vec1.z * beta) / w1 + (vec2.z * gamma) / w2) * w_reciprocal
             } else if (typeName === this._gameGl.FLOAT_VEC4) {
                 let vec0: Vec4Data = (<any>interpolateData0)[dataName]
                 let vec1: Vec4Data = (<any>interpolateData1)[dataName]
@@ -2721,10 +2726,10 @@ export class CpuRenderingContext {
                 if (!interpolated) {
                     continue
                 }
-                interpolated.x = vec0.x * alpha + vec1.x * beta + vec2.x * gamma
-                interpolated.y = vec0.y * alpha + vec1.y * beta + vec2.y * gamma
-                interpolated.z = vec0.z * alpha + vec1.z * beta + vec2.z * gamma
-                interpolated.w = vec0.w * alpha + vec1.w * beta + vec2.w * gamma
+                interpolated.x = ((vec0.x * alpha) / w0 + (vec1.x * beta) / w1 + (vec2.x * gamma) / w2) * w_reciprocal
+                interpolated.y = ((vec0.y * alpha) / w0 + (vec1.y * beta) / w1 + (vec2.y * gamma) / w2) * w_reciprocal
+                interpolated.z = ((vec0.z * alpha) / w0 + (vec1.z * beta) / w1 + (vec2.z * gamma) / w2) * w_reciprocal
+                interpolated.w = ((vec0.w * alpha) / w0 + (vec1.w * beta) / w1 + (vec2.w * gamma) / w2) * w_reciprocal
             } else {
                 debugger
                 console.error("暂未实现的插值方法")

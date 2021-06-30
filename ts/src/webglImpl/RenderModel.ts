@@ -47,6 +47,10 @@ export class AttributeReadInfo {
             case gl.FLOAT:
                 this.byteType = Float32Array
                 break
+            default:
+                console.error("无法识别的类型")
+                debugger
+                break
         }
     }
 }
