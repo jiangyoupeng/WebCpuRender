@@ -53,6 +53,8 @@ function renderError(message?: any, ...optionalParams: any[]) {
     debugger
     console.error(message, ...optionalParams)
 }
+// 一个三角形一个三角形渲染
+const oneTriRender = false
 
 let calculateUseShaderHash: Map<string, string> = new Map()
 let globalShaderIndex = 1
@@ -1690,6 +1692,7 @@ export class CpuRenderingContext {
         this.customPreSetTexData(this._useProgram.linkFragmentShader.uniformData)
     }
 
+    _testIndex = 0
     _customDraw(
         mode: GLenum,
         beginIndex: number,
@@ -1732,10 +1735,40 @@ export class CpuRenderingContext {
                     interpolateData[t] = linkVertexShader.varyingData.factoryCreate()
                 }
                 let index = beginIndex
+                let cachLog = []
+                let cachOverWLog = []
+                let renderLog = []
+                if (this._testIndex >= endIndex) {
+                    this._testIndex = 0
+                }
+
+                if (this._testIndex === 0) {
+                    console.log("********************begin index**********************")
+                }
+                console.log("this._testIndex " + this._testIndex)
+                if (oneTriRender) {
+                    if (this._testIndex === 30) {
+                        debugger
+                    }
+                }
                 do {
                     renderVertxPipeCachData.clear()
                     clearShaderCachData()
+                    let cachArr: any = []
+                    let cachOverWArr: any = []
+                    cachLog.push(cachArr)
+                    cachOverWLog.push(cachOverWArr)
                     for (let t = 0; t < 3; t++) {
+                        // if (index === 12) {
+                        //     debugger
+                        // }
+                        if (oneTriRender) {
+                            index = this._testIndex
+                        }
+                        // if (index >= this._testIndex) {
+                        //     drawOver = true
+                        //     break
+                        // }
                         let nowTriIndex = index + t
 
                         if (mode == this._gameGl.TRIANGLE_FAN && t === 0) {
@@ -1752,16 +1785,61 @@ export class CpuRenderingContext {
                                     attributeData[name] = data[nowTriIndex]
                                 }
                             )
+                            // cachArr.push((<any>linkVertexShader.attributeData)["a_position"])
                             gl_Position.set_Vn(0, 0, 0, 0)
                             linkVertexShader.main()
-                            // w除法
                             let glPos = renderVertxPipeCachData.vec4Data.getData()
+                            triangleVec[t] = glPos
                             glPos.set_V4(gl_Position)
+
+                            let interData = interpolateData[t]
+                            linkVertexShader.varyingData.copy(interData)
+                        }
+                    }
+
+                    // 视口裁剪
+                    let v1 = triangleVec[0]
+                    let v2 = triangleVec[1]
+                    let v3 = triangleVec[2]
+                    let isClip = false
+                    if (v1.x > v1.w && v2.x > v2.w && v3.x > v3.w) {
+                        isClip = true
+                    }
+                    if (v1.x < -v1.w && v2.x < -v2.w && v3.x < -v3.w) {
+                        isClip = true
+                    }
+                    if (v1.y > v1.w && v2.y > v2.w && v3.y > v3.w) {
+                        isClip = true
+                    }
+                    if (v1.y < -v1.w && v2.y < -v2.w && v3.y < -v3.w) {
+                        isClip = true
+                    }
+                    if (v1.z > v1.w && v2.z > v2.w && v3.z > v3.w) {
+                        isClip = true
+                    }
+                    if (v1.z < -v1.w && v2.z < -v2.w && v3.z < -v3.w) {
+                        isClip = true
+                    }
+
+                    if (!isClip) {
+                        for (let t = 0; t < 3; t++) {
+                            let glPos = triangleVec[t]
+                            // 在透视投影和透视除法之间应该还要进行一次裁剪空间的三角形拆分
+                            // 暂时不做三角形拆分 只是对不在裁剪空间的三角形做剔除
+                            let tmpPos = renderVertxPipeCachData.vec4Data.getData()
+                            tmpPos.set_V4(glPos)
+                            cachArr.push(tmpPos)
+
+                            // 透视除法
+                            // w除法
                             let wFactor = 1 / glPos.w
                             glPos.x *= wFactor
                             glPos.y *= wFactor
                             glPos.z *= wFactor
-                            // glPos.w *= wFactor
+
+                            let tmpPos2 = renderVertxPipeCachData.vec4Data.getData()
+                            tmpPos2.set_V4(glPos)
+                            cachOverWArr.push(tmpPos2)
 
                             //视口变化
                             glPos.x = 0.5 * this._viewPort.width * (glPos.x + 1) + this._viewPort.x
@@ -1769,56 +1847,58 @@ export class CpuRenderingContext {
 
                             // 计算公式为Zw = (f-n)*Zd/2+(n+f)/2。
                             glPos.z = glPos.z * f1 + f2
-                            triangleVec[t] = glPos
-                            let interData = interpolateData[t]
-                            linkVertexShader.varyingData.copy(interData)
                         }
-                    }
 
-                    let isCull = false
-                    //如果开启面裁剪的话
-                    if (this._openCullFace) {
-                        if (this._nowCullFaceType === this._gameGl.FRONT_AND_BACK) {
-                            isCull = true
-                        } else {
-                            let v01 = renderVertxPipeCachData.vec3Data.getData()
-                            let v12 = renderVertxPipeCachData.vec3Data.getData()
-                            Vec3Data.subtract(v01, triangleVec[1], triangleVec[0])
-                            Vec3Data.subtract(v12, triangleVec[2], triangleVec[1])
-                            let crossData = renderVertxPipeCachData.vec3Data.getData()
-
-                            Vec3Data.cross(crossData, v01, v12)
-                            // webgl是左手 z指向屏幕内 顺时针的话z是指向外面的 为负
-                            if (this._nowCullFaceType === this._gameGl.FRONT) {
-                                /**裁剪正面 */
-                                if (this._nowFrontType == this._gameGl.CW) {
-                                    if (crossData.z < 0) {
-                                        isCull = true
-                                    }
-                                } else {
-                                    if (crossData.z > 0) {
-                                        isCull = true
-                                    }
-                                }
+                        let isCull = false
+                        //如果开启面裁剪的话
+                        if (this._openCullFace) {
+                            if (this._nowCullFaceType === this._gameGl.FRONT_AND_BACK) {
+                                isCull = true
                             } else {
-                                /**裁剪背面 */
-                                if (this._nowFrontType == this._gameGl.CW) {
-                                    if (crossData.z > 0) {
-                                        isCull = true
+                                let v01 = renderVertxPipeCachData.vec3Data.getData()
+                                let v12 = renderVertxPipeCachData.vec3Data.getData()
+                                Vec3Data.subtract(v01, triangleVec[1], triangleVec[0])
+                                Vec3Data.subtract(v12, triangleVec[2], triangleVec[1])
+                                let crossData = renderVertxPipeCachData.vec3Data.getData()
+
+                                Vec3Data.cross(crossData, v01, v12)
+                                // webgl是左手 z指向屏幕内 顺时针的话z是指向外面的 为负
+                                if (this._nowCullFaceType === this._gameGl.FRONT) {
+                                    /**裁剪正面 */
+                                    if (this._nowFrontType == this._gameGl.CW) {
+                                        if (crossData.z < 0) {
+                                            isCull = true
+                                        }
+                                    } else {
+                                        if (crossData.z > 0) {
+                                            isCull = true
+                                        }
                                     }
                                 } else {
-                                    if (crossData.z < 0) {
-                                        isCull = true
+                                    /**裁剪背面 */
+                                    if (this._nowFrontType == this._gameGl.CW) {
+                                        if (crossData.z > 0) {
+                                            isCull = true
+                                        }
+                                    } else {
+                                        if (crossData.z < 0) {
+                                            isCull = true
+                                        }
                                     }
                                 }
                             }
                         }
+
+                        if (!isCull) {
+                            renderLog.push(cachOverWLog.length - 1)
+                            this._customRasterizeTriangle(triangleVec, interpolateData)
+                        }
                     }
 
-                    if (!isCull) {
-                        this._customRasterizeTriangle(triangleVec, interpolateData)
+                    if (oneTriRender) {
+                        drawOver = true
+                        break
                     }
-
                     if (mode === this._gameGl.TRIANGLES) {
                         index += 3
                         if (index >= endIndex) {
@@ -1839,6 +1919,14 @@ export class CpuRenderingContext {
                         }
                     }
                 } while (true)
+
+                this._testIndex += 3
+                if (this._testIndex === endIndex) {
+                    console.log("********************end index**********************")
+                }
+                console.log(cachLog)
+                console.log(cachOverWLog)
+                console.log(renderLog)
                 if (drawOver) {
                     this._cachWriteData = null
                 } else {
@@ -2168,6 +2256,9 @@ export class CpuRenderingContext {
                         uv.set_Vn(1 - (enterX + 1) / 2, (enterY + 1) / 2)
                     }
                 }
+                // for test
+                // 为啥要把y偏转?
+                uv.y = 1 - uv.y
 
                 // let texelMipmapData = textureData.texelsDatas![0].texelMipmapData
                 let texBufferData = texelMipmapData.get(0)!
@@ -2281,11 +2372,11 @@ export class CpuRenderingContext {
 
         let z0 = triangleVec[0].z
         let z1 = triangleVec[1].z
-        let z2 = triangleVec[0].z
+        let z2 = triangleVec[2].z
 
         let w0 = triangleVec[0].w
         let w1 = triangleVec[1].w
-        let w2 = triangleVec[0].w
+        let w2 = triangleVec[2].w
         // todo
         // 可用于优化的逻辑
         // 线段的表示 pBegin(xB,yB) pEnd(xE,yE) 线段上的任意一点 p(xB + t(xE - xB),yB + t(yE - yB)) t在0到1之间
@@ -2348,12 +2439,17 @@ export class CpuRenderingContext {
                     let w_reciprocal = 1.0 / (alpha / w0 + beta / w1 + gamma / w2)
                     let z_interpolated = (alpha * z0) / w0 + (beta * z1) / w1 + (gamma * z2) / w2
                     z_interpolated *= w_reciprocal
-                    let canWrite = z_interpolated >= -1 && z_interpolated <= 1
+                    // let canWrite = z_interpolated >= -1 && z_interpolated <= 1
+                    let canWrite = z_interpolated >= this._zNear && z_interpolated <= this._zFar
 
                     x = Math.floor(x)
                     y = Math.floor(y)
+                    // if (y === 51 && x === 801) {
+                    //     debugger
+                    // }
 
                     // 不在反写
+                    // 只是进行了earlyZ
                     let index = colorSize.x * y + x
                     if (canWrite && writeDepthBuffer && this._openDepthTest) {
                         let depth = writeDepthBuffer[index]
@@ -2391,10 +2487,15 @@ export class CpuRenderingContext {
                         custom_isDiscard.v = false
                         gl_FragColor.set_Vn(NaN, NaN, NaN, NaN)
                         fragShader.main()
-                        // if (y > 50 && y < 120 && x > 760 && x < 1000) {
+                        // if (y > 50 && y < 120 && x > 800 && x < 1000) {
+                        //     // debugger
                         //     if (gl_FragColor.y >= 1) {
                         //         debugger
                         //     }
+                        // }
+
+                        // if (y === 51 && x === 801) {
+                        //     debugger
                         // }
                         if (!custom_isDiscard.v) {
                             let color: Vec4Data
@@ -2730,6 +2831,11 @@ export class CpuRenderingContext {
                 interpolated.y = ((vec0.y * alpha) / w0 + (vec1.y * beta) / w1 + (vec2.y * gamma) / w2) * w_reciprocal
                 interpolated.z = ((vec0.z * alpha) / w0 + (vec1.z * beta) / w1 + (vec2.z * gamma) / w2) * w_reciprocal
                 interpolated.w = ((vec0.w * alpha) / w0 + (vec1.w * beta) / w1 + (vec2.w * gamma) / w2) * w_reciprocal
+
+                // interpolated.x = vec0.x * alpha + vec1.x * beta + vec2.x * gamma
+                // interpolated.y = vec0.y * alpha + vec1.y * beta + vec2.y * gamma
+                // interpolated.z = vec0.z * alpha + vec1.z * beta + vec2.z * gamma
+                // interpolated.w = vec0.w * alpha + vec1.w * beta + vec2.w * gamma
             } else {
                 debugger
                 console.error("暂未实现的插值方法")

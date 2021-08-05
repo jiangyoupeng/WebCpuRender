@@ -10,7 +10,6 @@ enum GlDebugMode {
     createTsImplGlslFile,
     replaceShaderSource,
 }
-
 let win: any = window
 let showGlDebugLog = win.showGlDebugLog || false
 let debugCpuRender = win.glDebugMode == GlDebugMode.debugCpuRender
