@@ -1797,6 +1797,9 @@ export class CpuRenderingContext {
                         }
                     }
 
+                    // 齐次空间的裁剪
+                    // 现在是直接把空间外的三角形裁剪了
+                    // 没有进行三角形拆分
                     // 视口裁剪
                     let v1 = triangleVec[0]
                     let v2 = triangleVec[1]
