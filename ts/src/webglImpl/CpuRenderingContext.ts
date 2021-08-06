@@ -81,6 +81,39 @@ class PreCachShaderUseData {
     texel2dMipmapData: Map<number, PreCachTexUseData> = new Map()
 }
 
+class StencilTestData {
+    func: GLenum = 0
+    ref: GLint = 0x00
+    readMask: GLint = 0xff
+    writeMask: GLint = 0xff
+
+    sfail: GLenum = 0
+    zfail: GLenum = 0
+    zpass: GLenum = 0
+    constructor(gameGl: WebGLRenderingContext) {
+        this.func = gameGl.ALWAYS
+        this.sfail = gameGl.KEEP
+        this.zfail = gameGl.KEEP
+        this.zpass = gameGl.KEEP
+    }
+
+    stencilMask(mask: GLuint): void {
+        this.writeMask = mask
+    }
+
+    stencilFunc(func: GLenum, ref: GLint, mask: GLuint): void {
+        this.func = func
+        this.ref = ref
+        this.readMask = mask
+    }
+
+    stencilOp(fail: GLenum, zfail: GLenum, zpass: GLenum): void {
+        this.sfail = fail
+        this.zfail = zfail
+        this.zpass = zpass
+    }
+}
+
 // 用cpu实现的webgl 1接口
 export class CpuRenderingContext {
     constructor() {
@@ -131,6 +164,9 @@ export class CpuRenderingContext {
         this._systemFrameBuffer.depthAttachPoint = new WebGLRenderbufferObject(new CPUWebGLRenderbuffer(0))
         this._systemFrameBuffer.stencilAttachPoint = new WebGLRenderbufferObject(new CPUWebGLRenderbuffer(0))
 
+        this._stencilFrontData = new StencilTestData(this._gameGl)
+        this._stencilBackData = new StencilTestData(this._gameGl)
+
         replaceWebglFunc(gl)
     }
 
@@ -175,6 +211,9 @@ export class CpuRenderingContext {
 
     /**默认的深度 */
     private _defaultDepth: number = Number.MAX_SAFE_INTEGER
+
+    /**默认的模板值 */
+    private _defaultStencil: number = 0
 
     /**深度是否可以写入 */
     private _depthWriteEnable: boolean = true
@@ -223,6 +262,9 @@ export class CpuRenderingContext {
     /**开启Scissor测试 */
     private _openScissorTest: boolean = false
 
+    /**开启Scissor测试 */
+    private _openStencilTest: boolean = false
+
     /**纹理从cpu到gpu的对齐准则 */
     private _pixelPackNum: number = 4
     /**纹理从gpu到cpu的对齐准则 */
@@ -252,6 +294,9 @@ export class CpuRenderingContext {
 
     private _zNear: GLclampf = 0
     private _zFar: GLclampf = 1
+
+    private _stencilFrontData: StencilTestData = null!
+    private _stencilBackData: StencilTestData = null!
 
     private _blendFactorColor: Vec4Data = new Vec4Data()
 
@@ -323,6 +368,13 @@ export class CpuRenderingContext {
         let depathFramebuffer: Float32Array | null = this.customGetNowDepthBuffer()
         if (depathFramebuffer) {
             depathFramebuffer.fill(this._defaultDepth, 0)
+        }
+    }
+
+    private _clearStencilBuffer() {
+        let stencilFramebuffer: Uint8Array | null = this.customGetNowStencilBuffer()
+        if (stencilFramebuffer) {
+            stencilFramebuffer.fill(this._defaultStencil, 0)
         }
     }
 
@@ -1241,8 +1293,7 @@ export class CpuRenderingContext {
             this._clearDeputhBuffer()
         }
         if (mask & this._gameGl.STENCIL_BUFFER_BIT) {
-            // todo
-            console.warn("clear STENCIL_BUFFER_BIT no imm")
+            this._clearStencilBuffer()
         }
     }
 
@@ -1852,49 +1903,44 @@ export class CpuRenderingContext {
                             glPos.z = glPos.z * f1 + f2
                         }
 
+                        // 当前三角形是正面
+                        let isFrontFace = false
+                        let v01 = renderVertxPipeCachData.vec3Data.getData()
+                        let v12 = renderVertxPipeCachData.vec3Data.getData()
+                        Vec3Data.subtract(v01, triangleVec[1], triangleVec[0])
+                        Vec3Data.subtract(v12, triangleVec[2], triangleVec[1])
+                        let crossData = renderVertxPipeCachData.vec3Data.getData()
+                        Vec3Data.cross(crossData, v01, v12)
+                        if (this._nowFrontType == this._gameGl.CW) {
+                            if (crossData.z < 0) {
+                                isFrontFace = true
+                            }
+                        } else {
+                            if (crossData.z > 0) {
+                                isFrontFace = true
+                            }
+                        }
+
                         let isCull = false
                         //如果开启面裁剪的话
                         if (this._openCullFace) {
                             if (this._nowCullFaceType === this._gameGl.FRONT_AND_BACK) {
                                 isCull = true
                             } else {
-                                let v01 = renderVertxPipeCachData.vec3Data.getData()
-                                let v12 = renderVertxPipeCachData.vec3Data.getData()
-                                Vec3Data.subtract(v01, triangleVec[1], triangleVec[0])
-                                Vec3Data.subtract(v12, triangleVec[2], triangleVec[1])
-                                let crossData = renderVertxPipeCachData.vec3Data.getData()
-
-                                Vec3Data.cross(crossData, v01, v12)
                                 // webgl是左手 z指向屏幕内 顺时针的话z是指向外面的 为负
-                                if (this._nowCullFaceType === this._gameGl.FRONT) {
+                                if (this._nowCullFaceType === this._gameGl.FRONT && isFrontFace) {
                                     /**裁剪正面 */
-                                    if (this._nowFrontType == this._gameGl.CW) {
-                                        if (crossData.z < 0) {
-                                            isCull = true
-                                        }
-                                    } else {
-                                        if (crossData.z > 0) {
-                                            isCull = true
-                                        }
-                                    }
-                                } else {
+                                    isCull = true
+                                } else if (!isFrontFace) {
                                     /**裁剪背面 */
-                                    if (this._nowFrontType == this._gameGl.CW) {
-                                        if (crossData.z > 0) {
-                                            isCull = true
-                                        }
-                                    } else {
-                                        if (crossData.z < 0) {
-                                            isCull = true
-                                        }
-                                    }
+                                    isCull = true
                                 }
                             }
                         }
 
                         if (!isCull) {
                             renderLog.push(cachOverWLog.length - 1)
-                            this._customRasterizeTriangle(triangleVec, interpolateData)
+                            this._customRasterizeTriangle(triangleVec, interpolateData, isFrontFace)
                         }
                     }
 
@@ -1927,9 +1973,9 @@ export class CpuRenderingContext {
                 if (this._testIndex === endIndex) {
                     console.log("********************end index**********************")
                 }
-                console.log(cachLog)
-                console.log(cachOverWLog)
-                console.log(renderLog)
+                // console.log(cachLog)
+                // console.log(cachOverWLog)
+                // console.log(renderLog)
                 if (drawOver) {
                     this._cachWriteData = null
                 } else {
@@ -2331,7 +2377,7 @@ export class CpuRenderingContext {
         return color
     }
 
-    _customRasterizeTriangle(triangleVec: Vec4Data[], interpolateData: VaryingData[]) {
+    _customRasterizeTriangle(triangleVec: Vec4Data[], interpolateData: VaryingData[], isFrontFace: boolean) {
         let fragShader: FragShaderHandle = this._useProgram.linkFragmentShader
         // 求出三角形的包围盒
         let minX = Number.MAX_VALUE
@@ -2354,6 +2400,15 @@ export class CpuRenderingContext {
         let writeColorFramebuffer = this.customGetNowColorBuffer()
         let colorSize = this.customGetNowRenderSize()
         let writeDepthBuffer = this.customGetNowDepthBuffer()
+        let stencilBuffer = this.customGetNowStencilBuffer()
+        let stencilTestData = isFrontFace ? this._stencilFrontData : this._stencilBackData
+        let sfail = stencilTestData.sfail
+        let zfail = stencilTestData.zfail
+        let zpass = stencilTestData.zpass
+        let stencilFun = stencilTestData.func
+        let writeMask = stencilTestData.writeMask
+        let readMask = stencilTestData.readMask
+        let ref = stencilTestData.ref
 
         let viewMaxWidth = Math.min(this._viewPort.x + this._viewPort.width - 1, colorSize.x - 1)
         let viewMinWidth = this._viewPort.x
@@ -2435,339 +2490,400 @@ export class CpuRenderingContext {
                         continue
                     }
 
-                    // let [alpha, beta, gamma] = GeometricOperations.computeBarycentric2D(x + 0.5, y + 0.5, x0, x1, x2, y0, y1, y2)
-                    // let [alpha, beta, gamma] = GeometricOperations.computeBarycentric2DByPre(x + 0.5, y + 0.5, preData)
-                    let [alpha, beta, gamma] = GeometricOperations.computeBarycentric2DByPre(x, y, preData)
-
-                    let w_reciprocal = 1.0 / (alpha / w0 + beta / w1 + gamma / w2)
-                    let z_interpolated = (alpha * z0) / w0 + (beta * z1) / w1 + (gamma * z2) / w2
-                    z_interpolated *= w_reciprocal
-                    // let canWrite = z_interpolated >= -1 && z_interpolated <= 1
-                    let canWrite = z_interpolated >= this._zNear && z_interpolated <= this._zFar
-
-                    x = Math.floor(x)
-                    y = Math.floor(y)
-                    // if (y === 51 && x === 801) {
-                    //     debugger
-                    // }
-
-                    // 不在反写
-                    // 只是进行了earlyZ
+                    // 做的是early stencil test
+                    let stencilCanWrite = true
                     let index = colorSize.x * y + x
-                    if (canWrite && writeDepthBuffer && this._openDepthTest) {
-                        let depth = writeDepthBuffer[index]
-
-                        let depthJudgeFunc = this._depthJudgeFunc
-                        if (depthJudgeFunc == this._gameGl.NEVER) {
-                            canWrite = false
-                        } else if (depthJudgeFunc == this._gameGl.LESS) {
-                            canWrite = z_interpolated < depth
-                        } else if (depthJudgeFunc == this._gameGl.EQUAL) {
-                            canWrite = z_interpolated == depth
-                        } else if (depthJudgeFunc == this._gameGl.LEQUAL) {
-                            canWrite = z_interpolated <= depth
-                        } else if (depthJudgeFunc == this._gameGl.GREATER) {
-                            canWrite = z_interpolated > depth
-                        } else if (depthJudgeFunc == this._gameGl.GEQUAL) {
-                            canWrite = z_interpolated >= depth
-                        } else if (depthJudgeFunc == this._gameGl.ALWAYS) {
-                            canWrite = true
-                        } else {
-                            console.error("error depthJudgeFunc ")
-                        }
-                        if (canWrite && this._depthWriteEnable) {
-                            writeDepthBuffer[index] = z_interpolated
+                    if (this._openStencilTest && stencilBuffer) {
+                        let stencil = stencilBuffer[index]
+                        if (stencilFun === this._gameGl.NEVER) {
+                            stencilCanWrite = false
+                        } else if (stencilFun === this._gameGl.LESS) {
+                            stencilCanWrite = (ref & readMask) < (stencil & readMask)
+                        } else if (stencilFun === this._gameGl.EQUAL) {
+                            stencilCanWrite = (ref & readMask) === (stencil & readMask)
+                        } else if (stencilFun === this._gameGl.LEQUAL) {
+                            stencilCanWrite = (ref & readMask) <= (stencil & readMask)
+                        } else if (stencilFun === this._gameGl.GREATER) {
+                            stencilCanWrite = (ref & readMask) > (stencil & readMask)
+                        } else if (stencilFun === this._gameGl.NOTEQUAL) {
+                            stencilCanWrite = (ref & readMask) != (stencil & readMask)
+                        } else if (stencilFun === this._gameGl.GEQUAL) {
+                            stencilCanWrite = (ref & readMask) >= (stencil & readMask)
+                        } else if (stencilFun === this._gameGl.ALWAYS) {
                         }
                     }
-                    if (canWrite) {
-                        // if (debugPos && debugPos.x == x && debugPos.y == y) {
-                        //     debugger
-                        // }
 
-                        index *= 4
-                        clearShaderCachData()
-                        this._customInterpolated(varyingData, interpolateData, alpha, beta, gamma, w_reciprocal, w0, w1, w2)
-                        custom_isDiscard.v = false
-                        gl_FragColor.set_Vn(NaN, NaN, NaN, NaN)
-                        fragShader.main()
-                        // if (y > 50 && y < 120 && x > 800 && x < 1000) {
-                        //     // debugger
-                        //     if (gl_FragColor.y >= 1) {
-                        //         debugger
-                        //     }
-                        // }
+                    let stencilop = sfail
+                    // 模板测试不通过
+                    if (stencilCanWrite) {
+                        // let [alpha, beta, gamma] = GeometricOperations.computeBarycentric2D(x + 0.5, y + 0.5, x0, x1, x2, y0, y1, y2)
+                        // let [alpha, beta, gamma] = GeometricOperations.computeBarycentric2DByPre(x + 0.5, y + 0.5, preData)
+                        let [alpha, beta, gamma] = GeometricOperations.computeBarycentric2DByPre(x, y, preData)
 
+                        let w_reciprocal = 1.0 / (alpha / w0 + beta / w1 + gamma / w2)
+                        let z_interpolated = (alpha * z0) / w0 + (beta * z1) / w1 + (gamma * z2) / w2
+                        z_interpolated *= w_reciprocal
+                        // let depthCanWrite = z_interpolated >= -1 && z_interpolated <= 1
+                        let depthCanWrite = z_interpolated >= this._zNear && z_interpolated <= this._zFar
+
+                        x = Math.floor(x)
+                        y = Math.floor(y)
                         // if (y === 51 && x === 801) {
                         //     debugger
                         // }
-                        if (!custom_isDiscard.v) {
-                            let color: Vec4Data
-                            if (!isNaN(gl_FragColor.x)) {
-                                color = gl_FragColor
+
+                        // 只是进行了earlyZ 没有片元着色器的深度检测
+                        if (depthCanWrite && writeDepthBuffer && this._openDepthTest) {
+                            let depth = writeDepthBuffer[index]
+
+                            let depthJudgeFunc = this._depthJudgeFunc
+                            if (depthJudgeFunc == this._gameGl.NEVER) {
+                                depthCanWrite = false
+                            } else if (depthJudgeFunc == this._gameGl.LESS) {
+                                depthCanWrite = z_interpolated < depth
+                            } else if (depthJudgeFunc == this._gameGl.EQUAL) {
+                                depthCanWrite = z_interpolated == depth
+                            } else if (depthJudgeFunc == this._gameGl.LEQUAL) {
+                                depthCanWrite = z_interpolated <= depth
+                            } else if (depthJudgeFunc == this._gameGl.GREATER) {
+                                depthCanWrite = z_interpolated > depth
+                            } else if (depthJudgeFunc == this._gameGl.GEQUAL) {
+                                depthCanWrite = z_interpolated >= depth
+                            } else if (depthJudgeFunc == this._gameGl.ALWAYS) {
+                                depthCanWrite = true
                             } else {
-                                // 关于gl_FragData 的理解还不足 不太清楚是写入那些通道里
-                                color = gl_FragData[0]
+                                console.error("error depthJudgeFunc ")
                             }
-
-                            color.x = clamp(color.x, 0, 1)
-                            color.y = clamp(color.y, 0, 1)
-                            color.z = clamp(color.z, 0, 1)
-                            color.w = clamp(color.w, 0, 1)
-                            if (this._openBlend) {
-                                let destColor = renderFragPipeCachData.vec4Data.getData()
-                                destColor.set_Vn(frameBuffer[index], frameBuffer[index + 1], frameBuffer[index + 2], frameBuffer[index + 3])
-                                Vec4Data.multiplyScalar(destColor, destColor, 1 / 255)
-                                let srcComputerColor: Vec4Data = renderFragPipeCachData.vec4Data.getData()
-                                let destComputerColor: Vec4Data = renderFragPipeCachData.vec4Data.getData()
-                                if (this._rgbSrcBlendFunc === this._gameGl.ZERO) {
-                                    srcComputerColor.x = 0
-                                    srcComputerColor.y = 0
-                                    srcComputerColor.z = 0
-                                } else if (this._rgbSrcBlendFunc === this._gameGl.ONE) {
-                                    srcComputerColor.x = color.x
-                                    srcComputerColor.y = color.y
-                                    srcComputerColor.z = color.z
-                                    // 不变
-                                } else if (this._rgbSrcBlendFunc === this._gameGl.SRC_COLOR) {
-                                    srcComputerColor.x = color.x * color.x
-                                    srcComputerColor.y = color.y * color.y
-                                    srcComputerColor.z = color.z * color.z
-                                } else if (this._rgbSrcBlendFunc === this._gameGl.ONE_MINUS_SRC_COLOR) {
-                                    srcComputerColor.x = color.x * (1 - color.x)
-                                    srcComputerColor.y = color.y * (1 - color.y)
-                                    srcComputerColor.z = color.z * (1 - color.z)
-                                } else if (this._rgbSrcBlendFunc === this._gameGl.DST_COLOR) {
-                                    srcComputerColor.x = color.x * destColor.x
-                                    srcComputerColor.y = color.y * destColor.y
-                                    srcComputerColor.z = color.z * destColor.z
-                                } else if (this._rgbSrcBlendFunc === this._gameGl.ONE_MINUS_DST_COLOR) {
-                                    srcComputerColor.x = color.x * (1 - destColor.x)
-                                    srcComputerColor.y = color.y * (1 - destColor.y)
-                                    srcComputerColor.z = color.z * (1 - destColor.z)
-                                } else if (this._rgbSrcBlendFunc === this._gameGl.SRC_ALPHA) {
-                                    let factor = color.w
-                                    srcComputerColor.x = color.x * factor
-                                    srcComputerColor.y = color.y * factor
-                                    srcComputerColor.z = color.z * factor
-                                } else if (this._rgbSrcBlendFunc === this._gameGl.ONE_MINUS_SRC_ALPHA) {
-                                    let factor = 1 - color.w
-                                    srcComputerColor.x = color.x * factor
-                                    srcComputerColor.y = color.y * factor
-                                    srcComputerColor.z = color.z * factor
-                                } else if (this._rgbSrcBlendFunc === this._gameGl.DST_ALPHA) {
-                                    let factor = destColor.w
-                                    srcComputerColor.x = color.x * factor
-                                    srcComputerColor.y = color.y * factor
-                                    srcComputerColor.z = color.z * factor
-                                } else if (this._rgbSrcBlendFunc === this._gameGl.ONE_MINUS_DST_ALPHA) {
-                                    let factor = 1 - destColor.w
-                                    srcComputerColor.x = color.x * factor
-                                    srcComputerColor.y = color.y * factor
-                                    srcComputerColor.z = color.z * factor
-                                } else if (this._rgbSrcBlendFunc === this._gameGl.CONSTANT_COLOR) {
-                                    srcComputerColor.x = color.x * this._blendFactorColor.x
-                                    srcComputerColor.y = color.y * this._blendFactorColor.y
-                                    srcComputerColor.z = color.z * this._blendFactorColor.z
-                                } else if (this._rgbSrcBlendFunc === this._gameGl.ONE_MINUS_CONSTANT_COLOR) {
-                                    srcComputerColor.x = color.x * (1 - this._blendFactorColor.x)
-                                    srcComputerColor.y = color.y * (1 - this._blendFactorColor.y)
-                                    srcComputerColor.z = color.z * (1 - this._blendFactorColor.z)
-                                } else if (this._rgbSrcBlendFunc === this._gameGl.CONSTANT_ALPHA) {
-                                    let factor = this._blendFactorColor.w
-                                    srcComputerColor.x = color.x * factor
-                                    srcComputerColor.y = color.y * factor
-                                    srcComputerColor.z = color.z * factor
-                                } else if (this._rgbSrcBlendFunc === this._gameGl.ONE_MINUS_CONSTANT_ALPHA) {
-                                    let factor = 1 - this._blendFactorColor.w
-                                    srcComputerColor.x = color.x * factor
-                                    srcComputerColor.y = color.y * factor
-                                    srcComputerColor.z = color.z * factor
-                                } else if (this._rgbSrcBlendFunc === this._gameGl.SRC_ALPHA_SATURATE) {
-                                    let factor = Math.min(color.w, 1 - destColor.w)
-                                    srcComputerColor.x = color.x * factor
-                                    srcComputerColor.y = color.y * factor
-                                    srcComputerColor.z = color.z * factor
-                                }
-
-                                if (this._alphaSrcBlendFunc === this._gameGl.ZERO) {
-                                    srcComputerColor.w = 0
-                                } else if (this._alphaSrcBlendFunc === this._gameGl.ONE) {
-                                    srcComputerColor.w = color.w
-                                } else if (this._alphaSrcBlendFunc === this._gameGl.SRC_COLOR) {
-                                    srcComputerColor.w = color.w * color.w
-                                } else if (this._alphaSrcBlendFunc === this._gameGl.ONE_MINUS_SRC_COLOR) {
-                                    srcComputerColor.w = color.w * (1 - color.w)
-                                } else if (this._alphaSrcBlendFunc === this._gameGl.DST_COLOR) {
-                                    srcComputerColor.w = color.w * destColor.w
-                                } else if (this._alphaSrcBlendFunc === this._gameGl.ONE_MINUS_DST_COLOR) {
-                                    srcComputerColor.w = color.w * (1 - destColor.w)
-                                } else if (this._alphaSrcBlendFunc === this._gameGl.SRC_ALPHA) {
-                                    srcComputerColor.w = color.w * color.w
-                                } else if (this._alphaSrcBlendFunc === this._gameGl.ONE_MINUS_SRC_ALPHA) {
-                                    srcComputerColor.w = color.w * (1 - color.w)
-                                } else if (this._alphaSrcBlendFunc === this._gameGl.DST_ALPHA) {
-                                    srcComputerColor.w = color.w * destColor.w
-                                } else if (this._alphaSrcBlendFunc === this._gameGl.ONE_MINUS_DST_ALPHA) {
-                                    srcComputerColor.w = color.w * (1 - destColor.w)
-                                } else if (this._alphaSrcBlendFunc === this._gameGl.CONSTANT_COLOR) {
-                                    srcComputerColor.w = color.w * this._blendFactorColor.w
-                                } else if (this._alphaSrcBlendFunc === this._gameGl.ONE_MINUS_CONSTANT_COLOR) {
-                                    srcComputerColor.w = color.w * (1 - this._blendFactorColor.w)
-                                } else if (this._alphaSrcBlendFunc === this._gameGl.CONSTANT_ALPHA) {
-                                    srcComputerColor.w = color.w * this._blendFactorColor.w
-                                } else if (this._alphaSrcBlendFunc === this._gameGl.ONE_MINUS_CONSTANT_ALPHA) {
-                                    srcComputerColor.w = color.w * (1 - this._blendFactorColor.w)
-                                } else if (this._alphaSrcBlendFunc === this._gameGl.SRC_ALPHA_SATURATE) {
-                                    srcComputerColor.z = color.w
-                                }
-
-                                if (this._rgbDestBlendFunc === this._gameGl.ZERO) {
-                                    destComputerColor.x = 0
-                                    destComputerColor.y = 0
-                                    destComputerColor.z = 0
-                                } else if (this._rgbDestBlendFunc === this._gameGl.ONE) {
-                                    destComputerColor.x = destColor.x
-                                    destComputerColor.y = destColor.y
-                                    destComputerColor.z = destColor.z
-                                    // 不变
-                                } else if (this._rgbDestBlendFunc === this._gameGl.SRC_COLOR) {
-                                    destComputerColor.x = color.x * destColor.x
-                                    destComputerColor.y = color.y * destColor.y
-                                    destComputerColor.z = color.z * destColor.z
-                                } else if (this._rgbDestBlendFunc === this._gameGl.ONE_MINUS_SRC_COLOR) {
-                                    destComputerColor.x = destColor.x * (1 - color.x)
-                                    destComputerColor.y = destColor.y * (1 - color.y)
-                                    destComputerColor.z = destColor.z * (1 - color.z)
-                                } else if (this._rgbDestBlendFunc === this._gameGl.DST_COLOR) {
-                                    destComputerColor.x = destColor.x * destColor.x
-                                    destComputerColor.y = destColor.y * destColor.y
-                                    destComputerColor.z = destColor.z * destColor.z
-                                } else if (this._rgbDestBlendFunc === this._gameGl.ONE_MINUS_DST_COLOR) {
-                                    destComputerColor.x = destColor.x * (1 - destColor.x)
-                                    destComputerColor.y = destColor.y * (1 - destColor.y)
-                                    destComputerColor.z = destColor.z * (1 - destColor.z)
-                                } else if (this._rgbDestBlendFunc === this._gameGl.SRC_ALPHA) {
-                                    let factor = color.w
-                                    destComputerColor.x = destColor.x * factor
-                                    destComputerColor.y = destColor.y * factor
-                                    destComputerColor.z = destColor.z * factor
-                                } else if (this._rgbDestBlendFunc === this._gameGl.ONE_MINUS_SRC_ALPHA) {
-                                    let factor = 1 - color.w
-                                    destComputerColor.x = destColor.x * factor
-                                    destComputerColor.y = destColor.y * factor
-                                    destComputerColor.z = destColor.z * factor
-                                } else if (this._rgbDestBlendFunc === this._gameGl.DST_ALPHA) {
-                                    let factor = destColor.w
-                                    destComputerColor.x = destColor.x * factor
-                                    destComputerColor.y = destColor.y * factor
-                                    destComputerColor.z = destColor.z * factor
-                                } else if (this._rgbDestBlendFunc === this._gameGl.ONE_MINUS_DST_ALPHA) {
-                                    let factor = 1 - destColor.w
-                                    destComputerColor.x = destColor.x * factor
-                                    destComputerColor.y = destColor.y * factor
-                                    destComputerColor.z = destColor.z * factor
-                                } else if (this._rgbDestBlendFunc === this._gameGl.CONSTANT_COLOR) {
-                                    destComputerColor.x = destColor.x * this._blendFactorColor.x
-                                    destComputerColor.y = destColor.y * this._blendFactorColor.y
-                                    destComputerColor.z = destColor.z * this._blendFactorColor.z
-                                } else if (this._rgbDestBlendFunc === this._gameGl.ONE_MINUS_CONSTANT_COLOR) {
-                                    destComputerColor.x = destColor.x * (1 - this._blendFactorColor.x)
-                                    destComputerColor.y = destColor.y * (1 - this._blendFactorColor.y)
-                                    destComputerColor.z = destColor.z * (1 - this._blendFactorColor.z)
-                                } else if (this._rgbDestBlendFunc === this._gameGl.CONSTANT_ALPHA) {
-                                    let factor = this._blendFactorColor.w
-                                    destComputerColor.x = destColor.x * factor
-                                    destComputerColor.y = destColor.y * factor
-                                    destComputerColor.z = destColor.z * factor
-                                } else if (this._rgbDestBlendFunc === this._gameGl.ONE_MINUS_CONSTANT_ALPHA) {
-                                    let factor = 1 - this._blendFactorColor.w
-                                    destComputerColor.x = destColor.x * factor
-                                    destComputerColor.y = destColor.y * factor
-                                    destComputerColor.z = destColor.z * factor
-                                } else if (this._rgbDestBlendFunc === this._gameGl.SRC_ALPHA_SATURATE) {
-                                    let factor = Math.min(color.w, 1 - destColor.w)
-                                    destComputerColor.x = destColor.x * factor
-                                    destComputerColor.y = destColor.y * factor
-                                    destComputerColor.z = destColor.z * factor
-                                }
-
-                                if (this._alphaDestBlendFunc === this._gameGl.ZERO) {
-                                    destComputerColor.w = 0
-                                } else if (this._alphaDestBlendFunc === this._gameGl.ONE) {
-                                    destComputerColor.w = destColor.w
-                                } else if (this._alphaDestBlendFunc === this._gameGl.SRC_COLOR) {
-                                    destComputerColor.w = destColor.w * color.w
-                                } else if (this._alphaDestBlendFunc === this._gameGl.ONE_MINUS_SRC_COLOR) {
-                                    destComputerColor.w = destColor.w * (1 - color.w)
-                                } else if (this._alphaDestBlendFunc === this._gameGl.DST_COLOR) {
-                                    destComputerColor.w = destColor.w * destColor.w
-                                } else if (this._alphaDestBlendFunc === this._gameGl.ONE_MINUS_DST_COLOR) {
-                                    destComputerColor.w = destColor.w * (1 - destColor.w)
-                                } else if (this._alphaDestBlendFunc === this._gameGl.SRC_ALPHA) {
-                                    destComputerColor.w = destColor.w * color.w
-                                } else if (this._alphaDestBlendFunc === this._gameGl.ONE_MINUS_SRC_ALPHA) {
-                                    destComputerColor.w = destColor.w * (1 - color.w)
-                                } else if (this._alphaDestBlendFunc === this._gameGl.DST_ALPHA) {
-                                    destComputerColor.w = destColor.w * destColor.w
-                                } else if (this._alphaDestBlendFunc === this._gameGl.ONE_MINUS_DST_ALPHA) {
-                                    destComputerColor.w = destColor.w * (1 - destColor.w)
-                                } else if (this._alphaDestBlendFunc === this._gameGl.CONSTANT_COLOR) {
-                                    destComputerColor.w = destColor.w * this._blendFactorColor.w
-                                } else if (this._alphaDestBlendFunc === this._gameGl.ONE_MINUS_CONSTANT_COLOR) {
-                                    destComputerColor.w = destColor.w * (1 - this._blendFactorColor.w)
-                                } else if (this._alphaDestBlendFunc === this._gameGl.CONSTANT_ALPHA) {
-                                    destComputerColor.w = destColor.w * this._blendFactorColor.w
-                                } else if (this._alphaDestBlendFunc === this._gameGl.ONE_MINUS_CONSTANT_ALPHA) {
-                                    destComputerColor.w = destColor.w * (1 - this._blendFactorColor.w)
-                                } else if (this._alphaDestBlendFunc === this._gameGl.SRC_ALPHA_SATURATE) {
-                                    destComputerColor.z = destColor.w
-                                }
-
-                                if (this._rgbComputerBlendFunc === this._gameGl.FUNC_ADD) {
-                                    color.x = srcComputerColor.x + destComputerColor.x
-                                    color.y = srcComputerColor.y + destComputerColor.y
-                                    color.z = srcComputerColor.z + destComputerColor.z
-                                } else if (this._rgbComputerBlendFunc === this._gameGl.FUNC_SUBTRACT) {
-                                    color.x = srcComputerColor.x - destComputerColor.x
-                                    color.y = srcComputerColor.y - destComputerColor.y
-                                    color.z = srcComputerColor.z - destComputerColor.z
-                                } else if (this._rgbComputerBlendFunc === this._gameGl.FUNC_REVERSE_SUBTRACT) {
-                                    color.x = destComputerColor.x - srcComputerColor.x
-                                    color.y = destComputerColor.y - srcComputerColor.y
-                                    color.z = destComputerColor.z - srcComputerColor.z
-                                }
-
-                                if (this._alphaComputerBlendFunc === this._gameGl.FUNC_ADD) {
-                                    color.w = srcComputerColor.w + destComputerColor.w
-                                } else if (this._alphaComputerBlendFunc === this._gameGl.FUNC_SUBTRACT) {
-                                    color.w = srcComputerColor.w - destComputerColor.w
-                                } else if (this._alphaComputerBlendFunc === this._gameGl.FUNC_REVERSE_SUBTRACT) {
-                                    color.w = destComputerColor.w - srcComputerColor.w
-                                }
-                            }
-
-                            // if (
-                            //     color.x > 0.5 && color.x < 0.7 &&
-                            //     color.y > 0.5 && color.y < 0.7 &&
-                            //     color.z > 0.5 && color.z < 0.7 &&
-                            //     this._frameBuffer[index + 1] == 150 &&
-                            //     this._frameBuffer[index + 2] == 170
-                            // ) {
-                            //     debugger
-                            // }
-                            if (this._colorRWriteEnable) {
-                                frameBuffer[index] = color.x * 255
-                            }
-                            if (this._colorGWriteEnable) {
-                                frameBuffer[index + 1] = color.y * 255
-                            }
-                            if (this._colorBWriteEnable) {
-                                frameBuffer[index + 2] = color.z * 255
-                            }
-                            if (this._colorAWriteEnable) {
-                                frameBuffer[index + 3] = color.w * 255
+                            if (depthCanWrite && this._depthWriteEnable) {
+                                writeDepthBuffer[index] = z_interpolated
                             }
                         }
+                        if (depthCanWrite) {
+                            // 因为是early 所以没有考虑disacard和片段着色对齐的修改
+                            stencilop = zpass
+                            // if (debugPos && debugPos.x == x && debugPos.y == y) {
+                            //     debugger
+                            // }
+
+                            index *= 4
+                            clearShaderCachData()
+                            this._customInterpolated(varyingData, interpolateData, alpha, beta, gamma, w_reciprocal, w0, w1, w2)
+                            custom_isDiscard.v = false
+                            gl_FragColor.set_Vn(NaN, NaN, NaN, NaN)
+                            fragShader.main()
+                            // if (y > 50 && y < 120 && x > 800 && x < 1000) {
+                            //     // debugger
+                            //     if (gl_FragColor.y >= 1) {
+                            //         debugger
+                            //     }
+                            // }
+
+                            // if (y === 51 && x === 801) {
+                            //     debugger
+                            // }
+                            if (!custom_isDiscard.v) {
+                                let color: Vec4Data
+                                if (!isNaN(gl_FragColor.x)) {
+                                    color = gl_FragColor
+                                } else {
+                                    // 关于gl_FragData 的理解还不足 不太清楚是写入那些通道里
+                                    color = gl_FragData[0]
+                                }
+
+                                color.x = clamp(color.x, 0, 1)
+                                color.y = clamp(color.y, 0, 1)
+                                color.z = clamp(color.z, 0, 1)
+                                color.w = clamp(color.w, 0, 1)
+                                if (this._openBlend) {
+                                    let destColor = renderFragPipeCachData.vec4Data.getData()
+                                    destColor.set_Vn(
+                                        frameBuffer[index],
+                                        frameBuffer[index + 1],
+                                        frameBuffer[index + 2],
+                                        frameBuffer[index + 3]
+                                    )
+                                    Vec4Data.multiplyScalar(destColor, destColor, 1 / 255)
+                                    let srcComputerColor: Vec4Data = renderFragPipeCachData.vec4Data.getData()
+                                    let destComputerColor: Vec4Data = renderFragPipeCachData.vec4Data.getData()
+                                    if (this._rgbSrcBlendFunc === this._gameGl.ZERO) {
+                                        srcComputerColor.x = 0
+                                        srcComputerColor.y = 0
+                                        srcComputerColor.z = 0
+                                    } else if (this._rgbSrcBlendFunc === this._gameGl.ONE) {
+                                        srcComputerColor.x = color.x
+                                        srcComputerColor.y = color.y
+                                        srcComputerColor.z = color.z
+                                        // 不变
+                                    } else if (this._rgbSrcBlendFunc === this._gameGl.SRC_COLOR) {
+                                        srcComputerColor.x = color.x * color.x
+                                        srcComputerColor.y = color.y * color.y
+                                        srcComputerColor.z = color.z * color.z
+                                    } else if (this._rgbSrcBlendFunc === this._gameGl.ONE_MINUS_SRC_COLOR) {
+                                        srcComputerColor.x = color.x * (1 - color.x)
+                                        srcComputerColor.y = color.y * (1 - color.y)
+                                        srcComputerColor.z = color.z * (1 - color.z)
+                                    } else if (this._rgbSrcBlendFunc === this._gameGl.DST_COLOR) {
+                                        srcComputerColor.x = color.x * destColor.x
+                                        srcComputerColor.y = color.y * destColor.y
+                                        srcComputerColor.z = color.z * destColor.z
+                                    } else if (this._rgbSrcBlendFunc === this._gameGl.ONE_MINUS_DST_COLOR) {
+                                        srcComputerColor.x = color.x * (1 - destColor.x)
+                                        srcComputerColor.y = color.y * (1 - destColor.y)
+                                        srcComputerColor.z = color.z * (1 - destColor.z)
+                                    } else if (this._rgbSrcBlendFunc === this._gameGl.SRC_ALPHA) {
+                                        let factor = color.w
+                                        srcComputerColor.x = color.x * factor
+                                        srcComputerColor.y = color.y * factor
+                                        srcComputerColor.z = color.z * factor
+                                    } else if (this._rgbSrcBlendFunc === this._gameGl.ONE_MINUS_SRC_ALPHA) {
+                                        let factor = 1 - color.w
+                                        srcComputerColor.x = color.x * factor
+                                        srcComputerColor.y = color.y * factor
+                                        srcComputerColor.z = color.z * factor
+                                    } else if (this._rgbSrcBlendFunc === this._gameGl.DST_ALPHA) {
+                                        let factor = destColor.w
+                                        srcComputerColor.x = color.x * factor
+                                        srcComputerColor.y = color.y * factor
+                                        srcComputerColor.z = color.z * factor
+                                    } else if (this._rgbSrcBlendFunc === this._gameGl.ONE_MINUS_DST_ALPHA) {
+                                        let factor = 1 - destColor.w
+                                        srcComputerColor.x = color.x * factor
+                                        srcComputerColor.y = color.y * factor
+                                        srcComputerColor.z = color.z * factor
+                                    } else if (this._rgbSrcBlendFunc === this._gameGl.CONSTANT_COLOR) {
+                                        srcComputerColor.x = color.x * this._blendFactorColor.x
+                                        srcComputerColor.y = color.y * this._blendFactorColor.y
+                                        srcComputerColor.z = color.z * this._blendFactorColor.z
+                                    } else if (this._rgbSrcBlendFunc === this._gameGl.ONE_MINUS_CONSTANT_COLOR) {
+                                        srcComputerColor.x = color.x * (1 - this._blendFactorColor.x)
+                                        srcComputerColor.y = color.y * (1 - this._blendFactorColor.y)
+                                        srcComputerColor.z = color.z * (1 - this._blendFactorColor.z)
+                                    } else if (this._rgbSrcBlendFunc === this._gameGl.CONSTANT_ALPHA) {
+                                        let factor = this._blendFactorColor.w
+                                        srcComputerColor.x = color.x * factor
+                                        srcComputerColor.y = color.y * factor
+                                        srcComputerColor.z = color.z * factor
+                                    } else if (this._rgbSrcBlendFunc === this._gameGl.ONE_MINUS_CONSTANT_ALPHA) {
+                                        let factor = 1 - this._blendFactorColor.w
+                                        srcComputerColor.x = color.x * factor
+                                        srcComputerColor.y = color.y * factor
+                                        srcComputerColor.z = color.z * factor
+                                    } else if (this._rgbSrcBlendFunc === this._gameGl.SRC_ALPHA_SATURATE) {
+                                        let factor = Math.min(color.w, 1 - destColor.w)
+                                        srcComputerColor.x = color.x * factor
+                                        srcComputerColor.y = color.y * factor
+                                        srcComputerColor.z = color.z * factor
+                                    }
+
+                                    if (this._alphaSrcBlendFunc === this._gameGl.ZERO) {
+                                        srcComputerColor.w = 0
+                                    } else if (this._alphaSrcBlendFunc === this._gameGl.ONE) {
+                                        srcComputerColor.w = color.w
+                                    } else if (this._alphaSrcBlendFunc === this._gameGl.SRC_COLOR) {
+                                        srcComputerColor.w = color.w * color.w
+                                    } else if (this._alphaSrcBlendFunc === this._gameGl.ONE_MINUS_SRC_COLOR) {
+                                        srcComputerColor.w = color.w * (1 - color.w)
+                                    } else if (this._alphaSrcBlendFunc === this._gameGl.DST_COLOR) {
+                                        srcComputerColor.w = color.w * destColor.w
+                                    } else if (this._alphaSrcBlendFunc === this._gameGl.ONE_MINUS_DST_COLOR) {
+                                        srcComputerColor.w = color.w * (1 - destColor.w)
+                                    } else if (this._alphaSrcBlendFunc === this._gameGl.SRC_ALPHA) {
+                                        srcComputerColor.w = color.w * color.w
+                                    } else if (this._alphaSrcBlendFunc === this._gameGl.ONE_MINUS_SRC_ALPHA) {
+                                        srcComputerColor.w = color.w * (1 - color.w)
+                                    } else if (this._alphaSrcBlendFunc === this._gameGl.DST_ALPHA) {
+                                        srcComputerColor.w = color.w * destColor.w
+                                    } else if (this._alphaSrcBlendFunc === this._gameGl.ONE_MINUS_DST_ALPHA) {
+                                        srcComputerColor.w = color.w * (1 - destColor.w)
+                                    } else if (this._alphaSrcBlendFunc === this._gameGl.CONSTANT_COLOR) {
+                                        srcComputerColor.w = color.w * this._blendFactorColor.w
+                                    } else if (this._alphaSrcBlendFunc === this._gameGl.ONE_MINUS_CONSTANT_COLOR) {
+                                        srcComputerColor.w = color.w * (1 - this._blendFactorColor.w)
+                                    } else if (this._alphaSrcBlendFunc === this._gameGl.CONSTANT_ALPHA) {
+                                        srcComputerColor.w = color.w * this._blendFactorColor.w
+                                    } else if (this._alphaSrcBlendFunc === this._gameGl.ONE_MINUS_CONSTANT_ALPHA) {
+                                        srcComputerColor.w = color.w * (1 - this._blendFactorColor.w)
+                                    } else if (this._alphaSrcBlendFunc === this._gameGl.SRC_ALPHA_SATURATE) {
+                                        srcComputerColor.z = color.w
+                                    }
+
+                                    if (this._rgbDestBlendFunc === this._gameGl.ZERO) {
+                                        destComputerColor.x = 0
+                                        destComputerColor.y = 0
+                                        destComputerColor.z = 0
+                                    } else if (this._rgbDestBlendFunc === this._gameGl.ONE) {
+                                        destComputerColor.x = destColor.x
+                                        destComputerColor.y = destColor.y
+                                        destComputerColor.z = destColor.z
+                                        // 不变
+                                    } else if (this._rgbDestBlendFunc === this._gameGl.SRC_COLOR) {
+                                        destComputerColor.x = color.x * destColor.x
+                                        destComputerColor.y = color.y * destColor.y
+                                        destComputerColor.z = color.z * destColor.z
+                                    } else if (this._rgbDestBlendFunc === this._gameGl.ONE_MINUS_SRC_COLOR) {
+                                        destComputerColor.x = destColor.x * (1 - color.x)
+                                        destComputerColor.y = destColor.y * (1 - color.y)
+                                        destComputerColor.z = destColor.z * (1 - color.z)
+                                    } else if (this._rgbDestBlendFunc === this._gameGl.DST_COLOR) {
+                                        destComputerColor.x = destColor.x * destColor.x
+                                        destComputerColor.y = destColor.y * destColor.y
+                                        destComputerColor.z = destColor.z * destColor.z
+                                    } else if (this._rgbDestBlendFunc === this._gameGl.ONE_MINUS_DST_COLOR) {
+                                        destComputerColor.x = destColor.x * (1 - destColor.x)
+                                        destComputerColor.y = destColor.y * (1 - destColor.y)
+                                        destComputerColor.z = destColor.z * (1 - destColor.z)
+                                    } else if (this._rgbDestBlendFunc === this._gameGl.SRC_ALPHA) {
+                                        let factor = color.w
+                                        destComputerColor.x = destColor.x * factor
+                                        destComputerColor.y = destColor.y * factor
+                                        destComputerColor.z = destColor.z * factor
+                                    } else if (this._rgbDestBlendFunc === this._gameGl.ONE_MINUS_SRC_ALPHA) {
+                                        let factor = 1 - color.w
+                                        destComputerColor.x = destColor.x * factor
+                                        destComputerColor.y = destColor.y * factor
+                                        destComputerColor.z = destColor.z * factor
+                                    } else if (this._rgbDestBlendFunc === this._gameGl.DST_ALPHA) {
+                                        let factor = destColor.w
+                                        destComputerColor.x = destColor.x * factor
+                                        destComputerColor.y = destColor.y * factor
+                                        destComputerColor.z = destColor.z * factor
+                                    } else if (this._rgbDestBlendFunc === this._gameGl.ONE_MINUS_DST_ALPHA) {
+                                        let factor = 1 - destColor.w
+                                        destComputerColor.x = destColor.x * factor
+                                        destComputerColor.y = destColor.y * factor
+                                        destComputerColor.z = destColor.z * factor
+                                    } else if (this._rgbDestBlendFunc === this._gameGl.CONSTANT_COLOR) {
+                                        destComputerColor.x = destColor.x * this._blendFactorColor.x
+                                        destComputerColor.y = destColor.y * this._blendFactorColor.y
+                                        destComputerColor.z = destColor.z * this._blendFactorColor.z
+                                    } else if (this._rgbDestBlendFunc === this._gameGl.ONE_MINUS_CONSTANT_COLOR) {
+                                        destComputerColor.x = destColor.x * (1 - this._blendFactorColor.x)
+                                        destComputerColor.y = destColor.y * (1 - this._blendFactorColor.y)
+                                        destComputerColor.z = destColor.z * (1 - this._blendFactorColor.z)
+                                    } else if (this._rgbDestBlendFunc === this._gameGl.CONSTANT_ALPHA) {
+                                        let factor = this._blendFactorColor.w
+                                        destComputerColor.x = destColor.x * factor
+                                        destComputerColor.y = destColor.y * factor
+                                        destComputerColor.z = destColor.z * factor
+                                    } else if (this._rgbDestBlendFunc === this._gameGl.ONE_MINUS_CONSTANT_ALPHA) {
+                                        let factor = 1 - this._blendFactorColor.w
+                                        destComputerColor.x = destColor.x * factor
+                                        destComputerColor.y = destColor.y * factor
+                                        destComputerColor.z = destColor.z * factor
+                                    } else if (this._rgbDestBlendFunc === this._gameGl.SRC_ALPHA_SATURATE) {
+                                        let factor = Math.min(color.w, 1 - destColor.w)
+                                        destComputerColor.x = destColor.x * factor
+                                        destComputerColor.y = destColor.y * factor
+                                        destComputerColor.z = destColor.z * factor
+                                    }
+
+                                    if (this._alphaDestBlendFunc === this._gameGl.ZERO) {
+                                        destComputerColor.w = 0
+                                    } else if (this._alphaDestBlendFunc === this._gameGl.ONE) {
+                                        destComputerColor.w = destColor.w
+                                    } else if (this._alphaDestBlendFunc === this._gameGl.SRC_COLOR) {
+                                        destComputerColor.w = destColor.w * color.w
+                                    } else if (this._alphaDestBlendFunc === this._gameGl.ONE_MINUS_SRC_COLOR) {
+                                        destComputerColor.w = destColor.w * (1 - color.w)
+                                    } else if (this._alphaDestBlendFunc === this._gameGl.DST_COLOR) {
+                                        destComputerColor.w = destColor.w * destColor.w
+                                    } else if (this._alphaDestBlendFunc === this._gameGl.ONE_MINUS_DST_COLOR) {
+                                        destComputerColor.w = destColor.w * (1 - destColor.w)
+                                    } else if (this._alphaDestBlendFunc === this._gameGl.SRC_ALPHA) {
+                                        destComputerColor.w = destColor.w * color.w
+                                    } else if (this._alphaDestBlendFunc === this._gameGl.ONE_MINUS_SRC_ALPHA) {
+                                        destComputerColor.w = destColor.w * (1 - color.w)
+                                    } else if (this._alphaDestBlendFunc === this._gameGl.DST_ALPHA) {
+                                        destComputerColor.w = destColor.w * destColor.w
+                                    } else if (this._alphaDestBlendFunc === this._gameGl.ONE_MINUS_DST_ALPHA) {
+                                        destComputerColor.w = destColor.w * (1 - destColor.w)
+                                    } else if (this._alphaDestBlendFunc === this._gameGl.CONSTANT_COLOR) {
+                                        destComputerColor.w = destColor.w * this._blendFactorColor.w
+                                    } else if (this._alphaDestBlendFunc === this._gameGl.ONE_MINUS_CONSTANT_COLOR) {
+                                        destComputerColor.w = destColor.w * (1 - this._blendFactorColor.w)
+                                    } else if (this._alphaDestBlendFunc === this._gameGl.CONSTANT_ALPHA) {
+                                        destComputerColor.w = destColor.w * this._blendFactorColor.w
+                                    } else if (this._alphaDestBlendFunc === this._gameGl.ONE_MINUS_CONSTANT_ALPHA) {
+                                        destComputerColor.w = destColor.w * (1 - this._blendFactorColor.w)
+                                    } else if (this._alphaDestBlendFunc === this._gameGl.SRC_ALPHA_SATURATE) {
+                                        destComputerColor.z = destColor.w
+                                    }
+
+                                    if (this._rgbComputerBlendFunc === this._gameGl.FUNC_ADD) {
+                                        color.x = srcComputerColor.x + destComputerColor.x
+                                        color.y = srcComputerColor.y + destComputerColor.y
+                                        color.z = srcComputerColor.z + destComputerColor.z
+                                    } else if (this._rgbComputerBlendFunc === this._gameGl.FUNC_SUBTRACT) {
+                                        color.x = srcComputerColor.x - destComputerColor.x
+                                        color.y = srcComputerColor.y - destComputerColor.y
+                                        color.z = srcComputerColor.z - destComputerColor.z
+                                    } else if (this._rgbComputerBlendFunc === this._gameGl.FUNC_REVERSE_SUBTRACT) {
+                                        color.x = destComputerColor.x - srcComputerColor.x
+                                        color.y = destComputerColor.y - srcComputerColor.y
+                                        color.z = destComputerColor.z - srcComputerColor.z
+                                    }
+
+                                    if (this._alphaComputerBlendFunc === this._gameGl.FUNC_ADD) {
+                                        color.w = srcComputerColor.w + destComputerColor.w
+                                    } else if (this._alphaComputerBlendFunc === this._gameGl.FUNC_SUBTRACT) {
+                                        color.w = srcComputerColor.w - destComputerColor.w
+                                    } else if (this._alphaComputerBlendFunc === this._gameGl.FUNC_REVERSE_SUBTRACT) {
+                                        color.w = destComputerColor.w - srcComputerColor.w
+                                    }
+                                }
+
+                                // if (
+                                //     color.x > 0.5 && color.x < 0.7 &&
+                                //     color.y > 0.5 && color.y < 0.7 &&
+                                //     color.z > 0.5 && color.z < 0.7 &&
+                                //     this._frameBuffer[index + 1] == 150 &&
+                                //     this._frameBuffer[index + 2] == 170
+                                // ) {
+                                //     debugger
+                                // }
+                                if (this._colorRWriteEnable) {
+                                    frameBuffer[index] = color.x * 255
+                                }
+                                if (this._colorGWriteEnable) {
+                                    frameBuffer[index + 1] = color.y * 255
+                                }
+                                if (this._colorBWriteEnable) {
+                                    frameBuffer[index + 2] = color.z * 255
+                                }
+                                if (this._colorAWriteEnable) {
+                                    frameBuffer[index + 3] = color.w * 255
+                                }
+                            }
+                        } else {
+                            stencilop = zfail
+                        }
+                    }
+                    if (stencilBuffer) {
+                        let oldVal = stencilBuffer[index]
+                        let stencil_new_value = oldVal
+                        if (stencilop === this._gameGl.KEEP) {
+                        } else if (stencilop === this._gameGl.ZERO) {
+                            stencil_new_value = 0
+                        } else if (stencilop === this._gameGl.REPLACE) {
+                            stencil_new_value = ref
+                        } else if (stencilop === this._gameGl.INCR) {
+                            stencil_new_value = Math.min(stencil_new_value + 1, 0xff)
+                        } else if (stencilop === this._gameGl.INCR_WRAP) {
+                            stencil_new_value++
+                            if (stencil_new_value > 0xff) {
+                                stencil_new_value = 0
+                            }
+                        } else if (stencilop === this._gameGl.DECR) {
+                            stencil_new_value = Math.max(stencil_new_value - 1, 0x00)
+                        } else if (stencilop === this._gameGl.DECR_WRAP) {
+                            stencil_new_value--
+                            if (stencil_new_value < 0) {
+                                stencil_new_value = 0xff
+                            }
+                        } else if (stencilop === this._gameGl.INVERT) {
+                            stencil_new_value = ~stencil_new_value
+                        }
+                        stencilBuffer[index] = (stencil_new_value & writeMask) | (oldVal & ~writeMask)
                     }
                 }
             }
@@ -2890,7 +3006,7 @@ export class CpuRenderingContext {
         } else if (cap === this._gameGl.SCISSOR_TEST) {
             this._openScissorTest = true
         } else if (cap === this._gameGl.STENCIL_TEST) {
-            console.error("STENCIL_TEST 还未实现")
+            this._openStencilTest = true
         } else {
             renderError("this._gameGl.INVALID_VALUE  " + this._gameGl.INVALID_VALUE + " in enable ")
         }
@@ -2914,7 +3030,7 @@ export class CpuRenderingContext {
         } else if (cap === this._gameGl.SCISSOR_TEST) {
             this._openScissorTest = false
         } else if (cap === this._gameGl.STENCIL_TEST) {
-            console.error("STENCIL_TEST 还未实现")
+            this._openStencilTest = false
         } else {
             renderError("this._gameGl.INVALID_VALUE  " + this._gameGl.INVALID_VALUE + " in disable ")
         }
@@ -4317,26 +4433,54 @@ export class CpuRenderingContext {
     }
 
     stencilFunc(func: GLenum, ref: GLint, mask: GLuint): void {
-        console.error("stencilFunc 不是很懂 暂时不做")
+        this.stencilFuncSeparate(this._gameGl.FRONT_AND_BACK, func, ref, mask)
     }
+
     stencilFuncSeparate(face: GLenum, func: GLenum, ref: GLint, mask: GLuint): void {
-        console.error("stencilFuncSeparate 不是很懂 暂时不做")
+        if (face === this._gameGl.FRONT_AND_BACK) {
+            this._stencilFrontData.stencilFunc(func, ref, mask)
+            this._stencilBackData.stencilFunc(func, ref, mask)
+        } else if (face === this._gameGl.FRONT) {
+            this._stencilFrontData.stencilFunc(func, ref, mask)
+        } else if (face === this._gameGl.BACK) {
+            this._stencilBackData.stencilFunc(func, ref, mask)
+        }
     }
-    stencilMask(mask: GLuint): void {
-        console.error("stencilMask 不是很懂 暂时不做")
-    }
-    stencilMaskSeparate(face: GLenum, mask: GLuint): void {
-        console.error("stencilMaskSeparate 不是很懂 暂时不做")
-    }
+
     stencilOp(fail: GLenum, zfail: GLenum, zpass: GLenum): void {
-        console.error("stencilOp 不是很懂 暂时不做")
+        this.stencilOpSeparate(this._gameGl.FRONT_AND_BACK, fail, zfail, zpass)
     }
+
     stencilOpSeparate(face: GLenum, fail: GLenum, zfail: GLenum, zpass: GLenum): void {
-        console.error("stencilOpSeparate 不是很懂 暂时不做")
+        if (face === this._gameGl.FRONT_AND_BACK) {
+            this._stencilFrontData.stencilOp(fail, zfail, zpass)
+            this._stencilBackData.stencilOp(fail, zfail, zpass)
+        } else if (face === this._gameGl.FRONT) {
+            this._stencilFrontData.stencilOp(fail, zfail, zpass)
+        } else if (face === this._gameGl.BACK) {
+            this._stencilBackData.stencilOp(fail, zfail, zpass)
+        }
     }
+
+    stencilMask(mask: GLuint): void {
+        this.stencilMaskSeparate(this._gameGl.FRONT_AND_BACK, mask)
+    }
+
+    stencilMaskSeparate(face: GLenum, mask: GLuint): void {
+        if (face === this._gameGl.FRONT_AND_BACK) {
+            this._stencilFrontData.stencilMask(mask)
+            this._stencilBackData.stencilMask(mask)
+        } else if (face === this._gameGl.FRONT) {
+            this._stencilFrontData.stencilMask(mask)
+        } else if (face === this._gameGl.BACK) {
+            this._stencilBackData.stencilMask(mask)
+        }
+    }
+
     blendColor(red: GLclampf, green: GLclampf, blue: GLclampf, alpha: GLclampf): void {
         this._blendFactorColor = new Vec4Data(clamp(red, 0, 1), clamp(green, 0, 1), clamp(blue, 0, 1), clamp(alpha, 0, 1))
     }
+
     blendEquation(mode: GLenum): void {
         if (mode === this._gameGl.FUNC_ADD || mode === this._gameGl.FUNC_SUBTRACT || mode === this._gameGl.FUNC_REVERSE_SUBTRACT) {
             this._rgbComputerBlendFunc = mode
@@ -4494,8 +4638,7 @@ export class CpuRenderingContext {
     }
 
     clearStencil(s: GLint): void {
-        // debugger
-        console.warn("clearStencil 还未实现")
+        this._defaultStencil = s
     }
 }
 
