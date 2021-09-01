@@ -1803,7 +1803,7 @@ export function mat4_M3(m00: Mat3Data): Mat4Data {
     data.m12 = 0
     data.m13 = 0
     data.m14 = 0
-    data.m15 = 1
+    data.m15 = 0
 
     return data
 }
