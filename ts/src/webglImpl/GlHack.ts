@@ -16,8 +16,8 @@ let debugCpuRender = win.glDebugMode == GlDebugMode.debugCpuRender
 let createTsImplGlslFile = win.glDebugMode == GlDebugMode.createTsImplGlslFile
 let replaceShaderSource = win.glDebugMode == GlDebugMode.replaceShaderSource
 
-let compilerTsFiles: Map<string, string> = new Map()
-let compilerFactGlslFiles: Map<string, string> = new Map()
+let newTsFile = 0
+let waitDownloadCompilerTsFile: Map<string, string> = new Map()
 let testShaderSourceNum = 0
 // let testShaderBegin: number = 62
 let testShaderBegin: number = 0
@@ -119,33 +119,12 @@ export function replaceWebglFunc(gl: any) {
                                 let shaderSource: string = info[1]
 
                                 console.log(testShaderSourceNum)
-                                let interpreterData = GLSLInterpreter.interpreter(shaderSource)
-                                compilerTsFiles.set(interpreterData[0], interpreterData[1])
-                            }
-                        } else if (funcKey === "drawElements" || funcKey === "drawArrays") {
-                            if (compilerTsFiles.size > 0) {
-                                // 直接判断输出drawElements之前的转译脚本
-                                var zip = new win.JSZip()
-                                let readonlyStr = ""
-                                let importStr = ""
-                                compilerTsFiles.forEach((value: string, key: string) => {
-                                    zip.file(`Impl_${key}.ts`, value)
-                                    readonlyStr += `    static readonly Impl_${key} = Impl_${key}\n`
-                                    readonlyStr += `    static readonly glsl_${key} = glsl_${key}\n`
-                                    importStr += `import { glsl_${key}, Impl_${key} } from "./Impl_${key}"\n`
-                                })
-
-                                let ShaderManagerStr = importStr + `export class ShaderManager {\n` + readonlyStr
-                                ShaderManagerStr += `    static getConstruct(source: string) {\n`
-                                ShaderManagerStr += `        return (<any>this)[source]\n`
-                                ShaderManagerStr += `    }\n`
-                                ShaderManagerStr += "}\n"
-                                zip.file(`ShaderManager.ts`, ShaderManagerStr)
-
-                                zip.generateAsync({ type: "blob" }).then((content: any) => {
-                                    fileSaveAs(content, `tsScript.zip`)
-                                })
-                                compilerTsFiles.clear()
+                                let hash = SparkMD5.hash(shaderSource)
+                                if (!waitDownloadCompilerTsFile.has(hash)) {
+                                    let interpreterData = GLSLInterpreter.interpreter(shaderSource, hash)
+                                    newTsFile++
+                                    waitDownloadCompilerTsFile.set(hash, interpreterData[0])
+                                }
                             }
                         }
                     } else if (replaceShaderSource) {
@@ -179,3 +158,31 @@ export function replaceWebglFunc(gl: any) {
         }
     }
 }
+
+export function outputTsShader() {
+    if (newTsFile > 0) {
+        // 直接判断输出drawElements之前的转译脚本
+        var zip = new win.JSZip()
+        let readonlyStr = ""
+        let importStr = ""
+        waitDownloadCompilerTsFile.forEach((value: string, key: string) => {
+            zip.file(`Impl_${key}.ts`, value)
+            readonlyStr += `    static readonly Impl_${key} = Impl_${key}\n`
+            readonlyStr += `    static readonly glsl_${key} = glsl_${key}\n`
+            importStr += `import { glsl_${key}, Impl_${key} } from "./Impl_${key}"\n`
+        })
+
+        let ShaderManagerStr = importStr + `export class ShaderManager {\n` + readonlyStr
+        ShaderManagerStr += `    static getConstruct(source: string) {\n`
+        ShaderManagerStr += `        return (<any>this)[source]\n`
+        ShaderManagerStr += `    }\n`
+        ShaderManagerStr += "}\n"
+        zip.file(`ShaderManager.ts`, ShaderManagerStr)
+
+        zip.generateAsync({ type: "blob" }).then((content: any) => {
+            fileSaveAs(content, `tsScript.zip`)
+        })
+        newTsFile = 0
+    }
+}
+win.outputTsShader = outputTsShader

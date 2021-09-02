@@ -1006,13 +1006,15 @@ export class CpuRenderingContext {
 
     private _cusetomUniformDataBefore(location: WebGLUniformLocation | null) {
         let program
-        if (this._useProgram === null) {
-            renderError("this._gameGl.INVALID_OPERATION   " + this._gameGl.INVALID_OPERATION + " in uniform1f ")
-        } else {
-            if (this._useProgram.linkStatus) {
-                program = this._useProgram
-            } else {
+        if (location !== null) {
+            if (this._useProgram === null) {
                 renderError("this._gameGl.INVALID_OPERATION   " + this._gameGl.INVALID_OPERATION + " in uniform1f ")
+            } else {
+                if (this._useProgram.linkStatus) {
+                    program = this._useProgram
+                } else {
+                    renderError("this._gameGl.INVALID_OPERATION   " + this._gameGl.INVALID_OPERATION + " in uniform1f ")
+                }
             }
         }
         return program
@@ -1754,6 +1756,7 @@ export class CpuRenderingContext {
         let drawOver = false
         this.customLogUseShaderHash()
         this.customPreCalBeforeDraw()
+        console.log("beginIndex: " + beginIndex + " endIndex: " + endIndex)
 
         let linkVertexShader = this._useProgram.linkVertexShader
         switch (mode) {
@@ -1789,19 +1792,22 @@ export class CpuRenderingContext {
                 let cachLog = []
                 let cachOverWLog = []
                 let renderLog = []
-                if (this._testIndex >= endIndex) {
-                    this._testIndex = 0
-                }
+                // if (this._testIndex >= endIndex) {
+                //     this._testIndex = 0
+                // }
 
-                if (this._testIndex === 0) {
-                    console.log("********************begin index**********************")
-                }
-                console.log("this._testIndex " + this._testIndex)
-                if (oneTriRender) {
-                    if (this._testIndex === 30) {
-                        debugger
-                    }
-                }
+                // if (this._testIndex === 0) {
+                //     console.log("********************begin index**********************")
+                // }
+                // console.log("this._testIndex " + this._testIndex)
+                // if (oneTriRender) {
+                //     if (this._testIndex === 30) {
+                //         debugger
+                //     }
+                // }
+                // if (endIndex === 810) {
+                //     debugger
+                // }
                 do {
                     renderVertxPipeCachData.clear()
                     clearShaderCachData()
@@ -1813,9 +1819,9 @@ export class CpuRenderingContext {
                         // if (index === 12) {
                         //     debugger
                         // }
-                        if (oneTriRender) {
-                            index = this._testIndex
-                        }
+                        // if (oneTriRender) {
+                        //     index = this._testIndex
+                        // }
                         // if (index >= this._testIndex) {
                         //     drawOver = true
                         //     break
@@ -1838,6 +1844,9 @@ export class CpuRenderingContext {
                             )
                             // cachArr.push((<any>linkVertexShader.attributeData)["a_position"])
                             gl_Position.set_Vn(0, 0, 0, 0)
+                            if (linkVertexShader.shaderLocalData) {
+                                linkVertexShader.shaderLocalData.init()
+                            }
                             linkVertexShader.main()
                             let glPos = renderVertxPipeCachData.vec4Data.getData()
                             triangleVec[t] = glPos
@@ -1848,6 +1857,8 @@ export class CpuRenderingContext {
                         }
                     }
 
+                    // 关于这一块的理解和实现都有问题
+                    // 暂时搁置
                     // 齐次空间的裁剪
                     // 现在是直接把空间外的三角形裁剪了
                     // 没有进行三角形拆分
@@ -1856,24 +1867,24 @@ export class CpuRenderingContext {
                     let v2 = triangleVec[1]
                     let v3 = triangleVec[2]
                     let isClip = false
-                    if (v1.x > v1.w && v2.x > v2.w && v3.x > v3.w) {
-                        isClip = true
-                    }
-                    if (v1.x < -v1.w && v2.x < -v2.w && v3.x < -v3.w) {
-                        isClip = true
-                    }
-                    if (v1.y > v1.w && v2.y > v2.w && v3.y > v3.w) {
-                        isClip = true
-                    }
-                    if (v1.y < -v1.w && v2.y < -v2.w && v3.y < -v3.w) {
-                        isClip = true
-                    }
-                    if (v1.z > v1.w && v2.z > v2.w && v3.z > v3.w) {
-                        isClip = true
-                    }
-                    if (v1.z < -v1.w && v2.z < -v2.w && v3.z < -v3.w) {
-                        isClip = true
-                    }
+                    // if (v1.x > v1.w && v2.x > v2.w && v3.x > v3.w) {
+                    //     isClip = true
+                    // }
+                    // if (v1.x < -v1.w && v2.x < -v2.w && v3.x < -v3.w) {
+                    //     isClip = true
+                    // }
+                    // if (v1.y > v1.w && v2.y > v2.w && v3.y > v3.w) {
+                    //     isClip = true
+                    // }
+                    // if (v1.y < -v1.w && v2.y < -v2.w && v3.y < -v3.w) {
+                    //     isClip = true
+                    // }
+                    // if (v1.z > v1.w && v2.z > v2.w && v3.z > v3.w) {
+                    //     isClip = true
+                    // }
+                    // if (v1.z < -v1.w && v2.z < -v2.w && v3.z < -v3.w) {
+                    //     isClip = true
+                    // }
 
                     if (!isClip) {
                         for (let t = 0; t < 3; t++) {
@@ -1969,10 +1980,10 @@ export class CpuRenderingContext {
                     }
                 } while (true)
 
-                this._testIndex += 3
-                if (this._testIndex === endIndex) {
-                    console.log("********************end index**********************")
-                }
+                // this._testIndex += 3
+                // if (this._testIndex === endIndex) {
+                //     console.log("********************end index**********************")
+                // }
                 // console.log(cachLog)
                 // console.log(cachOverWLog)
                 // console.log(renderLog)
@@ -2570,6 +2581,9 @@ export class CpuRenderingContext {
                             this._customInterpolated(varyingData, interpolateData, alpha, beta, gamma, w_reciprocal, w0, w1, w2)
                             custom_isDiscard.v = false
                             gl_FragColor.set_Vn(NaN, NaN, NaN, NaN)
+                            if (fragShader.shaderLocalData) {
+                                fragShader.shaderLocalData.init()
+                            }
                             fragShader.main()
                             // if (y > 50 && y < 120 && x > 800 && x < 1000) {
                             //     // debugger
@@ -2841,6 +2855,9 @@ export class CpuRenderingContext {
                                 // ) {
                                 //     debugger
                                 // }
+                                if (5107200 === index) {
+                                    debugger
+                                }
                                 if (this._colorRWriteEnable) {
                                     frameBuffer[index] = color.x * 255
                                 }

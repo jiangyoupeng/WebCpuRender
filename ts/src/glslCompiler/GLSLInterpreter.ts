@@ -3,7 +3,7 @@ let tokenizeString = require("glsl-tokenizer")
 let parseArray = require("glsl-parser/direct")
 let SparkMD5 = require("Spark-md5")
 
-const shaderBeginContent = `import { AttributeData, FragShaderHandle, UniformData, VaryingData, VertShaderHandle, StructData } from "../../ShaderDefine"
+const shaderBeginContent = `import { AttributeData, FragShaderHandle, UniformData, VaryingData, ShaderLocalData, VertShaderHandle, StructData } from "../../ShaderDefine"
 import { IntData, FloatData, Vec2Data, Vec3Data, Vec4Data, Mat3Data, Mat4Data, BoolData, Sampler2D, SamplerCube } from "../builtin/BuiltinData"
 `
 enum BlockType {
@@ -167,8 +167,25 @@ function interpreterDefine(lineStr: string, defines: Map<string, number | string
 }
 
 export class GLSLInterpreter {
-    static interpreter(source: string) {
-        let lines = source.split("\n")
+    static interpreter(source: string, hash: string) {
+        // 排除注释的文本
+        let excludeComments = ``
+        let remainSourceContent = source
+        let excludeIndex = remainSourceContent.indexOf("/*")
+        while (excludeIndex !== -1) {
+            excludeComments += remainSourceContent.substring(0, excludeIndex)
+            remainSourceContent = remainSourceContent.substring(excludeIndex + 2)
+            let excludeOutIndex = remainSourceContent.indexOf("*/")
+            if (excludeOutIndex === -1) {
+                console.error("error to get excludeComments")
+                debugger
+            }
+            remainSourceContent = remainSourceContent.substring(excludeOutIndex + 2)
+            excludeIndex = remainSourceContent.indexOf("/*")
+        }
+        excludeComments += remainSourceContent
+
+        let lines = excludeComments.split("\n")
         let defines: Map<string, number> = new Map()
         let strDefines: Map<string, string> = new Map()
 
@@ -188,7 +205,12 @@ export class GLSLInterpreter {
 
         let remainContent = ""
         for (let i = 0; i < lines.length; i++) {
-            const lineStr = lines[i]
+            let lineStr = lines[i]
+            let commentIndex = lineStr.indexOf("//")
+            if (commentIndex !== -1) {
+                lineStr = lineStr.substring(0, commentIndex)
+            }
+
             let strArr = lineStr.split(" ")
             let analysisStr: string[] = []
             strArr.forEach((element) => {
@@ -371,6 +393,7 @@ export class GLSLInterpreter {
             factDoGlsl = `#define ${key} ${value}\n` + factDoGlsl
         })
 
+        let shaderLocalData: Map<string, string> = new Map()
         let uniformData: Map<string, string> = new Map()
         let varyingData: Map<string, string> = new Map()
         let attributeData: Map<string, string> = new Map()
@@ -378,80 +401,112 @@ export class GLSLInterpreter {
         let structData: Map<string, string> | null = null
 
         let logicLines: string[] = []
+        let nowFuncBlock = 0
 
         // 获取所有的函数外部变量
         for (let i = 0; i < excludeUnuseLine.length; i++) {
             let lineStr = excludeUnuseLine[i]
-            // 删掉冒号
-            let deleteIndex = lineStr.indexOf(";")
-            if (deleteIndex !== -1) {
-                lineStr = lineStr.substr(0, deleteIndex)
+            if (lineStr.indexOf("{") !== -1) {
+                nowFuncBlock++
             }
 
-            let strArr = lineStr.split(" ")
-            let analysisStr: string[] = []
-            strArr.forEach((element) => {
-                if (element !== "") {
-                    analysisStr.push(element)
+            if (nowFuncBlock === 0) {
+                // 删掉冒号
+                let deleteIndex = lineStr.indexOf(";")
+                if (deleteIndex !== -1) {
+                    lineStr = lineStr.substr(0, deleteIndex)
                 }
-            })
 
-            let index = lineStr.indexOf(varyingKey)
-            if (index !== -1) {
-                if (analysisStr.length == 4) {
-                    varyingData.set(analysisStr[3], analysisStr[2])
-                } else {
-                    varyingData.set(analysisStr[2], analysisStr[1])
-                }
-                continue
-            }
-
-            index = lineStr.indexOf(attributeKey)
-            if (index !== -1) {
-                if (analysisStr.length == 4) {
-                    attributeData.set(analysisStr[3], analysisStr[2])
-                } else {
-                    attributeData.set(analysisStr[2], analysisStr[1])
-                }
-                continue
-            }
-
-            index = lineStr.indexOf(uniformKey)
-            if (index !== -1) {
-                if (analysisStr.length == 4) {
-                    uniformData.set(analysisStr[3], analysisStr[2])
-                } else {
-                    uniformData.set(analysisStr[2], analysisStr[1])
-                }
-                continue
-            }
-
-            index = lineStr.indexOf(structKey)
-            if (index !== -1) {
-                structData = new Map()
-                structDataMap.set(analysisStr[1], structData)
-                continue
-            }
-
-            if (structData) {
-                analysisStr.forEach((str) => {
-                    if (str.indexOf("}") !== -1) {
-                        structData = null
+                let strArr = lineStr.split(" ")
+                let analysisStr: string[] = []
+                strArr.forEach((element) => {
+                    if (element !== "") {
+                        analysisStr.push(element)
                     }
                 })
-                if (analysisStr.length == 2) {
-                    structData.set(analysisStr[1], analysisStr[0])
-                } else if (analysisStr.length == 3) {
-                    structData.set(analysisStr[2], analysisStr[1])
+
+                let index = lineStr.indexOf(varyingKey)
+                if (index !== -1) {
+                    if (analysisStr.length == 4) {
+                        varyingData.set(analysisStr[3], analysisStr[2])
+                    } else {
+                        varyingData.set(analysisStr[2], analysisStr[1])
+                    }
+                    continue
                 }
-            } else {
-                logicLines.push(lineStr)
+
+                index = lineStr.indexOf(attributeKey)
+                if (index !== -1) {
+                    if (analysisStr.length == 4) {
+                        attributeData.set(analysisStr[3], analysisStr[2])
+                    } else {
+                        attributeData.set(analysisStr[2], analysisStr[1])
+                    }
+                    continue
+                }
+
+                index = lineStr.indexOf(uniformKey)
+                if (index !== -1) {
+                    if (analysisStr.length == 4) {
+                        uniformData.set(analysisStr[3], analysisStr[2])
+                    } else {
+                        uniformData.set(analysisStr[2], analysisStr[1])
+                    }
+                    continue
+                }
+
+                index = lineStr.indexOf(structKey)
+                if (index !== -1) {
+                    structData = new Map()
+                    structDataMap.set(analysisStr[1], structData)
+                    continue
+                }
+
+                if (structData) {
+                    analysisStr.forEach((str) => {
+                        if (str.indexOf("}") !== -1) {
+                            structData = null
+                        }
+                    })
+                    if (analysisStr.length == 2) {
+                        structData.set(analysisStr[1], analysisStr[0])
+                    } else if (analysisStr.length == 3) {
+                        structData.set(analysisStr[2], analysisStr[1])
+                    }
+                    continue
+                }
+
+                if (analysisStr.length > 1) {
+                    if (analysisStr.length == 3) {
+                        shaderLocalData.set(analysisStr[2], analysisStr[1])
+                    } else {
+                        shaderLocalData.set(analysisStr[1], analysisStr[0])
+                    }
+                } else {
+                    logicLines.push(lineStr)
+                }
+            }
+
+            //要不然函数只有一行会有问题 比如 void main(){}
+            if (lineStr.indexOf("}") !== -1) {
+                nowFuncBlock--
             }
         }
 
-        let hash = SparkMD5.hash(source)
         // 这里的ts脚本是不包含uniform等变量声明的
-        let args = deparseToTs(ast, true, "    ", uniformData, varyingData, attributeData, structDataMap, defines, isVert, hash)
+        let args = deparseToTs(
+            ast,
+            true,
+            "    ",
+            uniformData,
+            varyingData,
+            attributeData,
+            structDataMap,
+            defines,
+            shaderLocalData,
+            isVert,
+            hash
+        )
         let importStr = args[0]
         let tsScript = args[1]
 
@@ -473,6 +528,6 @@ export class GLSLInterpreter {
             printWidth: 140,
         })
         // console.log(outStr)
-        return [hash, outStr, factDoGlsl]
+        return [outStr, factDoGlsl]
     }
 }

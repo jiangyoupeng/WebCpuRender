@@ -40,6 +40,8 @@ export let convertToBuiltinCall = {
     Mat3Data: "mat3",
     Mat4Data: "mat4",
     BoolData: "bool",
+    Sampler2D: "sampler2D",
+    SamplerCube: "samplerCube",
 }
 
 export let tsbuiltinOperationFunsWithReturn = {
@@ -346,8 +348,8 @@ export let tsbuiltinFunsWithReturn = {
     mod_V4_V4: "Vec4Data",
     pow_N_N: "NumData",
     pow_V2_V2: "Vec2Data",
-    pow_V3: "Vec3Data",
-    pow_V4: "Vec4Data",
+    pow_V3_V3: "Vec3Data",
+    pow_V4_V4: "Vec4Data",
     round_N: "NumData",
     round_V2: "Vec2Data",
     round_V3: "Vec3Data",

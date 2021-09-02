@@ -74,12 +74,13 @@ export function deparseToTs(
     ad: Map<string, string>,
     sdm: Map<string, Map<string, string>>,
     d: Map<string, number | string>,
+    shaderLocalData: Map<string, string>,
     isVert: boolean = false,
     hash: string
 ) {
     output.length = 0
     ws = new WsManager(whitespace_enabled, indent_text)
-    deparseGlobalVal.forceInit(ud, vd, ad, sdm, d)
+    deparseGlobalVal.forceInit(ud, vd, ad, sdm, d, shaderLocalData)
 
     let attributeStr = "class AttributeDataImpl implements AttributeData {\n"
     let attributerDataKeysStr = "    dataKeys: Map<string, any> = new Map([\n"
@@ -176,6 +177,48 @@ export function deparseToTs(
     uniformStr += uniformDataKeysStr + uniformDataSizeStr + "}\n"
     deparseGlobalVal.uniformData = tmpUniformData
 
+    let shaderLocalStr = `class ShaderLocalDataImpl implements ShaderLocalData {\n`
+    let tmpshaderLocalData: Map<string, string> = new Map()
+    let shaderLocalDataKeysStr = "    dataKeys: Map<string, any> = new Map([\n"
+    let shaderLocalDataSizeStr = "    dataSize: Map<string, number> = new Map([\n"
+    let initStr = "    init() {\n"
+    deparseGlobalVal.shaderLocalData.forEach((value, key: string) => {
+        let convertType: string = (<any>convertToTsType)[value]
+        if (convertType) {
+            let arrData = splitArrData(key, deparseGlobalVal.defines)
+            let factObjName = arrData.factObjName
+
+            let typeNumStr = customGetTypeNumStr(convertType)
+            shaderLocalDataKeysStr += `        ["${factObjName}", cpuRenderingContext.cachGameGl.${typeNumStr}],\n`
+            shaderLocalDataSizeStr += `        ["${factObjName}", ${arrData.arrNum || 1}],\n`
+            tmpshaderLocalData.set(factObjName, `${convertType}${arrData.arrNum > 0 ? "[]" : ""}`)
+
+            let builtinFuncCall = (<any>convertToBuiltinCall)[convertType]
+            if (arrData.arrNum > 0) {
+                shaderLocalStr += `    ${factObjName}: ${convertType}${arrData.arrNum > 0 ? "[]" : ""} | null = null\n`
+                initStr += `    this.${factObjName} = [`
+                let lastIndex = arrData.arrNum - 1
+                for (let index = 0; index < arrData.arrNum; index++) {
+                    initStr += `${builtinFuncCall}()`
+                    if (index != lastIndex) {
+                        initStr += `, `
+                    }
+                }
+                initStr += `]\n`
+            } else {
+                shaderLocalStr += `    ${factObjName}: ${convertType}${arrData.arrNum > 0 ? "[]" : ""} | null = null\n`
+                initStr += `    this.${factObjName} = ${builtinFuncCall}()\n`
+            }
+        } else {
+            console.error("不识别的shader 数据结构: " + value)
+        }
+    })
+    initStr += `    }`
+    shaderLocalDataKeysStr += `    ])\n`
+    shaderLocalDataSizeStr += `    ])\n`
+    shaderLocalStr += shaderLocalDataKeysStr + shaderLocalDataSizeStr + initStr + "}\n"
+    deparseGlobalVal.shaderLocalData = tmpshaderLocalData
+
     let structStr = ""
     let tmpStructDataMap: Map<string, Map<string, string>> = new Map()
     deparseGlobalVal.structDataMap.forEach((value: Map<string, string>, key: string) => {
@@ -226,6 +269,10 @@ export function deparseToTs(
         tsScript = `    uniformData: UniformDataImpl = new UniformDataImpl()\n` + tsScript
         tsScript = `    varyingData: VaryingDataImpl = new VaryingDataImpl()\n` + tsScript
     }
+    if (deparseGlobalVal.shaderLocalData.size > 0) {
+        tsScript = `    shaderLocalData: ShaderLocalDataImpl = new ShaderLocalDataImpl()\n` + tsScript
+    }
+
     tsScript = `export class Impl_${hash} extends ${isVert ? "VertShaderHandle" : "FragShaderHandle"}{\n` + tsScript + "}\n"
     // console.log(hash)
 
@@ -237,9 +284,11 @@ export function deparseToTs(
             defineStr += `let ${key} = "${value}"\n`
         }
     })
-    tsScript = defineStr + structStr + attributeStr + varyingStr + uniformStr + tsScript
+    tsScript = defineStr + structStr + attributeStr + varyingStr + uniformStr + shaderLocalStr + tsScript
 
     let importStr = "import {\n"
+    deparseGlobalVal.useBuiltinFuncs.add("sampler2D")
+    deparseGlobalVal.useBuiltinFuncs.add("samplerCube")
     deparseGlobalVal.useBuiltinFuncs.add("float")
     deparseGlobalVal.useBuiltinFuncs.add("float_N")
     deparseGlobalVal.useBuiltinFuncs.add("bool")
@@ -291,29 +340,33 @@ function outputReplace(index: number, str: string) {
 }
 
 function convertToClassObj(str: string) {
-    let objStr: string | undefined
-    if (deparseGlobalVal.defines.get(str) !== undefined) {
-        objStr = str
-    } else {
-        objStr = deparseGlobalVal.uniformData.get(str)
-        if (!objStr) {
-            objStr = deparseGlobalVal.varyingData.get(str)
-            if (!objStr) {
-                objStr = deparseGlobalVal.attributeData.get(str)
-                if (!objStr) {
-                    objStr = str
-                } else {
-                    objStr = `this.attributeData.${str}`
-                }
-            } else {
-                objStr = `this.varyingData.${str}`
-            }
-        } else {
-            objStr = `this.uniformData.${str}`
-        }
+    let objStr: any = deparseGlobalVal.defines.get(str)
+
+    if (objStr) {
+        return str
     }
 
-    return objStr
+    objStr = deparseGlobalVal.shaderLocalData.get(str)
+    if (objStr) {
+        return `this.shaderLocalData.${str}`
+    }
+
+    objStr = deparseGlobalVal.uniformData.get(str)
+    if (objStr) {
+        return `this.uniformData.${str}`
+    }
+
+    objStr = deparseGlobalVal.varyingData.get(str)
+    if (objStr) {
+        return `this.varyingData.${str}`
+    }
+
+    objStr = deparseGlobalVal.attributeData.get(str)
+    if (objStr) {
+        return `this.attributeData.${str}`
+    }
+
+    return str
 }
 
 function getStructType(str: string) {
@@ -362,6 +415,7 @@ function deparse_binary(node: any) {
     let leftType: string = deparse(node.children[0])
     if (!leftType) {
         debugger
+        leftType = deparse(node.children[0])
     }
 
     let leftEnd = output.length
@@ -541,23 +595,28 @@ function deparse_decl(node: any) {
         }
     }
 
+    // 2021.9.1改 看之后的情况在决定
+    // 先还是直接添加吧
+    // 可是这样可能会导致用一个语句中就要使用在nowFuncObj找不到。。。
+
     // 避免有天才声明了同一个类型在同一个语句中
     // 所以声明语句放在最后添加
-    if (deparseGlobalVal.waitPushDecVal.size) {
-        deparseGlobalVal.waitPushDecVal.forEach((value: string, key: string) => {
-            let setData = deparseGlobalVal.nowFucObj.get(deparseGlobalVal.nowBlockLevel)
-            if (!setData) {
-                setData = new Map()
-                deparseGlobalVal.nowFucObj.set(deparseGlobalVal.nowBlockLevel, setData)
-            }
-            setData.set(key, value)
-        })
-        deparseGlobalVal.waitPushDecVal.clear()
-    }
+    // if (deparseGlobalVal.waitPushDecVal.size) {
+    //     deparseGlobalVal.waitPushDecVal.forEach((value: string, key: string) => {
+    //         let setData = deparseGlobalVal.nowFucObj.get(deparseGlobalVal.nowBlockLevel)
+    //         if (!setData) {
+    //             setData = new Map()
+    //             deparseGlobalVal.nowFucObj.set(deparseGlobalVal.nowBlockLevel, setData)
+    //         }
+    //         setData.set(key, value)
+    //     })
+    //     deparseGlobalVal.waitPushDecVal.clear()
+    // }
     return cachValType || deparseGlobalVal.nowFuncTypeCach
 }
 
 function deparse_decllist(node: any) {
+    // 有可能在函数外声明
     if (!deparseGlobalVal.isFuncBlock) {
         return
     }
@@ -804,13 +863,13 @@ function deparse_ident(node: any) {
         let letType = (<any>convertToTsType)[deparseGlobalVal.nowTypeCach] || deparseGlobalVal.nowTypeCach
         outputPush(": " + letType)
 
-        // let setData = deparseGlobalVal.nowFucObj.get(deparseGlobalVal.nowBlockLevel)
-        // if (!setData) {
-        //     setData = new Map()
-        //     deparseGlobalVal.nowFucObj.set(deparseGlobalVal.nowBlockLevel, setData)
-        // }
-        // setData.set(node.data, letType)
-        deparseGlobalVal.waitPushDecVal.set(node.data, letType)
+        let setData = deparseGlobalVal.nowFucObj.get(deparseGlobalVal.nowBlockLevel)
+        if (!setData) {
+            setData = new Map()
+            deparseGlobalVal.nowFucObj.set(deparseGlobalVal.nowBlockLevel, setData)
+        }
+        setData.set(node.data, letType)
+        // deparseGlobalVal.waitPushDecVal.set(node.data, letType)
 
         let grandParentNode = node.parent.parent
 
@@ -1299,6 +1358,11 @@ function getObjType(element: string) {
         myIndex = element.indexOf("this.uniformData.")
         if (myIndex !== -1) {
             return (nowObjType = deparseGlobalVal.uniformData.get(element.substring(myIndex + "this.uniformData.".length))!)
+        }
+
+        myIndex = element.indexOf("this.shaderLocalData.")
+        if (myIndex !== -1) {
+            return (nowObjType = deparseGlobalVal.shaderLocalData.get(element.substring(myIndex + "this.shaderLocalData.".length))!)
         }
 
         nowObjType = deparseGlobalVal.defines.get(element)

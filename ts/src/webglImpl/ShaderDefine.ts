@@ -22,11 +22,20 @@ export class VaryingData {
         console.error("必须自己实现copy")
     }
 }
+/**定义的shader文件内部数据 */
+export class ShaderLocalData {
+    constructor() {}
+    dataKeys: Map<string, number> = null!
+    dataSize: Map<string, number> = null!
+    /**每次调用前需要自己内部初始化 */
+    init() {}
+}
 
 export class BaseShaderHandle {
     constructor() {}
     uniformData: UniformData = null!
     varyingData: VaryingData = null!
+    shaderLocalData: ShaderLocalData | null = null
 }
 
 export class VertShaderHandle extends BaseShaderHandle {

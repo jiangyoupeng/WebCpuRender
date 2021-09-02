@@ -87,6 +87,8 @@ export class CachPool<T extends ValueType> {
 export class BuiltinDataCach {
     intData: CachPool<IntData> = new CachPool<IntData>(() => new IntData())
     floatData: CachPool<FloatData> = new CachPool<FloatData>(() => new FloatData())
+    sampler2D: CachPool<Sampler2D> = new CachPool<Sampler2D>(() => new Sampler2D())
+    samplerCube: CachPool<SamplerCube> = new CachPool<SamplerCube>(() => new SamplerCube())
     vec2Data: CachPool<Vec2Data> = new CachPool<Vec2Data>(() => new Vec2Data())
     vec3Data: CachPool<Vec3Data> = new CachPool<Vec3Data>(() => new Vec3Data())
     vec4Data: CachPool<Vec4Data> = new CachPool<Vec4Data>(() => new Vec4Data())
@@ -96,6 +98,8 @@ export class BuiltinDataCach {
     clear() {
         this.intData.clear()
         this.floatData.clear()
+        this.sampler2D.clear()
+        this.samplerCube.clear()
         this.vec2Data.clear()
         this.vec3Data.clear()
         this.vec4Data.clear()
@@ -116,6 +120,8 @@ let vec3Data = builtinCachData.vec3Data
 let vec4Data = builtinCachData.vec4Data
 let floatData = builtinCachData.floatData
 let intData = builtinCachData.intData
+let sampler2D = builtinCachData.sampler2D
+let samplerCube = builtinCachData.samplerCube
 
 let outParasmCachData = new BuiltinDataCach()
 let outVec2Data = outParasmCachData.vec2Data
@@ -4688,8 +4694,16 @@ export class IntData extends NumData {
     }
 }
 
-export class Sampler2D extends IntData {}
-export class SamplerCube extends IntData {}
+export class Sampler2D extends IntData {
+    ctor() {
+        return sampler2D.getData()
+    }
+}
+export class SamplerCube extends IntData {
+    ctor() {
+        return samplerCube.getData()
+    }
+}
 
 export class Mat3Data extends ValueType {
     out_m00: FloatData = new FloatData()

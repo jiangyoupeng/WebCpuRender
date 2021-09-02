@@ -22,6 +22,8 @@ let vec4Data = builtinCachData.vec4Data
 let floatData = builtinCachData.floatData
 let intData = builtinCachData.intData
 let boolData = builtinCachData.boolData
+let sampler2DData = builtinCachData.sampler2D
+let samplerCubeData = builtinCachData.samplerCube
 
 let clampTmp = function (val: number, min: number, max: number) {
     return val < min ? min : val > max ? max : val
@@ -886,13 +888,13 @@ export function pow_V2_V2(x: Vec2Data, y: Vec2Data): Vec2Data {
     return data
 }
 
-export function pow_V3(x: Vec3Data, y: Vec3Data): Vec3Data {
+export function pow_V3_V3(x: Vec3Data, y: Vec3Data): Vec3Data {
     let data = vec3Data.getData()
     data.set_Vn(powTmp(x.x, y.x), powTmp(x.y, y.y), powTmp(x.z, y.z))
     return data
 }
 
-export function pow_V4(x: Vec4Data, y: Vec4Data): Vec4Data {
+export function pow_V4_V4(x: Vec4Data, y: Vec4Data): Vec4Data {
     let data = vec4Data.getData()
     data.set_Vn(powTmp(x.x, y.x), powTmp(x.y, y.y), powTmp(x.z, y.z), powTmp(x.w, y.w))
     return data
@@ -1583,6 +1585,18 @@ export function float_N(x?: NumData | number): FloatData {
 export function vec2(): Vec2Data {
     let data = vec2Data.getData()
     data.set_Vn(0, 0)
+    return data
+}
+
+export function sampler2D(): Sampler2D {
+    let data = sampler2DData.getData()
+    data.v = 0
+    return data
+}
+
+export function samplerCube(): SamplerCube {
+    let data = samplerCubeData.getData()
+    data.v = 0
     return data
 }
 

@@ -27,6 +27,7 @@ export class DeparseGlslGlobalVal {
     attributeData: Map<string, string> = new Map()
     structDataMap: Map<string, Map<string, string>> = new Map()
     defines: Map<string, number | string> = null!
+    shaderLocalData: Map<string, string> = new Map()
 
     customFuns: Map<string, string> = new Map()
     customFunsInOutType: Map<string, InOutType[]> = new Map()
@@ -42,7 +43,8 @@ export class DeparseGlslGlobalVal {
         vd?: Map<string, string>,
         ad?: Map<string, string>,
         sdm?: Map<string, Map<string, string>>,
-        d?: Map<string, number | string>
+        d?: Map<string, number | string>,
+        shaderLocalData?: Map<string, string>
     ) {
         this.nowFuncTypeCach = ""
         this.waitPushDecVal = new Map()
@@ -57,6 +59,7 @@ export class DeparseGlslGlobalVal {
         this.attributeData = ad!
         this.structDataMap = sdm!
         this.defines = d!
+        this.shaderLocalData = shaderLocalData!
         this.nowFucObj = new Map()
         this.useBuiltinFuncs = new Set()
         this.useBuiltinOperators = new Set()
