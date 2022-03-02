@@ -126,6 +126,8 @@ export function replaceWebglFunc(gl: any) {
                                     waitDownloadCompilerTsFile.set(hash, interpreterData[0])
                                 }
                             }
+                        } else if (funcKey === "drawElements" || funcKey === "drawArrays") {
+                            outputTsShader()
                         }
                     } else if (replaceShaderSource) {
                         if (funcKey == "shaderSource") {

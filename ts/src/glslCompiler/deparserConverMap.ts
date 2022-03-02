@@ -215,10 +215,10 @@ export let glslBuiltinType = {
 }
 
 export let tsbuiltinFunsWithReturn = {
-    radian_N: "NumData",
-    radian_V2: "Vec2Data",
-    radian_V3: "Vec3Data",
-    radian_V4: "Vec4Data",
+    radians_N: "NumData",
+    radians_V2: "Vec2Data",
+    radians_V3: "Vec3Data",
+    radians_V4: "Vec4Data",
     degrees_N: "NumData",
     degrees_V2: "Vec2Data",
     degrees_V3: "Vec3Data",
@@ -459,7 +459,7 @@ export let tsbuiltinFunsWithReturn = {
 }
 
 export let builtinFuns = {
-    radian: true,
+    radians: true,
     degrees: true,
     sin: true,
     cos: true,

@@ -490,7 +490,7 @@ export class CpuRenderingContext {
     }
 
     getProgramInfoLog(programIndex: WebGLProgram): string | null {
-        let program = this.customGetProram(programIndex)
+        let program = this.customGetProgram(programIndex)
         if (!program) {
             renderError("this._gameGl.INVALID_OPERATION " + this._gameGl.INVALID_OPERATION + " in getProgramInfoLog ")
         }
@@ -512,7 +512,7 @@ export class CpuRenderingContext {
     }
 
     attachShader(programIndex: WebGLProgram, shaderIndex: WebGLShader): void {
-        let program = this.customGetProram(programIndex)
+        let program = this.customGetProgram(programIndex)
         let shader = this.customGetShader(shaderIndex)
 
         if (program === undefined || shader === undefined) {
@@ -538,7 +538,7 @@ export class CpuRenderingContext {
     }
 
     detachShader(programIndex: WebGLProgram, shaderIndex: WebGLShader): void {
-        let program = this.customGetProram(programIndex)
+        let program = this.customGetProgram(programIndex)
         let shader = this.customGetShader(shaderIndex)
 
         if (program === undefined || shader === undefined) {
@@ -566,7 +566,7 @@ export class CpuRenderingContext {
     }
 
     linkProgram(programIndex: WebGLProgram): void {
-        let program = this.customGetProram(programIndex)
+        let program = this.customGetProgram(programIndex)
 
         if (program === undefined) {
             renderError("this._gameGl.INVALID_VALUE  " + this._gameGl.INVALID_VALUE + " in linkProgram ")
@@ -575,7 +575,7 @@ export class CpuRenderingContext {
         }
     }
 
-    customGetProram(programIndex: WebGLProgram) {
+    customGetProgram(programIndex: WebGLProgram) {
         let program: CPUShaderProgram | undefined
         if (programIndex) {
             program = this._webGLProgramMap.get((<CPUWebGLProgram>programIndex).cachIndex)!
@@ -584,7 +584,7 @@ export class CpuRenderingContext {
     }
 
     useProgram(programIndex: WebGLProgram): void {
-        let program = this.customGetProram(programIndex)
+        let program = this.customGetProgram(programIndex)
 
         if (program === undefined) {
             this._useProgram = null!
@@ -603,7 +603,7 @@ export class CpuRenderingContext {
     }
 
     deleteProgram(programIndex: WebGLProgram): void {
-        let program = this.customGetProram(programIndex)
+        let program = this.customGetProgram(programIndex)
 
         if (program === undefined) {
             renderError("this._gameGl.INVALID_VALUE  " + this._gameGl.INVALID_VALUE + " in deleteProgram ")
@@ -675,7 +675,7 @@ export class CpuRenderingContext {
     }
 
     getActiveAttrib(programIndex: WebGLProgram, index: GLuint): WebGLActiveInfo | null {
-        let program = this.customGetProram(programIndex)
+        let program = this.customGetProgram(programIndex)
 
         let activeInfo: WebGLActiveInfo | null = null
         if (program === undefined) {
@@ -695,7 +695,7 @@ export class CpuRenderingContext {
     }
 
     getActiveUniform(programIndex: WebGLProgram, index: GLuint): WebGLActiveInfo | null {
-        let program = this.customGetProram(programIndex)
+        let program = this.customGetProgram(programIndex)
 
         let activeInfo: WebGLActiveInfo | null = null
         if (program === undefined) {
@@ -882,7 +882,7 @@ export class CpuRenderingContext {
 
     /**active 和 enable 应该不是一个概念 */
     getAttribLocation(programIndex: WebGLProgram, name: string): GLint {
-        let program = this.customGetProram(programIndex)
+        let program = this.customGetProgram(programIndex)
 
         let localtion = -1
         if (program === undefined) {
@@ -982,7 +982,7 @@ export class CpuRenderingContext {
     }
 
     getUniformLocation(programIndex: WebGLProgram, name: string): WebGLUniformLocation | null {
-        let program = this.customGetProram(programIndex)
+        let program = this.customGetProgram(programIndex)
 
         let localtion = null
         if (program === undefined) {

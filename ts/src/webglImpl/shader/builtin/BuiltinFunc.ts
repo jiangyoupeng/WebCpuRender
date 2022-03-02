@@ -79,20 +79,20 @@ let stepTmp = function (edge: number, x: number) {
 
 const oneDegressRadin = Math.PI / 180
 
-export function radian_N(degrees: NumData): NumData {
+export function radians_N(degrees: NumData): NumData {
     let data = degrees.ctor()
     data.v = oneDegressRadin * degrees.v
     return data
 }
 
-export function radian_V2(degrees: Vec2Data): Vec2Data {
+export function radians_V2(degrees: Vec2Data): Vec2Data {
     let data = vec2Data.getData()
     data.out_x.v = oneDegressRadin * degrees.x
     data.out_y.v = oneDegressRadin * degrees.y
     return data
 }
 
-export function radian_V3(degrees: Vec3Data): Vec3Data {
+export function radians_V3(degrees: Vec3Data): Vec3Data {
     let data = vec3Data.getData()
     data.out_x.v = oneDegressRadin * degrees.x
     data.out_y.v = oneDegressRadin * degrees.y
@@ -100,7 +100,7 @@ export function radian_V3(degrees: Vec3Data): Vec3Data {
     return data
 }
 
-export function radian_V4(degrees: Vec4Data): Vec4Data {
+export function radians_V4(degrees: Vec4Data): Vec4Data {
     let data = vec4Data.getData()
     data.out_x.v = oneDegressRadin * degrees.x
     data.out_y.v = oneDegressRadin * degrees.y
