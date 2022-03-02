@@ -7,7 +7,7 @@ module.exports = {
         main: "./ts/src/main.ts",
     },
     output: {
-        path: path.resolve(__dirname, "build"),
+        path: path.resolve(__dirname, "../preview-template"),
         filename: "[name]-bundle.js",
     },
     resolve: {
